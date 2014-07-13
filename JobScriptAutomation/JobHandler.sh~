@@ -625,6 +625,7 @@ if [ $LISTSTATUS = "TRUE" ]; then
 			JOBNAME_BETA=$(echo $JOBNAME | sed "s/^.*\([[:digit:]]\.[[:digit:]]\{4\}$\)/\1/")
 
 			STATUS="notQueued"	
+			#Test
 
 			if [ $JOBNAME_BETA = $BETA ] && [ $JOBNAME_KAPPA = $KAPPA ] && [ $JOBNAME_NTAU = $NTAU ] && [ $JOBNAME_NSPAT = $NSPAT ]; then
 
