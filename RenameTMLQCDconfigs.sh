@@ -132,7 +132,9 @@ END {
     fi
     
     # Estimate maximum trajectory number and check it
-    max_traj_number="$(($Nsave * ($max_index_conf + 1)))"
+    max_index_conf=$(echo $max_index_conf | sed 's/^0*//') #Removing leading zeros!
+    max_traj_number=$(($Nsave * ($max_index_conf + 1)))
+
     if [ $(($(echo "$(($Nsave * ($max_index_conf + 1)))" | wc -m) -1)) -gt $numDigitsAllowedCL2QCD ]; then # wc counts the endline, too -> I have to subtract 1
 	echo "Maximum trajectory number would have more than 5 digits and it is not allowed! Aborting..."
 	exit -1
@@ -142,7 +144,7 @@ END {
     # overwrite files, since the old have 4 digits and the new 5). In any case we use mv -i.
     for f in $(ls -lr $folder | grep -v "^d" | awk 'NR>1{print $9}' | grep "conf." | grep -v "save")
     do
-	new_index=$(echo $f | awk '{print substr($1,index($1, "conf.")+5,length($1))}')
+	new_index=$(echo $f | awk '{print substr($1,index($1, "conf.")+5,length($1))}' | sed 's/^0*//') #Removing leading zeros!
 	new_index=$(($Nsave * ($new_index + 1)))
 	new_name=`printf "conf.%0${numDigitsAllowedCL2QCD}d" $new_index`
 	mv -i $folder/$f $folder/$new_name
