@@ -37,8 +37,8 @@ ara $2; printf "\n\e[0;36mFile $1/output.data copied successfully!\n"; fi
     # Copy all the configurations
     printf "\n\e[0;32mCOPYING CONFIGURATIONS FROM \e[0;35m $1 \e[0;32m TO \e[0;35m $2 \e[0;32m...\n"
     printf "\n\e[0;34m"
-    rsync $rsync_options --progress $1/conf.* $2
-    printf " \e[0m\n\n"
+    rsync $rsync_options --stats $1/conf.* $2
+    printf " \e[0m\n"
     # Delete conf.save if it has been copied
     rm -f $2/conf.save
 fi
