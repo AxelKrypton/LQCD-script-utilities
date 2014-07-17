@@ -31,6 +31,6 @@ else
     # Copy all the configurations
     printf "\n\e[0;32mCOPYING PBP FILES FROM \e[0;35m $1 \e[0;32m TO \e[0;35m $2 \e[0;32m...\n"
     printf "\n\e[0;34m"
-    rsync $rsync_options --progress $1/*pbp.dat $2
-    printf " \e[0m\n\n"
+    rsync $rsync_options --stats $1/*pbp.dat $2
+    printf " \e[0m\n"
 fi
