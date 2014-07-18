@@ -36,26 +36,25 @@ if [ $# -ne 1 ]; then
 else
     #Rename $1 to ./$1 if it does not start with . ----> Maybe this is not needed, but for sure it works
     grep_result=$(echo $1 | awk '{print substr($0, 1, 1)}')
-    if [ "$grep_result" != "." ]; then  # ${parameter:+word} substitute word if parameter Set and Not Null, substitute null if parameter Set But Null ot parameter Unset
+    if [ "$grep_result" != "." ] && [ "$grep_result" != "/" ]; then
 	folder="./$1"
     else
 	folder=$1
     fi
     
-    folder=${folder%/*} # ${parameter%[word]}  Remove Smallest Suffix Pattern.
     # Check if the folder exists
-    if [ ! -d $1 ]; then
+    if [ ! -d $folder ]; then
 	echo "Directory \"$folder\" does not exist or cannot be accessed! Aborting..."
 	exit -1
     fi
     # Check if the folder contains a output.para file
-    if [ ! -e $1/output.para ]; then
+    if [ ! -e $folder/output.para ]; then
 	echo "File \"$folder/output.para\" does not exist or cannot be accessed! Aborting..."
 	exit -1
     fi
 
     # Check if output.para is valid and in case read Nsave
-    Nsave=$(grep "Nsave=" $1/output.para | awk '\
+    Nsave=$(grep "Nsave=" $folder/output.para | awk '\
 BEGIN{digitsBeforeParam; correct=1; previousNumber; actualNumber}
 {
   digitsBeforeParam = index($0, "Nsave=");
@@ -83,7 +82,7 @@ END{
     print actualNumber;
   }
 }')
-    if [ -z ${Nsave:+x} ]; then
+    if [ -z ${Nsave:+x} ]; then   # ${parameter:+word} substitute word if parameter Set and Not Null, substitute null if parameter Set But Null ot parameter Unset
 	echo "Variable \"Nsave\" unset or empty after search for it! Problem to be investigated! Aborting..."
 	exit -1
     fi
@@ -132,7 +131,9 @@ END {
     fi
     
     # Estimate maximum trajectory number and check it
-    max_traj_number="$(($Nsave * ($max_index_conf + 1)))"
+    max_index_conf=$(echo $max_index_conf | sed 's/^0*//') #Removing leading zeros!
+    max_traj_number=$(($Nsave * ($max_index_conf + 1)))
+    
     if [ $(($(echo "$(($Nsave * ($max_index_conf + 1)))" | wc -m) -1)) -gt $numDigitsAllowedCL2QCD ]; then # wc counts the endline, too -> I have to subtract 1
 	echo "Maximum trajectory number would have more than 5 digits and it is not allowed! Aborting..."
 	exit -1
@@ -142,7 +143,7 @@ END {
     # overwrite files, since the old have 4 digits and the new 5). In any case we use mv -i.
     for f in $(ls -lr $folder | grep -v "^d" | awk 'NR>1{print $9}' | grep "conf." | grep -v "save")
     do
-	new_index=$(echo $f | awk '{print substr($1,index($1, "conf.")+5,length($1))}')
+	new_index=$(echo $f | awk '{print substr($1,index($1, "conf.")+5,length($1))}' | sed 's/^0*//') #Removing leading zeros!
 	new_index=$(($Nsave * ($new_index + 1)))
 	new_name=`printf "conf.%0${numDigitsAllowedCL2QCD}d" $new_index`
 	mv -i $folder/$f $folder/$new_name

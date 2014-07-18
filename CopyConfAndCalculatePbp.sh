@@ -151,7 +151,7 @@ if [ "$HOST" == "loewe" ]; then
 	    mkdir -p b${BETAVALUES[$i]} || exit 2
 	    if test -n "$(find b${BETAVALUES[$i]} -maxdepth 1 -name 'conf*' -print -quit)"; then
 		printf "\n\e[0;31m  Folder $(pwd)/b${BETAVALUES[$i]} already contains some \"conf*\" file! Aborting...\n\n\e[0m"
-                exit -1
+		exit -1
             fi
 	    bash $SCRIPTDIR/CopyConfigs.sh ${CONFIGHOST}\:${PATHTOCONFIG_PREFIX}${PARAMETERS_PATH}/b${BETAVALUES[$i]} $(pwd)/b${BETAVALUES[$i]}
 	    if [ $? -ne 0 ]; then

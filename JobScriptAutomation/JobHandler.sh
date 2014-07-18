@@ -39,7 +39,6 @@ source $HOME/Script/JobScriptAutomation/AuxiliaryFunction.sh || exit -2
 #-----------------------------------------------------------------------------------------------------------------#
 # Set default values for the command line parameters
 
-JOBSCRIPT_PREFIX="job.submit.script.imagMu"
 BETA_PREFIX="b"
 BETASFILE="betas"
 KAPPA="1000"
@@ -59,6 +58,8 @@ SUBMITONLY="FALSE"
 CONTINUE="FALSE"
 CONTINUE_NUMBER="0"
 LISTSTATUS="FALSE"
+CLUSTER_NAME="LOEWE"
+LOEWE_PARTITION="parallel"
 
 #-----------------------------------------------------------------------------------------------------------------#
 # Set default values for the non-modifyable variables ---> Modify this file to change them!
@@ -69,6 +70,13 @@ source $HOME/Script/JobScriptAutomation/UserSpecificVariables_$(whoami).sh || ex
 #-----------------------------------------------------------------------------------------------------------------#
 # Extract options and their arguments into variables.
 source $HOME/Script/JobScriptAutomation/CommandLineParser.sh || exit -2
+
+# NOTE: The CLUSTER_NAME variable has not been so far put in the parser since
+#       it can be either LOEWE or JUQUEEN. It is set using whoami. Change this in future if needed!
+if [[ $(whoami) =~ ^hkf[[:digit:]]{3} ]]; then
+    CLUSTER_NAME="JUQUEEN"
+fi
+
 ParseCommandLineOption $@
 #-----------------------------------------------------------------------------------------------------------------#
 
@@ -76,7 +84,7 @@ ParseCommandLineOption $@
 #-----------------------------------------------------------------------------------------------------------------#
 # Check if the necessary scripts exist.
 if [ ! -f $PRODUCEJOBSCRIPTSH ] || [ ! -f $PRODUCEINPUTFILESH ] || [ ! -f $HMC_TM_GLOBALPATH ]; then
-	printf "\n\e[0;31m One or more of the following scripts are missing:\n\e[0m"
+	printf "\n\e[0;31m One or more of the following files are missing:\n\e[0m"
 	printf "\n\e[0;31m   - $PRODUCEJOBSCRIPTSH\e[0m"
 	printf "\n\e[0;31m   - $PRODUCEINPUTFILESH\e[0m"
 	printf "\n\e[0;31m   - $HMC_TM_GLOBALPATH\e[0m"
@@ -88,7 +96,12 @@ fi
 
 #-----------------------------------------------------------------------------------------------------------------#
 # Perform all the checks on the path, reading out some variables 
-CheckSingleOccurrenceInPath "homeb" "hkf8/" "hkf8[[:digit:]]\+" "mui" "k[[:digit:]]\+" "nt[[:digit:]]\+" "ns[[:digit:]]\+"
+if [ "$CLUSTER_NAME" = "JUQUEEN" ]; then
+    CheckSingleOccurrenceInPath "homeb" "hkf8/" "hkf8[[:digit:]]\+" "mui" "k[[:digit:]]\+" "nt[[:digit:]]\+" "ns[[:digit:]]\+"
+else
+    CheckSingleOccurrenceInPath "home" "hfftheo" "$(whoami)" "mui" "k[[:digit:]]\+" "nt[[:digit:]]\+" "ns[[:digit:]]\+"
+fi
+
 ReadParametersFromPath $(pwd)
 HOME_DIR_WITH_BETAFOLDERS="$HOME_DIR/$SIMULATION_PATH$PARAMETERS_PATH"
 if [ "$HOME_DIR_WITH_BETAFOLDERS" != "$(pwd)" ]; then
@@ -100,10 +113,10 @@ WORK_DIR_WITH_BETAFOLDERS="$WORK_DIR/$SIMULATION_PATH$PARAMETERS_PATH"
 
 
 #-----------------------------------------------------------------------------------------------------------------#
-# Check for correct specification of parallelization parameters
+# Check for correct specification of parallelization parameters, only on JUQUEEN
 if [ $LISTSTATUS = "FALSE" ]; then
 
-    CheckParallelizationTmlqcdForJuqueen
+    if [ "$CLUSTER_NAME" = "JUQUEEN" ]; then CheckParallelizationTmlqcdForJuqueen; fi
 
 fi
 #-----------------------------------------------------------------------------------------------------------------#
@@ -126,23 +139,27 @@ PROBLEM_BETA_ARRAY=() #Arrays that will contain the beta values that actually wi
 
 if [ $SUBMITONLY = "FALSE" ] && [ $CONTINUE = "FALSE" ] && [ $LISTSTATUS = "FALSE" ]; then  
 
-    ProduceInputFileAndJobScriptForEachBeta #TODO: Declare all possible local variable in this function as local!
+    ProduceInputFileAndJobScriptForEachBeta
 
-elif [ $SUBMITONLY = "TRUE" ] && [ $CONTINUE = "FALSE" ] && [ $LISTSTATUS = "FALSE" ]; then  
+elif [ $SUBMITONLY = "TRUE" ]; then  
 
-    ProcessBetaValuesForSubmitOnly #TODO: Declare all possible local variable in this function as local!
+    ProcessBetaValuesForSubmitOnly
 
 elif [ $CONTINUE = "TRUE" ]; then 
 
     ProcessBetaValuesForContinue #TODO: Declare all possible local variable in this function as local! Use also only capital letters!
 
 fi
+#-----------------------------------------------------------------------------------------------------------------#
 
 
 #-----------------------------------------------------------------------------------------------------------------#
-if [ $LISTSTATUS = "TRUE" ]; then #TODO: This option should be reconsidered and improved
+# TODO: Should not this if be an elif of above!?
+if [ $LISTSTATUS = "TRUE" ]; then #TODO: This option should be reconsidered and improved for Juqueen
 
-    ProduceJobStatusFile #TODO: Declare all possible local variable in this function as local! Use PARAMETERS_STRING/PATH where needed!
+    ProduceJobStatusFile 
+    #TODO: On Juqueen, declare all possible local variable in this function as local! Use PARAMETERS_STRING/PATH where needed!
+    #TODO: Test on LOEWE! 
 
 fi
 #------------------------------------------------------------------------------------------------------------------------------#
@@ -159,20 +176,10 @@ fi
 
 
 #------------------------------------------------------------------------------------------------------------------------------#
-# Printing report for problem betas
-if [ ${#PROBLEM_BETA_ARRAY[@]} -gt "0" ]; then	
-printf "\e[0;31m \n For the following beta values something went wrong \n\e[0m"
-printf "\e[0;31m and hence these were left out during file creation and/or job submission:\n\e[0m"
-
-	printf "\n\e[0;31m===================================================================================\n\e[0m"
-	printf "\e[0;31m problematic beta values:\n"
-	for i in ${PROBLEM_BETA_ARRAY[@]}; do
-		echo "  - $i"
-	done
-	printf "\e[0;31m===================================================================================\n\e[0m"
-fi
+# Report on eventual problems
+PrintReportForProblematicBeta
 #------------------------------------------------------------------------------------------------------------------------------#
 
-printf "\e[0;34m \n done!\n\e[0m"
+printf "\e[0;34m \n ...done!\n\n\e[0m"
 
 exit 0
