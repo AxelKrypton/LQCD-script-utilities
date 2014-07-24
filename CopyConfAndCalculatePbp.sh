@@ -12,7 +12,7 @@
 source $HOME/Script/PathManagement.sh || exit -2
 
 # set an initial value for the options
-EXECUTABLE="${HOME}/clhmc/build/inverter"
+EXECUTABLE="${HOME}/clhmc/build/RefExec/inverter_ref"
 MEASURE_PBP="true"
 MEASURE_CORRELATORS="false"
 SOLVER="cg"
@@ -37,7 +37,7 @@ while [ "$1" != "" ]; do
           printf "\n\e[0;32m"
           echo "Call the script $0 with the following optional arguments:"
           echo "  -h | --help"
-          echo "  --executable            ->    default value = ${HOME}/clhmc/build/inverter"
+          echo "  --executable            ->    default value = ${HOME}/clhmc/build/RefExec/inverter_ref"
           echo "  --measure_correlators   ->    default value = false"
           echo "  --solver                ->    default value = cg"
           echo "  --cgmax                 ->    default value = 1000"
