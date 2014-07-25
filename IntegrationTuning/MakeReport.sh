@@ -110,7 +110,7 @@ printf "\e[0;34m\e[2m$TABLE_FORMAT\e[0m\n"   "SETUP:" ""   "DURATION:" ""   "ACC
 
 if [ $ALLRUNFINISHED -eq 0 ]; then
     for ((i=0; i<${#FOLDERS[@]}; i++)); do
-	printf "$TABLE_FORMAT\e[0m\n"   "${FOLDERS[$i]}" ""   " $(( (${DURATION[$i]}-${DURATION[$i]}%60)/60 ))m $(( ${DURATION[$i]}%60 ))s" ""   "${ACCEPTANCE[$i]}%"
+	printf "$TABLE_FORMAT%3s%-15s\e[0m\n"   "${FOLDERS[$i]}" ""   " $(( (${DURATION[$i]}-${DURATION[$i]}%60)/60 ))m $(( ${DURATION[$i]}%60 ))s" ""   "${ACCEPTANCE[$i]}%" "" "(out of ${TRAJECTORIES[$i]})"
     done
 else
     while [ ${#FOLDERS[@]} -gt 0 ]; do

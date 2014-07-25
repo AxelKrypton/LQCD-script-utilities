@@ -45,6 +45,7 @@ NUMTIMESCALES=1
 INTSTEPS0=7
 INTSTEPS1=5
 LOEWE_PARTITION="test"
+LOEWE_NODE="unset"
 
 #-----------------------------------------------------------------------------------------------------------------#
 # Paths on LOEWE using CL2QCD
