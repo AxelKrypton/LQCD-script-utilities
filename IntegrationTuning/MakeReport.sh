@@ -3,6 +3,30 @@
 # Just a short script to read out the situation from
 # the folders present where the script is run.
 
+function ParseCommandLineOption(){
+    while [ "$1" != "" ]; do
+	case $1 in
+	    -h | --help )
+		printf "\n\e[0;32m"
+		echo "Call the script $0 with the following optional arguments:"
+		echo ""
+		echo "  -h | --help"
+		echo "  -a | --orderAcceptance      ->    Print report with increasing Acceptance Rate"
+		echo "  -t | --orderTime            ->    Print report with increasing Simulation Time"
+		echo "  -f | --orderFolder          ->    Print report with increasing Folder Name"
+		echo ""
+		echo "NOTE: If more than one of the options -a, -t and -f are given, the last is used! By default -a is used."
+		printf "\n\e[0m"
+		exit
+		shift;;
+	    -a | --orderAcceptance )  ORDER_PARAMETER="ACCEPTANCE"; shift ;;
+	    -t | --orderTime )        ORDER_PARAMETER="DURATION"; shift ;;
+	    -f | --orderFolder )      ORDER_PARAMETER="FOLDERS"; shift ;;
+	    * ) printf "\n\e[0;31mError parsing the options! Aborting...\n\n\e[0m" ; exit -1 ;;
+	esac
+    done
+}
+
 function TimeToSeconds(){
     local T=$1; shift
     echo $((10#${T:0:2} * 3600 + 10#${T:3:2} * 60 + 10#${T:6:2})) 
@@ -64,6 +88,8 @@ fi
 
 
 #-----------------------------------------------------------------------------------------------------------------#
+ORDER_PARAMETER="ACCEPTANCE"
+ParseCommandLineOption $@
 FOLDERS=( $(ls) )
 index=0
 for NAME in ${FOLDERS[@]}; do
@@ -79,14 +105,17 @@ done
 ACCEPTANCE=()
 TRAJECTORIES=()
 DURATION=()
+MAX_DELTAS=()
 ALLRUNFINISHED=1
 for NAME in ${FOLDERS[@]}; do
     if [ -f $NAME/hmc_output ]; then
 	ACCEPTANCE+=( $(awk '{ sum+=$11} END {print 100*sum/(NR)}' $NAME/hmc_output) )
 	TRAJECTORIES+=( $(wc -l $NAME/hmc_output | awk '{print $1}') )
+	MAX_DELTAS+=( $(awk 'BEGIN {max=0} {if(sqrt($8^2)>max){max=sqrt($8^2)}} END {printf "%6g", max}' $NAME/hmc_output) )
     else
 	ACCEPTANCE+=( "--" )
 	TRAJECTORIES+=( "--")
+	MAX_DELTAS+=( "--" )
 	ALLRUNFINISHED=0
     fi
     if [ -f $NAME/hmc*.out ]; then
@@ -102,25 +131,38 @@ done
 
 
 #-----------------------------------------------------------------------------------------------------------------#
-printf "\n\e[0;36m=======================================================\e[0m\n"
+printf "\n\e[0;36m=====================================================================\e[0m\n"
 printf "\e[0;35m\e[2m  kappa=0.$KAPPA  ns=$NSPACE  beta=$BETA\e[0m"
-TABLE_FORMAT="%-8s%-5s%-9s%-5s%-8s"
-printf "\n\e[0;36m=======================================================\e[0m\n"
-printf "\e[0;34m\e[2m$TABLE_FORMAT\e[0m\n"   "SETUP:" ""   "DURATION:" ""   "ACC-RATE:"
+TABLE_FORMAT="%-8s%-5s%-9s%-5s%-9s%3s%-15s%-5s%-8s"
+printf "\n\e[0;36m=====================================================================\e[0m\n"
+printf "\e[0;34m\e[2m$TABLE_FORMAT\e[0m\n"   "SETUP:" ""   "DURATION:" ""   "ACC-RATE:" "" "" "" "MAX_DS:"
 
 if [ $ALLRUNFINISHED -eq 0 ]; then
     for ((i=0; i<${#FOLDERS[@]}; i++)); do
-	printf "$TABLE_FORMAT%3s%-15s\e[0m\n"   "${FOLDERS[$i]}" ""   " $(( (${DURATION[$i]}-${DURATION[$i]}%60)/60 ))m $(( ${DURATION[$i]}%60 ))s" ""   "${ACCEPTANCE[$i]}%" "" "(out of ${TRAJECTORIES[$i]})"
+	printf "$TABLE_FORMAT\e[0m\n"   "${FOLDERS[$i]}" ""\
+                                       " $(( (${DURATION[$i]}-${DURATION[$i]}%60)/60 ))m $(( ${DURATION[$i]}%60 ))s" ""\
+                                        "${ACCEPTANCE[$i]}%" "" "(out of ${TRAJECTORIES[$i]})" ""\
+                                        "${MAX_DELTAS[$i]}"
     done
 else
     while [ ${#FOLDERS[@]} -gt 0 ]; do
-	i=$(FindPositionOfFirstMinimumOfArray "${ACCEPTANCE[@]}")
-	printf "$TABLE_FORMAT%3s%-15s\e[0m\n"   "${FOLDERS[$i]}" ""   " $(( (${DURATION[$i]}-${DURATION[$i]}%60)/60 ))m $(( ${DURATION[$i]}%60 ))s" ""   "${ACCEPTANCE[$i]}%" "" "(out of ${TRAJECTORIES[$i]})"
+	if [[ $ORDER_PARAMETER = "ACCEPTANCE" ]]; then
+	    i=$(FindPositionOfFirstMinimumOfArray "${ACCEPTANCE[@]}")
+	elif [[ $ORDER_PARAMETER = "DURATION" ]]; then
+	    i=$(FindPositionOfFirstMinimumOfArray "${DURATION[@]}")
+	else
+	    i=$(FindPositionOfFirstMinimumOfArray "${FOLDERS[@]}")
+	fi
+	printf "$TABLE_FORMAT\e[0m\n"   "${FOLDERS[$i]}" ""\
+                                       " $(( (${DURATION[$i]}-${DURATION[$i]}%60)/60 ))m $(( ${DURATION[$i]}%60 ))s" ""\
+                                        "${ACCEPTANCE[$i]}%" "" "(out of ${TRAJECTORIES[$i]})" ""\
+                                        "${MAX_DELTAS[$i]}"
 	unset FOLDERS[$i]; FOLDERS=( "${FOLDERS[@]}" )
 	unset DURATION[$i]; DURATION=( "${DURATION[@]}" )
 	unset ACCEPTANCE[$i]; ACCEPTANCE=( "${ACCEPTANCE[@]}" )
 	unset TRAJECTORIES[$i]; TRAJECTORIES=( "${TRAJECTORIES[@]}" )
+	unset MAX_DELTAS[$i]; MAX_DELTAS=( "${MAX_DELTAS[@]}" )
     done    
 fi
-printf "\e[0;36m=======================================================\e[0m\n\n"
+printf "\e[0;36m=====================================================================\e[0m\n"
 
