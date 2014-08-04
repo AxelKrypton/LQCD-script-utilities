@@ -104,7 +104,7 @@ if [ "$HOST" == "loewe" ]; then
     echo "#!/bin/sh" > $JOBFILENAME
     echo "#SBATCH --tasks=1" >> $JOBFILENAME
     echo "#SBATCH --cpus-per-task=1" >> $JOBFILENAME
-    echo "#SBATCH --job-name=CalculatePbp_Nt${NTIME}_Ns${NSPACE}_k${KAPPA}_b${BETA}" >> $JOBFILENAME
+    echo "#SBATCH --job-name=CalculatePbp_${PARAMETERS_STRING}_b$BETA" >> $JOBFILENAME
     echo "#SBATCH --mail-type=FAIL" >> $JOBFILENAME
     echo "#SBATCH --mail-user=sciarra@th.physik.uni-frankfurt.de" >> $JOBFILENAME
     echo "#SBATCH --output=pbp.%j.out" >> $JOBFILENAME
@@ -113,7 +113,7 @@ if [ "$HOST" == "loewe" ]; then
     echo "#SBATCH --gres=gpu" >> $JOBFILENAME
     echo "#SBATCH --partition=parallel" >> $JOBFILENAME
     echo "" >> $JOBFILENAME
-    echo "WORKDIR=/scratch/hfftheo/sciarra/WilsonProject/muiPiT/Nt${NTIME}/Ns${NSPACE}/k${KAPPA}/b${BETA}" >> $JOBFILENAME
+    echo "WORKDIR=/scratch/hfftheo/sciarra/WilsonProject$PARAMETERS_PATH/b${BETA}" >> $JOBFILENAME
     echo "" >> $JOBFILENAME
     echo "cd \$WORKDIR || exit 2" >> $JOBFILENAME
     echo "" >> $JOBFILENAME

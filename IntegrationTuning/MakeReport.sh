@@ -1,0 +1,168 @@
+#!/bin/bash
+
+# Just a short script to read out the situation from
+# the folders present where the script is run.
+
+function ParseCommandLineOption(){
+    while [ "$1" != "" ]; do
+	case $1 in
+	    -h | --help )
+		printf "\n\e[0;32m"
+		echo "Call the script $0 with the following optional arguments:"
+		echo ""
+		echo "  -h | --help"
+		echo "  -a | --orderAcceptance      ->    Print report with increasing Acceptance Rate"
+		echo "  -t | --orderTime            ->    Print report with increasing Simulation Time"
+		echo "  -f | --orderFolder          ->    Print report with increasing Folder Name"
+		echo ""
+		echo "NOTE: If more than one of the options -a, -t and -f are given, the last is used! By default -a is used."
+		printf "\n\e[0m"
+		exit
+		shift;;
+	    -a | --orderAcceptance )  ORDER_PARAMETER="ACCEPTANCE"; shift ;;
+	    -t | --orderTime )        ORDER_PARAMETER="DURATION"; shift ;;
+	    -f | --orderFolder )      ORDER_PARAMETER="FOLDERS"; shift ;;
+	    * ) printf "\n\e[0;31mError parsing the options! Aborting...\n\n\e[0m" ; exit -1 ;;
+	esac
+    done
+}
+
+function TimeToSeconds(){
+    local T=$1; shift
+    echo $((10#${T:0:2} * 3600 + 10#${T:3:2} * 60 + 10#${T:6:2})) 
+}
+
+function MinimumOfArray(){
+    local MIN=$1; shift
+    while [ "$1" != "" ]; do
+	if [ $(echo "$1 $MIN" | awk '{if($1<$2){print 1}else{print 0}}') -eq 1 ]; then
+	    MIN=$1
+	fi
+	shift
+    done
+    echo "$MIN"
+}
+
+function FindPositionOfFirstMinimumOfArray(){
+    local ARRAY_TMP=("$@")
+    local ARRAY=("$@")
+    local MIN=$(MinimumOfArray "${ARRAY_TMP[@]}")
+    for (( i=0; i<${#ARRAY[@]}; i++ )); do
+	if [ "${ARRAY[$i]}" = "${MIN}" ]; then
+	    echo $i;
+	    break
+	fi
+    done
+}
+
+
+#-----------------------------------------------------------------------------------------------------------------#
+# Load auxiliary bash files that will be used.
+source $HOME/Script/PathManagement.sh || exit -2
+CheckSingleOccurrenceInPath "scratch" "hfftheo" "$(whoami)" "mui" "k[[:digit:]]\+" "nt[[:digit:]]\+" "ns[[:digit:]]\+"
+ReadParametersFromPath $(pwd)
+BETA=$(echo "$(pwd)" | awk '{if(index($0, "/b") != 0){print substr($0, index($0, "/b") + 2, 6)}else{print 0}}')
+if [[ ! $BETA =~ ^[0-9]+([.][0-9]+)?$ || $BETA = "0" ]]; then
+    echo "Unable to recover beta from the path \"$(pwd)\". Aborting..."
+    exit -1
+fi
+#-----------------------------------------------------------------------------------------------------------------#
+
+#-----------------------------------------------------------------------------------------------------------------#
+# Global variables declared in other scripts
+#   CHEMPOT_PREFIX="mui"
+#   NTIME_PREFIX="nt"
+#   NSPACE_PREFIX="ns"
+#   KAPPA_PREFIX="k"
+#   CHEMPOT_POSITION=0
+#   KAPPA_POSITION=1
+#   NTIME_POSITION=2
+#   NSPACE_POSITION=3
+#   CHEMPOT
+#   KAPPA
+#   NSPACE
+#   NTIME
+#   PARAMETERS_PATH    <---This is the string in the path with the 4 parameters with slash in front, e.g. /muiPiT/k1550/nt6/ns12
+#   PARAMETERS_STRING  <---This is the string in the path with the 4 parameters with underscores, e.g. muiPiT_k1550_nt6_ns12
+#-----------------------------------------------------------------------------------------------------------------#
+
+
+#-----------------------------------------------------------------------------------------------------------------#
+ORDER_PARAMETER="ACCEPTANCE"
+ParseCommandLineOption $@
+FOLDERS=( $(ls) )
+index=0
+for NAME in ${FOLDERS[@]}; do
+    if [ ! -d $NAME ] || [[ ! $NAME =~ ^[0-9]{1,2}_[0-9]{1,2}$ ]]; then
+	unset FOLDERS[$index]
+    fi
+    index=$(($index+1))
+done
+#-----------------------------------------------------------------------------------------------------------------#
+
+
+#-----------------------------------------------------------------------------------------------------------------#
+ACCEPTANCE=()
+TRAJECTORIES=()
+DURATION=()
+MAX_DELTAS=()
+ALLRUNFINISHED=1
+for NAME in ${FOLDERS[@]}; do
+    if [ -f $NAME/hmc_output ]; then
+	ACCEPTANCE+=( $(awk '{ sum+=$11} END {print 100*sum/(NR)}' $NAME/hmc_output) )
+	TRAJECTORIES+=( $(wc -l $NAME/hmc_output | awk '{print $1}') )
+	MAX_DELTAS+=( $(awk 'BEGIN {max=0} {if(sqrt($8^2)>max){max=sqrt($8^2)}} END {printf "%6g", max}' $NAME/hmc_output) )
+    else
+	ACCEPTANCE+=( "--" )
+	TRAJECTORIES+=( "--")
+	MAX_DELTAS+=( "--" )
+	ALLRUNFINISHED=0
+    fi
+    if [ -f $NAME/hmc*.out ]; then
+	START_TIME=( $(grep "\[[[:digit:]]\{2\}:[[:digit:]]\{2\}:[[:digit:]]\{2\}\] INFO:" $NAME/hmc*.out | head -n1 | grep -o "[[:digit:]]\{2\}:[[:digit:]]\{2\}:[[:digit:]]\{2\}" ) )
+	END_TIME=( $(grep "\[[[:digit:]]\{2\}:[[:digit:]]\{2\}:[[:digit:]]\{2\}\] INFO:" $NAME/hmc*.out | tail -n1 | grep -o "[[:digit:]]\{2\}:[[:digit:]]\{2\}:[[:digit:]]\{2\}") )
+	DURATION+=( $(( $(TimeToSeconds $END_TIME) - $(TimeToSeconds $START_TIME) )) )
+    else
+	DURATION+=( 0 )
+	ALLRUNFINISHED=0
+    fi
+done
+#-----------------------------------------------------------------------------------------------------------------#
+
+
+#-----------------------------------------------------------------------------------------------------------------#
+printf "\n\e[0;36m=====================================================================\e[0m\n"
+printf "\e[0;35m\e[2m  kappa=0.$KAPPA  ns=$NSPACE  beta=$BETA\e[0m"
+TABLE_FORMAT="%-8s%-5s%-9s%-5s%-9s%3s%-15s%-5s%-8s"
+printf "\n\e[0;36m=====================================================================\e[0m\n"
+printf "\e[0;34m\e[2m$TABLE_FORMAT\e[0m\n"   "SETUP:" ""   "DURATION:" ""   "ACC-RATE:" "" "" "" "MAX_DS:"
+
+if [ $ALLRUNFINISHED -eq 0 ]; then
+    for ((i=0; i<${#FOLDERS[@]}; i++)); do
+	printf "$TABLE_FORMAT\e[0m\n"   "${FOLDERS[$i]}" ""\
+                                       " $(( (${DURATION[$i]}-${DURATION[$i]}%60)/60 ))m $(( ${DURATION[$i]}%60 ))s" ""\
+                                        "${ACCEPTANCE[$i]}%" "" "(out of ${TRAJECTORIES[$i]})" ""\
+                                        "${MAX_DELTAS[$i]}"
+    done
+else
+    while [ ${#FOLDERS[@]} -gt 0 ]; do
+	if [[ $ORDER_PARAMETER = "ACCEPTANCE" ]]; then
+	    i=$(FindPositionOfFirstMinimumOfArray "${ACCEPTANCE[@]}")
+	elif [[ $ORDER_PARAMETER = "DURATION" ]]; then
+	    i=$(FindPositionOfFirstMinimumOfArray "${DURATION[@]}")
+	else
+	    i=$(FindPositionOfFirstMinimumOfArray "${FOLDERS[@]}")
+	fi
+	printf "$TABLE_FORMAT\e[0m\n"   "${FOLDERS[$i]}" ""\
+                                       " $(( (${DURATION[$i]}-${DURATION[$i]}%60)/60 ))m $(( ${DURATION[$i]}%60 ))s" ""\
+                                        "${ACCEPTANCE[$i]}%" "" "(out of ${TRAJECTORIES[$i]})" ""\
+                                        "${MAX_DELTAS[$i]}"
+	unset FOLDERS[$i]; FOLDERS=( "${FOLDERS[@]}" )
+	unset DURATION[$i]; DURATION=( "${DURATION[@]}" )
+	unset ACCEPTANCE[$i]; ACCEPTANCE=( "${ACCEPTANCE[@]}" )
+	unset TRAJECTORIES[$i]; TRAJECTORIES=( "${TRAJECTORIES[@]}" )
+	unset MAX_DELTAS[$i]; MAX_DELTAS=( "${MAX_DELTAS[@]}" )
+    done    
+fi
+printf "\e[0;36m=====================================================================\e[0m\n"
+
