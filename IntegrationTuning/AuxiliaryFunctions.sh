@@ -18,6 +18,7 @@ function ParseCommandLineOption(){
 		echo "  --intsteps0                        ->    default value = 7"
 		echo "  --intsteps1                        ->    default value = 5"
 		echo "  --partition                        ->    default value = test"
+		echo "  --node                             ->    default value = automatically assigned"
 		printf "\n\e[0m"
 		exit
 		shift;;
@@ -33,6 +34,7 @@ function ParseCommandLineOption(){
 	    --intsteps0=* )		 INTSTEPS0=${1#*=}; shift ;;
 	    --intsteps1=* )		 INTSTEPS1=${1#*=}; NUMTIMESCALES=2; shift ;;
 	    --partition=* )		 LOEWE_PARTITION=${1#*=}; shift ;;
+	    --node=* )		         LOEWE_NODE=${1#*=}; shift ;;
 	    * ) printf "\n\e[0;31mError parsing the options! Aborting...\n\n\e[0m" ; exit -1 ;;
 	esac
     done
@@ -56,7 +58,9 @@ function ProduceJobScriptFile(){
     echo "#SBATCH --error=${HMC_FILENAME}.%j.err" >> $JOBSCRIPT_GLOBALPATH
     echo "#SBATCH --time=$WALLTIME" >> $JOBSCRIPT_GLOBALPATH
     echo "#SBATCH --gres=gpu:1" >> $JOBSCRIPT_GLOBALPATH
-    if [[ "$LOEWE_PARTITION" = "gpu" ]]; then
+    if [[ "$LOEWE_NODE" != "unset" ]]; then
+	echo "#SBATCH -w $LOEWE_NODE" >> $JOBSCRIPT_GLOBALPATH
+    elif [[ "$LOEWE_PARTITION" = "gpu" ]]; then
 	echo "#SBATCH -w gpu021" >> $JOBSCRIPT_GLOBALPATH
     fi
     echo "#SBATCH --partition=$LOEWE_PARTITION" >> $JOBSCRIPT_GLOBALPATH
