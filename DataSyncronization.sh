@@ -78,5 +78,5 @@ if [ ${#SKIPPED_DIRECTORIES[@]} -gt "0" ]; then
     done
     printf "\e[0;31m===================================================================================\n\n\e[0m"
 fi
-printf "\n \e[0;32m\e[4mEnding time: $(date +'%Hh%M on %d.%m.%y')\n\n\e[0m\n"
+printf " \e[0;32m\e[4mEnding time: $(date +'%Hh%M on %d.%m.%y')\n\n\e[0m\n"
 exit 0
