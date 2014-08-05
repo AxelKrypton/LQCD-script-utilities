@@ -26,7 +26,7 @@ function PrintSituationDataFolder(){
 
 
 STARTING_POSITION="$(pwd)"
-printf "\n\e[0;34m Script \"$0\" run from $STARTING_POSITION...\n\n\e[0m"
+printf "\n\n\e[1mScript \"$0\" run from $STARTING_POSITION...\n\e[0m"
 
 DATA_GLOBALPATH="/home/phil-configs/wilson_nf2_muipi4/ImagMu/"
 RUN_PARAMETERS=()
@@ -37,7 +37,7 @@ while [ "$1" != "" ]; do
     shift
 done
 
-printf "\n \e[0;32m\e[4mStarting time: $(date +'%Hh%M on %d.%m.%y')\n\n\e[0m\n"
+printf "\n \e[0;32m\e[4mStarting time: $(date +'%Hh%M on %d.%m.%y')\n\e[0m"
 for RUN in ${RUN_PARAMETERS[@]}; do
     if [ ! -d $DATA_GLOBALPATH$RUN ]; then
 	printf "\n\e[0;31m The directory \"$DATA_GLOBALPATH$RUN\" has not been found! It will be skipped!\n\n\e[0m"
