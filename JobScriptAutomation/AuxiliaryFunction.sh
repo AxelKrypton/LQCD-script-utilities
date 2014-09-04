@@ -214,6 +214,39 @@ function ProcessBetaValuesForSubmitOnly() {
     done
 }
 
+function ConstructJobName(){
+
+	local JOBNAME=$CHEMPOT_PREFIX$CHEMPOT'_'$KAPPA_PREFIX$KAPPA'_'$NTIME_PREFIX$NTIME'_'$NSPACE_PREFIX$NSPACE'_'$BETA_PREFIX$BETA 
+
+	echo $JOBNAME
+}
+
+function CheckIfJobIsInQueue(){
+
+	#echo "In function: CheckIfJobIsInQueue"
+
+	local JOBNAME=$( ConstructJobName )	
+
+	local JOBID_ARRAY=( $(llq -u $(whoami) | grep -o "juqueen[[:alnum:]]\{3\}\.[[:digit:]]\+\.[[:digit:]]") )
+
+	for JOBID in ${JOBID_ARRAY[@]}; do
+
+		GREPPED_JOBNAME=$(llq -l $JOBID | grep "Job Name:" | sed "s/^.*Job Name: \(muiPiT.*$\)/\1/")
+
+		#echo 'GREPPED_JOBNAME:'$GREPPED_JOBNAME', JOBNAME: '$JOBNAME
+
+		if [ $GREPPED_JOBNAME = $JOBNAME ]; then
+			
+			echo "Job with name $GREPPED_JOBNAME and id $JOBID seems to be already running."
+			echo "Job cannot be continued..."
+
+			return 0
+		fi
+
+	done
+
+	return 1
+}
 
 function ProcessBetaValuesForContinue() {
     if [ "$CLUSTER_NAME" = "JUQUEEN" ]; then
@@ -241,6 +274,13 @@ function ProcessBetaValuesForContinue() {
 		printf "\e[0;31m Simulation cannot be continued. Leaving out beta = $BETA .\n\e[0m"
 		PROBLEM_BETA_ARRAY+=( $BETA )
 		continue
+	    fi
+
+	    CheckIfJobIsInQueue
+	    if [ $? == 0 ]; then
+
+		    PROBLEM_BETA_ARRAY+=( $BETA )
+		    continue
 	    fi
 	    
 	    grep -q "^StartCondition = continue" $INPUTFILE_GLOBALPATH
@@ -314,45 +354,32 @@ function ProcessBetaValuesForContinue() {
     fi
 }
 
-function ProduceJobsStatusFile_JobIdLoop(){
+function ShowQueuedJobsLocal(){
+#TODO: Generalize user name
 
-		for k in ${JOBID_ARRAY[@]}; do
+	if [ "$CLUSTER_NAME" = "JUQUEEN" ]; then
 
-		
-			JOBID=$k
-			#if [ $i = "b5.7500" ]; then 
-			#	echo $JOBID 
-			#fi
- 			JOBNAME=$(llq -l $JOBID | grep "Job Name:" | sed "s/^.*Job Name: \(muiPiT.*$\)/\1/")
-			#if [ $i = "b.57500" ]; then echo $JOBNAME 
-			#fi
-			JOBNAME_NTIME=$(echo $JOBNAME | sed "s/^.*_nt\([[:digit:]]\)_.*$/\1/")
-			JOBNAME_NSPACE=$(echo $JOBNAME | sed "s/^.*_n[[:alpha:]]\([[:digit:]]\{2\}\)_.*$/\1/")
-			JOBNAME_KAPPA=$(echo $JOBNAME | sed "s/^.*_k\([[:digit:]]\{4\}\)_.*$/\1/")
-			JOBNAME_BETA=$(echo $JOBNAME | sed "s/^.*\([[:digit:]]\.[[:digit:]]\{4\}$\)/\1/")
+	printf "\n\e[0;36m==================================================================================================\n\e[0m"
+		llq -W -f %id %jn %st %c %dq %dd %gl %h -u $(whoami) | awk --posix '$2 ~ /^muiPiT_'$KAPPA_PREFIX$KAPPA'_'$NTIME_PREFIX$NTIME'_'$NSPACE_PREFIX$NSPACE'_'$BETA_PREFIX'[[:digit:]]\.[[:digit:]]{4}$/ || NR <= 2 {print}'
+	printf "\e[0;36m==================================================================================================\n\e[0m"
 
-
-			if [ $JOBNAME_BETA = $BETA ] && [ $JOBNAME_KAPPA = $KAPPA ] && [ $JOBNAME_NTIME = $NTIME ] && [ $JOBNAME_NSPACE = $NSPACE ]; then
-
-				STATUS=$(llq -l $JOBID | grep "^[[:blank:]]*Status:" | sed "s/^.*Status: \([[:alpha:]].*$\)/\1/")
-				#if [ $i = "b5.7500" ]; then echo "break" 
-				#fi
-				break;
-			fi
-
-		done
+	else
+		echo "Fuctionality only implemented for the Juqueen cluster at the moment...terminating"
+		exit -1
+	fi
 }
 
-function ProduceJobsStatusFile_local(){
+
+function ListJobsStatus_local(){
 
 	printf "\n\e[0;36m==================================================================================================\n\e[0m"
 
-	printf "\n\e[0;34m%s  %s  %s  %s %s %s\n\e[0m" "  Beta" "Total nr of trajectories" "Trajectories done" "Trajectories remaining" "Status"
-	printf "%s  %s  %s  %s %s\n" "  Beta" "Total nr of trajectories" "Trajectories done" "Trajectories remaining" "Status" >> $JOBS_STATUS_FILE
+	printf "\n\e[0;34m%s  %s  %s\n" $KAPPA_PREFIX$KAPPA $NTIME_PREFIX$NTIME $NSPACE_PREFIX$NSPACE 
+	printf "\n      %s  %s  %s\n" $KAPPA_PREFIX$KAPPA $NTIME_PREFIX$NTIME $NSPACE_PREFIX$NSPACE >> $JOBS_STATUS_FILE
+	printf "\n  Beta     Traj. total / done     Status\n\e[0m"
+	printf "  	Beta     Traj. total / done     Status\n" >> $JOBS_STATUS_FILE
 
 	for i in b*; do
-
-		STATUS="notQueued"	
 
 		#Assigning beta value to BETA variable for readability
 		BETA=$(echo $i | grep -o "[[:digit:]].[[:digit:]]\{4\}")
@@ -362,14 +389,16 @@ function ProduceJobsStatusFile_local(){
 			continue;
 		fi
 
-		#JOBID_ARRAY=( $(llq -u hkf806 | grep -o "juqueen[[:alnum:]]\{3\}\.[[:digit:]]\+\.[[:digit:]]") )
-		JOBID_ARRAY=( $(llq -u hkf806 | awk -v lines=$(llq -u hkf806 | wc -l) 'NR>2 && NR<lines-1{print $1}') )
+		STATUS=$(llq -W -f %jn %st -u $(whoami) | awk '$1 ~ /^muiPiT_'$KAPPA_PREFIX$KAPPA'_'$NTIME_PREFIX$NTIME'_'$NSPACE_PREFIX$NSPACE'_'$i'$/ {print $2}') 
 
-		ProduceJobsStatusFile_JobIdLoop
-
-		#if [ $i = "b5.7500" ]; then echo "after break" 
-		#fi
-
+		if [ ${#STATUS} -eq 0 ]; then
+			STATUS="notQueued"	
+		elif [ $STATUS = R ]; then
+			STATUS="running"
+		elif [ $STATUS = I ]; then
+			STATUS="idling"
+		fi
+		
 		#----Constructing WORK_BETADIRECTORY, HOME_BETADIRECTORY, JOBSCRIPT_NAME, JOBSCRIPT_GLOBALPATH and INPUTFILE_GLOBALPATH---#
 		WORK_BETADIRECTORY="$WORK_DIR_WITH_BETAFOLDERS/$BETA_PREFIX$BETA"
 		HOME_BETADIRECTORY="$HOME_DIR_WITH_BETAFOLDERS/$BETA_PREFIX$BETA"
@@ -387,9 +416,6 @@ function ProduceJobsStatusFile_local(){
 
 		if [ -d $HOME_BETADIRECTORY ] && [ -f $INPUTFILE_GLOBALPATH ]; then
 						
-			#if [ $i = "b5.7500" ]; then echo "after break in if" 
-			#fi
-
 			TOTAL_NR_TRAJECTORIES=$(grep "Total number of trajectories" $INPUTFILE_GLOBALPATH | grep -o "[[:digit:]]\+")	
 			TOTAL_NR_TRAJECTORIES=$(expr $TOTAL_NR_TRAJECTORIES - 0)
 
@@ -418,14 +444,15 @@ function ProduceJobsStatusFile_local(){
 
 			#printf "\e[0;34m$BETA \t $TOTAL_NR_TRAJECTORIES \t $TRAJECTORIES_DONE \t $MEASUREMENTS_REMAINING\n\e[0m"
 			#26
-			printf "\e[0;34m%.4f  %24d  %17d  %22d %s\n\e[0m" "$BETA" "$TOTAL_NR_TRAJECTORIES" "$TRAJECTORIES_DONE" "$MEASUREMENTS_REMAINING" "$STATUS"
-			printf "%.4f  %24d  %17d  %22d %s\n" "$BETA" "$TOTAL_NR_TRAJECTORIES" "$TRAJECTORIES_DONE" "$MEASUREMENTS_REMAINING" "$STATUS" >> $JOBS_STATUS_FILE
+			#printf "\e[0;34m%.4f  %24d  %17d  %22d %s\n\e[0m" "$BETA" "$TOTAL_NR_TRAJECTORIES" "$TRAJECTORIES_DONE" "$MEASUREMENTS_REMAINING" "$STATUS"
+			printf "\e[0;34m%.4f  %14d / %5d    %s\n\e[0m" "$BETA" "$TOTAL_NR_TRAJECTORIES" "$TRAJECTORIES_DONE" "$STATUS"
+			printf "      %.4f  %14d / %5d    %s\n" "$BETA" "$TOTAL_NR_TRAJECTORIES" "$TRAJECTORIES_DONE" "$STATUS" >> $JOBS_STATUS_FILE
 		fi
 		
 	done
 }
 
-function ProduceJobsStatusFile_global(){
+function ListJobsStatus_global(){
 
 		ORIGINAL_HOME_DIR_WITH_BETAFOLDERS=$HOME_DIR_WITH_BETAFOLDERS
 		ORIGINAL_WORK_DIR_WITH_BETAFOLDERS=$WORK_DIR_WITH_BETAFOLDERS
@@ -459,7 +486,7 @@ function ProduceJobsStatusFile_global(){
 			#echo $JOBS_STATUS_FILE
 			rm -f $JOBS_STATUS_FILE
 
-			ProduceJobsStatusFile_local
+			ListJobsStatus_local
 		done
 
 		cd $ORIGINAL_HOME_DIR_WITH_BETAFOLDERS
@@ -499,7 +526,7 @@ function BuildGlobalJobStatusFile(){
 		NTIME_TMP=`echo $LOCAL_FILE | grep -o "$JOBS_STATUS_PREFIX.*" | grep -o "$NTIME_PREFIX$NTIME_REGEX"`
 		NSPACE_TMP=`echo $LOCAL_FILE | grep -o "$JOBS_STATUS_PREFIX.*" | grep -o "$NSPACE_PREFIX$NSPACE_REGEX"`
 
-		echo "$KAPPA_TMP $NTIME_TMP $NSPACE_TMP" >> "$JOBS_STATUS_FILE_GLOBAL"
+		#echo "$KAPPA_TMP $NTIME_TMP $NSPACE_TMP" >> "$JOBS_STATUS_FILE_GLOBAL"
 		cat $LOCAL_FILE >> "$JOBS_STATUS_FILE_GLOBAL"
 		echo "" >> "$JOBS_STATUS_FILE_GLOBAL"
 	done
@@ -507,7 +534,7 @@ function BuildGlobalJobStatusFile(){
 	printf "\n\e[0;34m A global jobs status file has been created: %s\n\e[0m" $JOBS_STATUS_FILE_GLOBAL
 }
 
-function ProduceJobStatusFile_Main(){
+function ListJobStatus_Main(){
      if [ "$CLUSTER_NAME" = "JUQUEEN" ]; then
 
 
@@ -522,14 +549,14 @@ function ProduceJobStatusFile_Main(){
 		printf "\n\e[0;36m==================================================================================================\n\e[0m"
 		printf "\e[0;34m Listing current local measurements status...\n\e[0m"
 
-		ProduceJobsStatusFile_local
+		ListJobsStatus_local
 
 	elif [ $LISTSTATUS = "TRUE" ] && [ $LISTSTATUSALL = "TRUE" ]; then
 
 		printf "\n\e[0;36m==================================================================================================\n\e[0m"
 		printf "\e[0;34m Listing current global measurements status...\n\e[0m"
 
-		ProduceJobsStatusFile_global
+		ListJobsStatus_global
 
 		printf "\n\e[0;36m==================================================================================================\n\e[0m"
 		BuildGlobalJobStatusFile

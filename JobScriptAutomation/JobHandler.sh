@@ -62,6 +62,9 @@ LISTSTATUSALL="FALSE"
 CLUSTER_NAME="LOEWE"
 LOEWE_PARTITION="parallel"
 JOBS_STATUS_PREFIX="jobs_status_"
+SHOWJOBS="FALSE"
+SHOWJOBSALL="FALSE"
+MUTUALLYEXCLUSIVEOPTS=( "--submit" "--submitonly" "--continue" "--liststatus" "--liststatus_all" "--showjobs" "--showjobs_all" )
 
 #-----------------------------------------------------------------------------------------------------------------#
 # Set default values for the non-modifyable variables ---> Modify this file to change them!
@@ -116,7 +119,7 @@ WORK_DIR_WITH_BETAFOLDERS="$WORK_DIR/$SIMULATION_PATH$PARAMETERS_PATH"
 
 #-----------------------------------------------------------------------------------------------------------------#
 # Check for correct specification of parallelization parameters, only on JUQUEEN
-if [ $LISTSTATUS = "FALSE" ]; then
+if [ $LISTSTATUS = "FALSE" ] && [ $SHOWJOBS = "FALSE" ]; then
 
     if [ "$CLUSTER_NAME" = "JUQUEEN" ]; then CheckParallelizationTmlqcdForJuqueen; fi
 
@@ -126,7 +129,7 @@ fi
 
 #-----------------------------------------------------------------------------------------------------------------#
 # Read beta values from BETASFILE and write them into BETAVALUES array
-if [ $LISTSTATUS = "FALSE" ]; then
+if [ $LISTSTATUS = "FALSE" ] && [ $SHOWJOBS = "FALSE" ]; then
 
     ReadBetaValuesFromFile  # Here we declare and fill the array BETAVALUES
 
@@ -139,9 +142,7 @@ fi
 SUBMIT_BETA_ARRAY=()
 PROBLEM_BETA_ARRAY=() #Arrays that will contain the beta values that actually will be processed
 
-if [ $SUBMITONLY = "FALSE" ] && [ $CONTINUE = "FALSE" ] && [ $LISTSTATUS = "FALSE" ]; then  
-
-    ProduceInputFileAndJobScriptForEachBeta
+if [ $SUBMITONLY = "FALSE" ] && [ $CONTINUE = "FALSE" ] && [ $LISTSTATUS = "FALSE" ] && [ $SHOWJOBS = "FALSE" ]; then  ProduceInputFileAndJobScriptForEachBeta
 
 elif [ $SUBMITONLY = "TRUE" ]; then  
 
@@ -159,7 +160,7 @@ fi
 # TODO: Should not this if be an elif of above!?
 if [ $LISTSTATUS = "TRUE" ] || [ $LISTSTATUSALL = "TRUE" ]; then #TODO: This option should be reconsidered and improved for Juqueen
 
-    ProduceJobStatusFile_Main 
+    ListJobStatus_Main 
     #TODO: On Juqueen, declare all possible local variable in this function as local! Use PARAMETERS_STRING/PATH where needed!
     #TODO: Test on LOEWE! 
 
@@ -173,6 +174,18 @@ if [ $SUBMIT = "TRUE" ] || [ $SUBMITONLY = "TRUE" ] || [ $CONTINUE = "TRUE" ] ||
 
     SubmitJobsForValidBetaValues #TODO: Declare all possible local variable in this function as local!
 
+fi
+#------------------------------------------------------------------------------------------------------------------------------#
+
+#------------------------------------------------------------------------------------------------------------------------------#
+# Showing queued jobs
+if [ $SHOWJOBS = "TRUE" ] && [ $SHOWJOBSALL = "FALSE" ]; then
+
+	ShowQueuedJobsLocal
+
+elif [ $SHOWJOBS = "TRUE" ] && [ $SHOWJOBSALL = "TRUE" ]; then
+
+	ShowQueuedJobsGlobal
 fi
 #------------------------------------------------------------------------------------------------------------------------------#
 
