@@ -62,6 +62,13 @@ for RUN in ${RUN_PARAMETERS[@]}; do
     printf "\n\e[0;32m--------------------------------------------------------------\e[0m\n"
     # Then syncronize
     python ${HOME}/Documents/PhD_project/Data_Elaboration_tools/LQCD_SimulationManagementUtilities/ImagMu/ImagMuTools.py -s --syncConfs -f=$BETASFILE
+    # Then clean data files
+    for d in ${BETAVALUES[@]}; do
+	printf "\n\e[0;34m"
+	rm -f $d/hmc_output_raw
+	${HOME}/Script/tmLQCD_Juqueen/CleanOutputData.sh $d/hmc_output
+	printf "\e[0m"
+    done
     # Then give an other overview of the status of the folder
     printf "\n\e[0;32m--------------------------------------------------------------\e[0m\n"
     PrintSituationDataFolder ${BETAVALUES[@]}

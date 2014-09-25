@@ -59,6 +59,7 @@ SUBMIT="FALSE"
 SUBMITONLY="FALSE"
 CONTINUE="FALSE"
 CONTINUE_NUMBER="0"
+CONTINUE_RESUMETRAJ="0"
 LISTSTATUS="FALSE"
 LISTSTATUSALL="FALSE"
 CLUSTER_NAME="LOEWE"
@@ -77,7 +78,7 @@ source $HOME/Script/JobScriptAutomation/UserSpecificVariables_$(whoami).sh || ex
 
 
 #-----------------------------------------------------------------------------------------------------------------#
-# Extract options and their arguments into variables.
+# Extract options and their arguments into variables, saving a copy of the specified options in an array for later use.
 source $HOME/Script/JobScriptAutomation/CommandLineParser.sh || exit -2
 
 # NOTE: The CLUSTER_NAME variable has not been so far put in the parser since
@@ -86,7 +87,9 @@ if [[ $(whoami) =~ ^hkf[[:digit:]]{3} ]]; then
     CLUSTER_NAME="JUQUEEN"
 fi
 
+SPECIFIED_COMMAND_LINE_OPTIONS=( $@ )
 ParseCommandLineOption $@
+
 #-----------------------------------------------------------------------------------------------------------------#
 
 
@@ -113,8 +116,10 @@ fi
 
 ReadParametersFromPath $(pwd)
 HOME_DIR_WITH_BETAFOLDERS="$HOME_DIR/$SIMULATION_PATH$PARAMETERS_PATH"
+
 if [ "$HOME_DIR_WITH_BETAFOLDERS" != "$(pwd)" ]; then
-	printf "\n\e[0;31m Constructed path to directory containing beta folders does not match the actual position! Aborting...\n\n\e[0m"
+        printf "\n\e[0;31m HOME_DIR_WITH_BETAFOLDERS=$HOME_DIR_WITH_BETAFOLDERS\n"
+	printf "\e[0;31m Constructed path to directory containing beta folders does not match the actual position! Aborting...\n\n\e[0m"
 	exit -1
 fi
 WORK_DIR_WITH_BETAFOLDERS="$WORK_DIR/$SIMULATION_PATH$PARAMETERS_PATH"
@@ -209,6 +214,6 @@ if [ $ACCRATE_REPORT = "TRUE" ]; then
 fi
 #------------------------------------------------------------------------------------------------------------------------------#
 
-printf "\e[0;34m \n ...done!\n\n\e[0m"
+printf "\e[0;32m \n ...done!\n\n\e[0m"
 
 exit 0
