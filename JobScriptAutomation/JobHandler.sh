@@ -20,6 +20,7 @@ source $HOME/Script/JobScriptAutomation/AuxiliaryFunction.sh || exit -2
 source $HOME/Script/JobScriptAutomation/AcceptanceRateReport.sh || exit -2
 source $HOME/Script/JobScriptAutomation/ListJobsStatus.sh || exit -2
 source $HOME/Script/JobScriptAutomation/BuildRegexPath.sh || exit -2
+source $HOME/Script/JobScriptAutomation/EmptyBetaDirectories.sh || exit -2
 #-----------------------------------------------------------------------------------------------------------------#
 
 #-----------------------------------------------------------------------------------------------------------------#
@@ -68,9 +69,9 @@ CLUSTER_NAME="LOEWE"
 LOEWE_PARTITION="parallel"
 JOBS_STATUS_PREFIX="jobs_status_"
 SHOWJOBS="FALSE"
-SHOWJOBSALL="FALSE"
 ACCRATE_REPORT="FALSE"
 ACCRATE_REPORT_GLOBAL="FALSE"
+EMPTY_BETA_DIRS="FALSE"
 
 #-----------------------------------------------------------------------------------------------------------------#
 # Set default values for the non-modifyable variables ---> Modify this file to change them!
@@ -129,7 +130,8 @@ WORK_DIR_WITH_BETAFOLDERS="$WORK_DIR/$SIMULATION_PATH$PARAMETERS_PATH"
 
 #-----------------------------------------------------------------------------------------------------------------#
 # Check for correct specification of parallelization parameters, only on JUQUEEN
-if [ $LISTSTATUS = "FALSE" ] && [ $SHOWJOBS = "FALSE" ] && [ $ACCRATE_REPORT = "FALSE" ]; then
+#if [ $LISTSTATUS = "FALSE" ] && [ $SHOWJOBS = "FALSE" ] && [ $ACCRATE_REPORT = "FALSE" ]; then
+if [ ${#MUTUALLYEXCLUSIVEOPTS_PASSED[@]} = 0 ] || [ $CONTINUE = "TRUE" ] || [ $SUBMIT = "TRUE" ] || [ $SUBMITONLY = "TRUE" ]; then	
 
     if [ "$CLUSTER_NAME" = "JUQUEEN" ]; then CheckParallelizationTmlqcdForJuqueen; fi
 
@@ -139,7 +141,7 @@ fi
 
 #-----------------------------------------------------------------------------------------------------------------#
 # Read beta values from BETASFILE and write them into BETAVALUES array
-if [ $LISTSTATUS = "FALSE" ] && [ $SHOWJOBS = "FALSE" ] && [ $ACCRATE_REPORT = "FALSE" ]; then
+if [ ${#MUTUALLYEXCLUSIVEOPTS_PASSED[@]} = 0 ] || [ $SUBMIT = "TRUE" ] || [ $SUBMITONLY = "TRUE" ] || [ $CONTINUE = "TRUE" ]; then
 
     ReadBetaValuesFromFile  # Here we declare and fill the array BETAVALUES
 
@@ -152,7 +154,7 @@ fi
 SUBMIT_BETA_ARRAY=()
 PROBLEM_BETA_ARRAY=() #Arrays that will contain the beta values that actually will be processed
 
-if [ $SUBMITONLY = "FALSE" ] && [ $CONTINUE = "FALSE" ] && [ $LISTSTATUS = "FALSE" ] && [ $SHOWJOBS = "FALSE" ] && [ $ACCRATE_REPORT = "FALSE" ]; then  
+if [ ${#MUTUALLYEXCLUSIVEOPTS_PASSED[@]} = 0 ]; then  
 	
 	ProduceInputFileAndJobScriptForEachBeta
 
@@ -169,8 +171,7 @@ fi
 
 
 #-----------------------------------------------------------------------------------------------------------------#
-# TODO: Should not this if be an elif of above!?
-if [ $LISTSTATUS = "TRUE" ] || [ $LISTSTATUSALL = "TRUE" ]; then #TODO: This option should be reconsidered and improved for Juqueen
+if [ $LISTSTATUS = "TRUE" ] || [ $LISTSTATUSALL = "TRUE" ]; then
 
     ListJobStatus_Main 
     #TODO: On Juqueen, declare all possible local variable in this function as local! Use PARAMETERS_STRING/PATH where needed!
@@ -191,13 +192,9 @@ fi
 
 #------------------------------------------------------------------------------------------------------------------------------#
 # Showing queued jobs
-if [ $SHOWJOBS = "TRUE" ] && [ $SHOWJOBSALL = "FALSE" ]; then
+if [ $SHOWJOBS = "TRUE" ]; then
 
 	ShowQueuedJobsLocal
-
-elif [ $SHOWJOBS = "TRUE" ] && [ $SHOWJOBSALL = "TRUE" ]; then
-
-	ShowQueuedJobsGlobal
 fi
 #------------------------------------------------------------------------------------------------------------------------------#
 
@@ -212,6 +209,16 @@ PrintReportForProblematicBeta
 if [ $ACCRATE_REPORT = "TRUE" ]; then
 
 	AcceptanceRateReport
+fi
+#------------------------------------------------------------------------------------------------------------------------------#
+
+#------------------------------------------------------------------------------------------------------------------------------#
+#Empty beta directories corresponding to the beta values specified in the betas file
+if [ $EMPTY_BETA_DIRS == "TRUE" ]; then
+
+	BETASFILE="emptybetas"
+	ReadBetaValuesFromFile
+	EmptyBetaDirectories
 fi
 #------------------------------------------------------------------------------------------------------------------------------#
 
