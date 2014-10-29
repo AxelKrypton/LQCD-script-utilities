@@ -12,12 +12,13 @@ function ParseCommandLineOption(){
 		echo "  --ntime_prefix                     ->    default value = nt"
 		echo "  --nspace_prefix                    ->    default value = ns"
 		echo "  --beta_prefix                      ->    default value = b"
-		echo "  --walltime                         ->    default value = 01:00:00 (1h)"
+		echo "  --walltime                         ->    default value = 06:00:00 (6h)"
 		echo "  --measurements                     ->    default value = 100"
 		echo "  --nsave                            ->    default value = 300"
 		echo "  --intsteps0                        ->    default value = 4:7:1"
 		echo "  --intsteps1                        ->    default value = not used, specify it to use 2 timescale!"
-		echo "  --partition                        ->    default value = test"
+		echo "  --partition                        ->    default value = parallel"
+		echo "  --constraint                       ->    default value = gpu"
 		echo "  --node                             ->    default value = automatically assigned"
 		echo "  --evonly                           ->    if given, just evaluate how many tuning would be done with the provided parameters!"
 		printf "\n\e[0m"
@@ -55,6 +56,7 @@ function ParseCommandLineOption(){
 	    --intsteps0=* )		 INTSTEPS0=${1#*=}; shift ;;
 	    --intsteps1=* )		 INTSTEPS1=${1#*=}; NUMTIMESCALES=2; shift ;;
 	    --partition=* )		 LOEWE_PARTITION=${1#*=}; shift ;;
+	    --constraint=* )		 LOEWE_CONSTRAINT=${1#*=}; shift ;;
 	    --node=* )		         LOEWE_NODE=${1#*=}; shift ;;
 	    --evonly )		         EVALUATEONLY=1; shift ;;
 	    * ) printf "\n\e[0;31mError parsing the options! Aborting...\n\n\e[0m" ; exit -1 ;;
@@ -126,8 +128,6 @@ function ProduceJobScriptFile(){
 	INT1_TO_BE_USED+=( "$2" )
 	shift 2
     done
-    echo "INT0_TO_BE_USED=(${INT0_TO_BE_USED[@]})"
-    echo "INT1_TO_BE_USED=(${INT1_TO_BE_USED[@]})"
     #-----------------------------------------------------------------#
 
     echo "#!/bin/sh" > $JOBSCRIPT_GLOBALPATH

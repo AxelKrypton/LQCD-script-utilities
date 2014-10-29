@@ -94,7 +94,12 @@ for NAME in ${FOLDERS[@]}; do
     if [ -f $NAME/hmc*.out ]; then
 	START_TIME=( $(grep "\[[[:digit:]]\{2\}:[[:digit:]]\{2\}:[[:digit:]]\{2\}\] INFO:" $NAME/hmc*.out | head -n1 | grep -o "[[:digit:]]\{2\}:[[:digit:]]\{2\}:[[:digit:]]\{2\}" ) )
 	END_TIME=( $(grep "\[[[:digit:]]\{2\}:[[:digit:]]\{2\}:[[:digit:]]\{2\}\] INFO:" $NAME/hmc*.out | tail -n1 | grep -o "[[:digit:]]\{2\}:[[:digit:]]\{2\}:[[:digit:]]\{2\}") )
-	DURATION+=( $(( $(TimeToSeconds $END_TIME) - $(TimeToSeconds $START_TIME) )) )
+	START_TIME_SEC=$(TimeToSeconds $START_TIME)
+	END_TIME_SEC=$(TimeToSeconds $END_TIME)
+	if [ $START_TIME_SEC -gt $END_TIME_SEC ]; then
+            END_TIME_SEC=$(( $END_TIME_SEC + 24*3600 ))
+	fi
+	DURATION+=( $(( $END_TIME_SEC - $START_TIME_SEC )) )
     else
 	DURATION+=( 0 )
 	ALLRUNFINISHED=0
@@ -137,5 +142,5 @@ else
 	unset MAX_DELTAS[$i]; MAX_DELTAS=( "${MAX_DELTAS[@]}" )
     done    
 fi
-printf "\e[0;36m=====================================================================\e[0m\n"
+printf "\e[0;36m=====================================================================\e[0m\n\n"
 

@@ -54,13 +54,13 @@ source $HOME/Script/IntegrationTuning/AuxiliaryFunctionsTuning.sh || exit -2
 # Set default values for the command line parameters
 
 BETA_PREFIX="b"
-WALLTIME="01:00:00"
+WALLTIME="06:00:00"
 MEASUREMENTS="100"
 NSAVE="300"
 NUMTIMESCALES=1
 INTSTEPS0="4:7:1"
 INTSTEPS1=""
-LOEWE_PARTITION="test"
+LOEWE_PARTITION="parallel"
 LOEWE_CONSTRAINT="gpu"
 LOEWE_NODE="unset"
 EVALUATEONLY=0
@@ -138,7 +138,8 @@ fi
 
 if [ $EVALUATEONLY -eq 1 ]; then
     if [ $(echo "$TOTAL_NUMBER_OF_SRUN" | awk '{print $1 % '"$GPU_PER_NODE"'}') -eq 0 ]; then
-	printf "\n\e[0;32m \e[1m\e[4mCONGRATULATION\e[24m:\e[0;32m Asked to run $TOTAL_NUMBER_OF_SRUN tunings (multiple of $GPU_PER_NODE)!\n\n\e[0m"
+	printf "\n\e[0;32m \e[1m\e[4mCONGRATULATION\e[24m:\e[0;32m Asked to run $TOTAL_NUMBER_OF_SRUN tunings,"
+	printf " multiple of $GPU_PER_NODE  ===>  $(($TOTAL_NUMBER_OF_SRUN/$GPU_PER_NODE)) jobs!\n\n\e[0m"
     else
 	echo ""
     fi
@@ -188,7 +189,6 @@ for((i=${INTSTEPS0[0]}; i<=${INTSTEPS0[1]}; i+=${INTSTEPS0[2]})); do
 	INTSTEPS_TOGETHER+=( "$i" "$j")
     done
 done
-echo "INTSTEPS_TOGETHER=(${INTSTEPS_TOGETHER[@]}) ---> $((2*$GPU_PER_NODE))"
 
 while [[ "${!INTSTEPS_TOGETHER[@]}" != "" ]]; do # ${!array[@]} gives the list of the valid indeces in the array
     INTSTEPS_FOR_JOBSCRIPT=(${INTSTEPS_TOGETHER[@]:0:$((2*$GPU_PER_NODE))})
