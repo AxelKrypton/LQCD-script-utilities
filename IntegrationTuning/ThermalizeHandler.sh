@@ -149,8 +149,8 @@ while [[ "${!BETAVALUES[@]}" != "" ]]; do # ${!array[@]} gives the list of the v
     printf "\n\e[0;36m=================================================\n\e[0m"
     printf "\e[0;36m  The following beta values have been grouped:\e[0m\n    "
     for BETA in "${!BETA_FOR_JOBSCRIPT[@]}"; do
-	printf "${BETA_FOR_JOBSCRIPT[BETA]}     "
-	BETAS_STRING="${BETAS_STRING}_$BETA_PREFIX${BETA_FOR_JOBSCRIPT[BETA]}"
+	printf "${BETA_FOR_JOBSCRIPT[$BETA]}     "
+	BETAS_STRING="${BETAS_STRING}_$BETA_PREFIX${BETA_FOR_JOBSCRIPT[$BETA]}"
     done
     printf "\n\e[0;36m=================================================\n\e[0m"
     JOBSCRIPT_NAME="${JOBSCRIPT_PREFIX}_${PARAMETERS_STRING}_${BETAS_STRING:1}"
