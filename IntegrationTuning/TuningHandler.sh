@@ -67,17 +67,21 @@ EVALUATEONLY=0
 
 #-----------------------------------------------------------------------------------------------------------------#
 # Paths on LOEWE using CL2QCD
-USER_MAIL="sciarra@th.physik.uni-frankfurt.de"
-HMC_BUILD_PATH="clhmc/build/RefExec"
-SIMULATION_PATH="IntegratorTest"
-HOME_DIR="/home/hfftheo/sciarra" 
-WORK_DIR="/scratch/hfftheo/sciarra" 
-HMC_FILENAME="hmc_ref"
-HMC_GLOBALPATH="$HOME_DIR/$HMC_BUILD_PATH/$HMC_FILENAME"
-INPUTFILE_NAME="hmc.input"
-JOBSCRIPT_PREFIX="job.cl2qcd.IntTest"
-JOBSCRIPT_LOCALFOLDER="JobScripts"
-GPU_PER_NODE=4 #If you change this number to a crazy value like 0, do not complain for what you get...
+#USER_MAIL="sciarra@th.physik.uni-frankfurt.de"
+#HMC_BUILD_PATH="clhmc/build/RefExec"
+#SIMULATION_PATH="IntegratorTest"
+#HOME_DIR="/home/hfftheo/sciarra" 
+#WORK_DIR="/scratch/hfftheo/sciarra" 
+#HMC_FILENAME="hmc_ref"
+#HMC_GLOBALPATH="$HOME_DIR/$HMC_BUILD_PATH/$HMC_FILENAME"
+#INPUTFILE_NAME="hmc.input"
+#JOBSCRIPT_PREFIX="job.cl2qcd.IntTest"
+#JOBSCRIPT_LOCALFOLDER="JobScripts"
+#GPU_PER_NODE=4 #If you change this number to a crazy value like 0, do not complain for what you get...
+#-----------------------------------------------------------------------------------------------------------------#
+# Set default values for the non-modifyable variables ---> Modify this file to change them!
+source $HOME/Script/IntegrationTuning/UserSpecificVariables_$(whoami).sh || exit -2
+#-----------------------------------------------------------------------------------------------------------------#
 #-----------------------------------------------------------------------------------------------------------------#
 
 
