@@ -79,6 +79,13 @@ function ParseIntegratorSteps(){
     local INTSTEPS0MIN=$(echo "$INTSTEPS0" | awk 'BEGIN{ FS=":" }{print $1}')
     local INTSTEPS0MAX=$(echo "$INTSTEPS0" | awk 'BEGIN{ FS=":" }{print $2}')
     local INTSTEPS0RES=$(echo "$INTSTEPS0" | awk 'BEGIN{ FS=":" }{print $3}')
+
+    if [ $INTSTEPS0MIN -eq $INTSTEPS0MAX ]; then INTSTEPS0RES=1; fi
+
+    if [ $INTSTEPS0RES -eq 0]; then
+        printf "\n\e[0;31m Integrator0 steps resolution equal to 0 cannot be used to scan the given region!! Aborting...\n\n\e[0m"
+        exit -1
+    fi
     
     if [ $INTSTEPS0MIN -gt $INTSTEPS0MAX ]; then
 	INTSTEPS0MIN=`expr $INTSTEPS0MIN + $INTSTEPS0MAX`
@@ -101,6 +108,13 @@ function ParseIntegratorSteps(){
 	local INTSTEPS1MIN=$(echo "$INTSTEPS1" | awk 'BEGIN{ FS=":" }{print $1}')
 	local INTSTEPS1MAX=$(echo "$INTSTEPS1" | awk 'BEGIN{ FS=":" }{print $2}')
 	local INTSTEPS1RES=$(echo "$INTSTEPS1" | awk 'BEGIN{ FS=":" }{print $3}')
+
+	if [ $INTSTEPS0MIN -eq $INTSTEPS0MAX ]; then INTSTEPS0RES=1; fi
+	
+	if [ $INTSTEPS0RES -eq 0]; then
+            printf "\n\e[0;31m Integrator1 steps resolution equal to 0 cannot be used to scan the given region!! Aborting...\n\n\e[0m"
+            exit -1
+	fi
 
 	if [ $INTSTEPS1MIN -gt $INTSTEPS1MAX ]; then
 	    INTSTEPS1MIN=`expr $INTSTEPS1MIN + $INTSTEPS1MAX`
