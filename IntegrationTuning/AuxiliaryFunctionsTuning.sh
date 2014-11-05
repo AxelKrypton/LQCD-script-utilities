@@ -82,7 +82,7 @@ function ParseIntegratorSteps(){
 
     if [ $INTSTEPS0MIN -eq $INTSTEPS0MAX ]; then INTSTEPS0RES=1; fi
 
-    if [ $INTSTEPS0RES -eq 0]; then
+    if [ $INTSTEPS0RES -eq 0 ]; then
         printf "\n\e[0;31m Integrator0 steps resolution equal to 0 cannot be used to scan the given region!! Aborting...\n\n\e[0m"
         exit -1
     fi
@@ -111,7 +111,7 @@ function ParseIntegratorSteps(){
 
 	if [ $INTSTEPS0MIN -eq $INTSTEPS0MAX ]; then INTSTEPS0RES=1; fi
 	
-	if [ $INTSTEPS0RES -eq 0]; then
+	if [ $INTSTEPS0RES -eq 0 ]; then
             printf "\n\e[0;31m Integrator1 steps resolution equal to 0 cannot be used to scan the given region!! Aborting...\n\n\e[0m"
             exit -1
 	fi
