@@ -5,7 +5,17 @@
 #
 # The idea is that one gives as command-line parameters a set
 # of strings like "muiPiT/k1650/nt6/ns16" and this script will
-# syncronize data using the betas file for such parameters
+# syncronize data using the betas(Sync) file for such parameters
+#
+# IMPORTANT: Add here below your globalpath to the python executable 
+#            using a variable whose name is whoami.
+
+sciarra="${HOME}/Documents/PhD_project/Data_Elaboration_tools/LQCD_SimulationManagementUtilities/ImagMu/ImagMuSync.py"
+czaban="to_be_completed"
+
+identity=$(whoami)
+
+#-----------------------------------------------------------------------------------------------------------------------------#
 
 function PrintSituationDataFolder(){
     for d in $@; do 
@@ -61,7 +71,7 @@ for RUN in ${RUN_PARAMETERS[@]}; do
     PrintSituationDataFolder ${BETAVALUES[@]}
     printf "\n\e[0;32m--------------------------------------------------------------\e[0m\n"
     # Then syncronize
-    python ${HOME}/Documents/PhD_project/Data_Elaboration_tools/LQCD_SimulationManagementUtilities/ImagMu/ImagMuTools.py -s --syncConfs -f=$BETASFILE
+    python ${!identity} --syncConfs -f=$BETASFILE
     # Then clean data files
     for d in ${BETAVALUES[@]}; do
 	printf "\n\e[0;34m"
