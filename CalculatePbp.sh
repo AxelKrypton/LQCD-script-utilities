@@ -8,7 +8,7 @@
 # we parse only those that are realistically sometimes changed. In any case all have
 # some default value (see below).
 #
-# NOTE: To right this script quickly, everything starting with "conf" is considered
+# NOTE: To write this script quickly, everything starting with "conf" is considered
 #       as configuration, i.e. as lime file. This means that if there is something that
 #       is not such a file, it will produce some error.
 #       This should not be the case but however is up to the user to manage it.
@@ -18,21 +18,19 @@
 source $HOME/Script/PathManagement.sh || exit -2
 
 # set an initial value for the options
-EXECUTABLE="./inverter"
-NTIME=6
-NSPACE=12
+EXECUTABLE="${HOME}/clhmc/build/RefExec/inverter_ref"
 MEASURE_PBP="true"
 MEASURE_CORRELATORS="false"
 SOLVER="cg"
-SOLVER_ITER=1000
+SOLVER_ITER=5000
 SOURCETYPE="volume"
 SOURCECONTENT="gaussian"
 FERM_OBS_CORR_POSTFIX="_pbp"
-NUM_SOURCES=96
+NUM_SOURCES=16
 USE_CPU="false"
 USE_GPU="true"
-HOST=""
-JOBWALLTIME="06:00:00"
+HOST="loewe"
+JOBWALLTIME="24:00:00"
 
 # extract options and their arguments into variables.
 while [ "$1" != "" ]; do
@@ -41,26 +39,22 @@ while [ "$1" != "" ]; do
 	  printf "\n\e[0;32m"
 	  echo "Call the script $0 with the following optional arguments:"
 	  echo "  -h | --help"
-	  echo "  --ntime                 ->    default value = 6"
-	  echo "  --nspace                ->    default value = 12"
-	  echo "  --executable            ->    default value = ./inverter"
-	  echo "  --measure_correlators   ->    default value = false"
-	  echo "  --solver                ->    default value = cg"
-          echo "  --cgmax                 ->    default value = 1000"
-	  echo "  --sourcetype            ->    default value = volume"
-	  echo "  --sourcecontent         ->    default value = gaussian"
-	  echo "  --ferm_obs_corr_postfix ->    defualt value = _pbp"
-          echo "  --num_sources           ->    default value = 96"
-          echo "  --use_cpu               ->    default value = false"
-          echo "  --use_gpu               ->    default value = true"
-          echo "  --host                  ->    default value = \"\""
-          echo "  --walltime              ->    default value = 06:00:00 (6h)"
+	  echo "  --executable            ->    default value = $EXECUTABLE"
+	  echo "  --measure_correlators   ->    default value = $MEASURE_CORRELATORS"
+	  echo "  --solver                ->    default value = $SOLVER"
+          echo "  --cgmax                 ->    default value = $SOLVER_ITER"
+	  echo "  --sourcetype            ->    default value = $SOURCETYPE"
+	  echo "  --sourcecontent         ->    default value = $SOURCECONTENT"
+	  echo "  --ferm_obs_corr_postfix ->    defualt value = $FERM_OBS_CORR_POSTFIX"
+          echo "  --num_sources           ->    default value = $NUM_SOURCES"
+          echo "  --use_cpu               ->    default value = $USE_CPU"
+          echo "  --use_gpu               ->    default value = $USE_GPU"
+          echo "  --host                  ->    default value = $HOST"
+          echo "  --walltime              ->    default value = $JOBWALLTIME"
 	  printf "\n\e[0m"
 	  exit
 	  shift;;
       --executable=* )             EXECUTABLE=${1#*=}; shift ;;
-      --ntime=* )                  NTIME=${1#*=}; shift ;;
-      --nspace=* )                 NSPACE=${1#*=}; shift ;;
       --measure_correlators=* )    MEASURE_CORRELATORS=${1#*=}; shift ;;
       --solver=* )                 SOLVER=${1#*=}; shift ;;
       --cgmax=* )                  SOLVER_ITER=${1#*=}; shift ;;
@@ -93,7 +87,7 @@ if [ "$HOST" == "loewe" ]; then
     fi
    
     # Build string that will be used later
-    PROGRAM_OPTIONS="--use_cpu=$USE_CPU --use_gpu=$USE_GPU --start=continue --ntime=$NTIME --nspace=$NSPACE --measure_pbp=$MEASURE_PBP --measure_correlators=$MEASURE_CORRELATORS --solver=$SOLVER --cgmax=$SOLVER_ITER --sourcetype=$SOURCETYPE --sourcecontent=$SOURCECONTENT --ferm_obs_corr_postfix=$FERM_OBS_CORR_POSTFIX --num_sources=$NUM_SOURCES"
+    PROGRAM_OPTIONS="--use_cpu=$USE_CPU --use_gpu=$USE_GPU --start=continue --ntime=$NTIME --nspace=$NSPACE --kappa=0.$KAPPA --measure_pbp=$MEASURE_PBP --measure_correlators=$MEASURE_CORRELATORS --solver=$SOLVER --cgmax=$SOLVER_ITER --sourcetype=$SOURCETYPE --sourcecontent=$SOURCECONTENT --ferm_obs_corr_postfix=$FERM_OBS_CORR_POSTFIX --num_sources=$NUM_SOURCES --beta=$BETA --theta_fermion_temporal=1"
 
     # First of all we have to wrte the job script, whose name is "job.calculate.pbp"
     JOBFILENAME="job.calculate.pbp"
@@ -110,8 +104,8 @@ if [ "$HOST" == "loewe" ]; then
     echo "#SBATCH --output=pbp.%j.out" >> $JOBFILENAME
     echo "#SBATCH --error=pbp.%j.err" >> $JOBFILENAME
     echo "#SBATCH --time=${JOBWALLTIME}" >> $JOBFILENAME
-    echo "#SBATCH --gres=gpu" >> $JOBFILENAME
     echo "#SBATCH --partition=parallel" >> $JOBFILENAME
+    echo "#SBATCH --constraint=gpu" >> $JOBFILENAME
     echo "" >> $JOBFILENAME
     echo "WORKDIR=/scratch/hfftheo/sciarra/WilsonProject$PARAMETERS_PATH/b${BETA}" >> $JOBFILENAME
     echo "" >> $JOBFILENAME
@@ -128,10 +122,10 @@ if [ "$HOST" == "loewe" ]; then
     echo "    CONFIGURATIONS_DONE=\$(( \$CONFIGURATIONS_DONE+1 ))" >> $JOBFILENAME
     echo "    printf \"  -  Calculating chiral condensate (\$CONFIGURATIONS_DONE of \$NUMBER_OF_CONFIGURATIONS)\"" >> $JOBFILENAME
     echo "    printf \" on \$CONF using $NUM_SOURCES $SOURCETYPE-sources on a lattice ${NTIME}x${NSPACE}^3...\"" >> $JOBFILENAME
-    echo "    srun $EXECUTABLE --sourcefile=\$CONF $PROGRAM_OPTIONS >> \${CONF}$FERM_OBS_CORR_POSTFIX.out" >> $JOBFILENAME
+    echo "    srun -n 1 $EXECUTABLE --device=0 --sourcefile=\$CONF $PROGRAM_OPTIONS >> \${CONF}$FERM_OBS_CORR_POSTFIX.out" >> $JOBFILENAME
     echo "    if [ \$? -ne 0 ]; then" >> $JOBFILENAME
-    echo "        printf \"\n  Error occurred executing \\\"$EXECUTABLE\\\". Aborting...\n\n\"" >> $JOBFILENAME
-    echo "        exit -1" >> $JOBFILENAME
+    echo "        printf \"\n     Error occurred executing \\\"$EXECUTABLE\\\". Please check...\"" >> $JOBFILENAME
+    #echo "        exit -1" >> $JOBFILENAME
     echo "    fi" >> $JOBFILENAME
     echo "    mv \${CONF}$FERM_OBS_CORR_POSTFIX.out StdOutput/" >> $JOBFILENAME
     echo "    mv \${CONF}$FERM_OBS_CORR_POSTFIX.dat Pbp/" >> $JOBFILENAME
@@ -145,9 +139,9 @@ if [ "$HOST" == "loewe" ]; then
     echo "" >> $JOBFILENAME
     echo "" >> $JOBFILENAME
     echo "echo \"---------------------------\"" >> $JOBFILENAME
-    echo "# backup core results" >> $JOBFILENAME
-    echo "cp -ar Pbp/ \$SLURM_SUBMIT_DIR/ || exit 2" >> $JOBFILENAME
-    echo "echo \"---------------------------\"" >> $JOBFILENAME
+    #echo "# backup core results" >> $JOBFILENAME
+    #echo "cp -ar Pbp/ \$SLURM_SUBMIT_DIR/ || exit 2" >> $JOBFILENAME
+    #echo "echo \"---------------------------\"" >> $JOBFILENAME
     echo "# go back to the submitting directory" >> $JOBFILENAME
     echo "cd \$SLURM_SUBMIT_DIR" >> $JOBFILENAME
 
@@ -155,6 +149,10 @@ if [ "$HOST" == "loewe" ]; then
     sbatch $JOBFILENAME
 
 else # Assume user want to do it from where he is without job
+
+    echo "Script has to be adjusted, so far it doesn't read parameters from path as for the job! Exiting..."
+    exit
+
     printf "\n\e[0;31m Interactive pbp-calculation TEMPORARILY not available! Modify the script \"$0\" to switch it on! Aborting...\n\n\e[0m"
     exit -1
     # Build string that will be used later
