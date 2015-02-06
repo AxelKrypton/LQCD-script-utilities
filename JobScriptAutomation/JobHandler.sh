@@ -117,7 +117,7 @@ fi
 if [ "$CLUSTER_NAME" = "JUQUEEN" ]; then
     CheckSingleOccurrenceInPath "homeb" "hkf8/" "hkf8[[:digit:]]\+" "mui" "k[[:digit:]]\+" "nt[[:digit:]]\+" "ns[[:digit:]]\+"
 else
-    CheckSingleOccurrenceInPath "home" "hfftheo" "$(whoami)" "mui" "k[[:digit:]]\+" "nt[[:digit:]]\+" "ns[[:digit:]]\+"
+    CheckSingleOccurrenceInPath $(echo $HOME_DIR | sed 's/\// /g') "$CHEMPOT_PREFIX" "${KAPPA_PREFIX}[[:digit:]]\+" "${NTIME_PREFIX}[[:digit:]]\+" "${NSPACE_PREFIX}[[:digit:]]\+"
 fi
 
 ReadParametersFromPath $(pwd)
