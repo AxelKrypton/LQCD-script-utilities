@@ -166,7 +166,7 @@ function ProcessBetaValuesForContinue_Loewe() {
     local LOCAL_SUBMIT_BETA_ARRAY=()
     #Remove -c | --continue option from command line
     for INDEX in "${!SPECIFIED_COMMAND_LINE_OPTIONS[@]}"; do
-	if [[ "${SPECIFIED_COMMAND_LINE_OPTIONS[$INDEX]}" == --continue* ]] && [[ "${SPECIFIED_COMMAND_LINE_OPTIONS[$INDEX]}" == -c* ]]; then
+	if [[ "${SPECIFIED_COMMAND_LINE_OPTIONS[$INDEX]}" == --continue* ]] || [[ "${SPECIFIED_COMMAND_LINE_OPTIONS[$INDEX]}" == -c* ]]; then
 	    unset SPECIFIED_COMMAND_LINE_OPTIONS[$INDEX]
 	    SPECIFIED_COMMAND_LINE_OPTIONS=( "${SPECIFIED_COMMAND_LINE_OPTIONS[@]}" )
 	fi
@@ -434,7 +434,7 @@ function ProcessBetaValuesForContinue_Loewe() {
 	if [ $CONTINUE_NUMBER -ne 0 ]; then
 	    local STDOUTPUT_FILE=`ls -lt $BETA_PREFIX$BETA | awk '{if($9 ~ /^hmc.[[:digit:]]+.out$/){print $9}}' | head -n1`
             local STDOUTPUT_GLOBALPATH="$HOME_DIR_WITH_BETAFOLDERS/$BETA_PREFIX$BETA/$STDOUTPUT_FILE"
-	    if [ -f $STDOUTPUT_GLOBALPATH ] && [ $(grep "writing gaugefield at tr. [[:digit:]]\+" $STDOUTPUT_GLOBALPATH) -ne 0 ]; then
+	    if [ -f $STDOUTPUT_GLOBALPATH ] && [ $(grep "writing gaugefield at tr. [[:digit:]]\+" $STDOUTPUT_GLOBALPATH | wc -l) -ne 0 ]; then
 		local NUMBER_DONE_TRAJECTORIES=$(( $(grep -o "writing gaugefield at tr. [[:digit:]]\+" $STDOUTPUT_GLOBALPATH | grep -o "[[:digit:]]\+" | tail -n1) - 1 ))
 	    elif [ -f $OUTPUTFILE_GLOBALPATH ]; then
 		local NUMBER_DONE_TRAJECTORIES=$(awk 'END{print $1 + 1}' $OUTPUTFILE_GLOBALPATH) #The +1 is here necessary because the first tr. is supposed to be the number 0.
@@ -523,10 +523,10 @@ function ProcessBetaValuesForContinue_Loewe() {
 	local EXCLUDE_COMMAND_LINE_OPTIONS=( "-u" "--useMultipleChains" "-w" "--walltime" "-p" "--doNotMeasurePbp" "--intsteps0" "--intsteps1" )
 	
 	for OPT in ${SPECIFIED_COMMAND_LINE_OPTIONS[@]}; do
-		if ElementInArray $OPT 	${EXCLUDE_COMMAND_LINE_OPTIONS[@]}; then
+		if ElementInArray ${OPT%"="*} 	${EXCLUDE_COMMAND_LINE_OPTIONS[@]}; then
 			continue
 		fi
-		__static__ModifyOptionInInputFile ${OPT#"--"*}
+		__static__ModifyOptionInInputFile ${OPT##*"-"}
 		[ $? == 1 ] && mv $ORIGINAL_INPUTFILE_GLOBALPATH $INPUTFILE_GLOBALPATH && continue 2
 		printf "\e[0;32m Set option \e[0;35m$OPT\e[0;32m into the \e[0;35m${INPUTFILE_GLOBALPATH#$(pwd)/}\e[0;32m file.\n\e[0m"
 	done
