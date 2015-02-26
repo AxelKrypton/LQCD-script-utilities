@@ -1,3 +1,8 @@
+# Load auxiliary bash files that will be used.
+source $HOME/Script/JobScriptAutomation/ProduceInputFileForLoewe.sh || exit -2
+source $HOME/Script/JobScriptAutomation/ProduceJobScriptForLoewe.sh || exit -2
+#------------------------------------------------------------------------------------#
+
 # Collection of function needed in the job handler script (mostly in AuxiliaryFunctions).
 
 function ProduceInputFileAndJobScriptForEachBeta_Loewe(){
@@ -31,7 +36,7 @@ function ProduceInputFileAndJobScriptForEachBeta_Loewe(){
 	printf "\e[0;36m   Configuration used: \"${STARTCONFIGURATION_GLOBALPATH[${BETAVALUES_COPY[$INDEX]}]}\"\n\e[0m"
 	#Call the file to produce the input file
 	local INPUTFILE_GLOBALPATH="${HOME_BETADIRECTORY}/$INPUTFILE_NAME"
-	. $PRODUCEINPUTFILESH	    
+	ProduceInputFile_Loewe
     done
     # Partition the BETAVALUES_COPY array into group of GPU_PER_NODE and create the JobScript files inside the JOBSCRIPT_FOLDER
     mkdir -p ${HOME_DIR_WITH_BETAFOLDERS}/$JOBSCRIPT_LOCALFOLDER || exit -2
@@ -113,7 +118,7 @@ function __static__FindAndReplaceSingleOccurenceInFile(){
 	printf "\n\e[0;31m Error occurred in __static__FindAndReplaceSingleOccurenceInFile(): file $1 has not been found! Aborting...\n\n\e[0m"
 	exit -1
     elif [ $(grep -o "$2" $1 | wc -l) -ne 1 ]; then
-	printf "\n\e[0;31m Error occurred in __static__FindAndReplaceSingleOccurenceInFile(): string $2 occurs 0 times or more than 1 time in file $1! Skipping beta = $BETA .\n\n\e[0m"
+	printf "\n\e[0;31m Error occurred in __static__FindAndReplaceSingleOccurenceInFile(): string $2 occurs 0 times or more than 1 time in file\n $1! Skipping beta = $BETA .\n\n\e[0m"
 	PROBLEM_BETA_ARRAY+=( $BETA )
 	return 1
     fi
@@ -131,15 +136,20 @@ function __static__ModifyOptionInInputFile(){
     
     case $1 in
 
-	startcondition=* )        __static__FindAndReplaceSingleOccurenceInFile $INPUTFILE_GLOBALPATH "startcondition=[[:alpha:]]\+" "startcondition=${1#*=}" ;;
-	sourcefile=* )            __static__FindAndReplaceSingleOccurenceInFile $INPUTFILE_GLOBALPATH "sourcefile=[[:alnum:][:punct:]]*" "sourcefile=${1#*=}" ;;
-	initial_prng_state=* )    __static__FindAndReplaceSingleOccurenceInFile $INPUTFILE_GLOBALPATH "initial_prng_state=[[:alnum:][:punct:]]*" "initial_prng_state=${1#*=}" ;;
-	host_seed=* )             __static__FindAndReplaceSingleOccurenceInFile $INPUTFILE_GLOBALPATH "host_seed=[[:digit:]]\+" "host_seed=${1#*=}" ;;
-	intsteps0=* )             __static__FindAndReplaceSingleOccurenceInFile $INPUTFILE_GLOBALPATH "integrationsteps0=[[:digit:]]\+" "integrationsteps0=${1#*=}" ;;
-	intsteps1=* )             __static__FindAndReplaceSingleOccurenceInFile $INPUTFILE_GLOBALPATH "integrationsteps1=[[:digit:]]\+" "integrationsteps1=${1#*=}" ;;
-	f=* | confSaveFrequency=* )                 __static__FindAndReplaceSingleOccurenceInFile $INPUTFILE_GLOBALPATH "savefrequency=[[:digit:]]\+" "savefrequency=${1#*=}" ;;
-	m=* | measurements=* )          __static__FindAndReplaceSingleOccurenceInFile $INPUTFILE_GLOBALPATH "hmcsteps=[[:digit:]]\+" "hmcsteps=${1#*=}" ;;
-        measure_pbp=* )           __static__FindAndReplaceSingleOccurenceInFile $INPUTFILE_GLOBALPATH "measure_pbp=[[:digit:]]\+" "measure_pbp=${1#*=}" ;;
+	startcondition=* )             __static__FindAndReplaceSingleOccurenceInFile $INPUTFILE_GLOBALPATH "startcondition=[[:alpha:]]\+" "startcondition=${1#*=}" ;;
+	sourcefile=* )                 __static__FindAndReplaceSingleOccurenceInFile $INPUTFILE_GLOBALPATH "sourcefile=[[:alnum:][:punct:]]*" "sourcefile=${1#*=}" ;;
+	initial_prng_state=* )         __static__FindAndReplaceSingleOccurenceInFile $INPUTFILE_GLOBALPATH "initial_prng_state=[[:alnum:][:punct:]]*" "initial_prng_state=${1#*=}" ;;
+	host_seed=* )                  __static__FindAndReplaceSingleOccurenceInFile $INPUTFILE_GLOBALPATH "host_seed=[[:digit:]]\+" "host_seed=${1#*=}" ;;
+	intsteps0=* )                  __static__FindAndReplaceSingleOccurenceInFile $INPUTFILE_GLOBALPATH "integrationsteps0=[[:digit:]]\+" "integrationsteps0=${1#*=}" ;;
+	intsteps1=* )                  __static__FindAndReplaceSingleOccurenceInFile $INPUTFILE_GLOBALPATH "integrationsteps1=[[:digit:]]\+" "integrationsteps1=${1#*=}" ;;
+	f=* | confSaveFrequency=* )    __static__FindAndReplaceSingleOccurenceInFile $INPUTFILE_GLOBALPATH "savefrequency=[[:digit:]]\+" "savefrequency=${1#*=}" ;;
+	m=* | measurements=* )         __static__FindAndReplaceSingleOccurenceInFile $INPUTFILE_GLOBALPATH "hmcsteps=[[:digit:]]\+" "hmcsteps=${1#*=}" ;;
+	measure_pbp=* )                __static__FindAndReplaceSingleOccurenceInFile $INPUTFILE_GLOBALPATH "measure_pbp=[[:digit:]]\+" "measure_pbp=${1#*=}" ;;
+	use_mp=* )                     __static__FindAndReplaceSingleOccurenceInFile $INPUTFILE_GLOBALPATH "use_mp=[[:digit:]]\+" "use_mp=${1#*=}" ;;
+	kappa_mp=* )                   __static__FindAndReplaceSingleOccurenceInFile $INPUTFILE_GLOBALPATH "kappa_mp=[[:digit:]]\+[.][[:digit:]]\+" "kappa_mp=${1#*=}" ;;
+	intsteps2=* )                  __static__FindAndReplaceSingleOccurenceInFile $INPUTFILE_GLOBALPATH "integrationsteps2=[[:digit:]]\+" "integrationsteps2=${1#*=}" ;;
+	cg_iteration_block_size=* )    __static__FindAndReplaceSingleOccurenceInFile $INPUTFILE_GLOBALPATH "cg_iteration_block_size=[[:digit:]]\+" "cg_iteration_block_size=${1#*=}" ;;
+	num_timescales=* )             __static__FindAndReplaceSingleOccurenceInFile $INPUTFILE_GLOBALPATH "num_timescales=[[:digit:]]\+" "num_timescales=${1#*=}" ;;
 
         * ) printf "\n\e[0;31m The option \"$1\" cannot be handled in the continue scenario.\n\e[0m"
         printf "\e[0;31m Simulation cannot be continued. Leaving out beta = $BETA .\n\n\e[0m"
@@ -302,13 +312,7 @@ function ProcessBetaValuesForContinue_Loewe() {
 	#If the beta is skipped this temporary file is used to restore the original input file, otherwise it is deleted.
 	ORIGINAL_INPUTFILE_GLOBALPATH="${INPUTFILE_GLOBALPATH}_original"
 	cp $INPUTFILE_GLOBALPATH $ORIGINAL_INPUTFILE_GLOBALPATH || exit 2
-	#If the option --pbp=1 has been given, check and in case add to input file relative piece
-
-	#DISCUSS_WITH_ALESSANDRO
-	#Since now when -p | --doNotMeasurePbp is specified the measurement of chiral condensate is ruled out from beginning on.
-	#Before the decision was left to the user whether he specified pbp=0 or pbp=1
-	#Hence the following out commented for loop and the following if test have to be abandoned.
-
+	#If the option -p | --doNotMeasurePbp has been given, check the input file and in case act accordingly
 	if [ $MEASURE_PBP = "FALSE" ]; then
 		local measure_pbp=0
 	elif [ $MEASURE_PBP = "TRUE" ]; then
@@ -321,12 +325,11 @@ function ProcessBetaValuesForContinue_Loewe() {
 			printf " the chiral condensate are present. Suspicious situation, investigate! Skipping beta = $BETA .\n\n\e[0m"
 			PROBLEM_BETA_ARRAY+=( $BETA )
 			mv $ORIGINAL_INPUTFILE_GLOBALPATH $INPUTFILE_GLOBALPATH && continue 2
-		else
-			echo "measure_pbp=$measure_pbp" >> $INPUTFILE_GLOBALPATH
-			echo "sourcetype=volume" >> $INPUTFILE_GLOBALPATH
-			echo "sourcecontent=gaussian" >> $INPUTFILE_GLOBALPATH
-			echo "num_sources=16" >> $INPUTFILE_GLOBALPATH
 		fi
+		echo "measure_pbp=$measure_pbp" >> $INPUTFILE_GLOBALPATH
+		echo "sourcetype=volume" >> $INPUTFILE_GLOBALPATH
+		echo "sourcecontent=gaussian" >> $INPUTFILE_GLOBALPATH
+		echo "num_sources=16" >> $INPUTFILE_GLOBALPATH
 		printf "\e[0;32m Added options \e[0;35mmeasure_pbp=$measure_pbp\n"
 		printf "\e[0;32m               \e[0;35msourcetype=volume\n"
 		printf "\e[0;32m               \e[0;35msourcecontent=gaussian\n"
@@ -338,19 +341,109 @@ function ProcessBetaValuesForContinue_Loewe() {
 		printf "\e[0;32m Set option \e[0;35mmeasure_pbp=$measure_pbp"
 		printf "\e[0;32m into the \e[0;35m${INPUTFILE_GLOBALPATH#$(pwd)/}\e[0;32m file.\n\e[0m"
 	fi
+	#If the option MP=() is given in the betasfile we have to do some work on the INPUTFILE to check if it was already given or not and act accordingly
+	if KeyInArray $BETA MASS_PRECONDITIONING_ARRAY; then	
+	    case $(grep -o "use_mp" $INPUTFILE_GLOBALPATH | wc -l) in
+		0 ) 
+		    if [ $(grep -o "solver_mp" $INPUTFILE_GLOBALPATH | wc -l) -ne 0 ] || [ $(grep -o "kappa_mp" $INPUTFILE_GLOBALPATH | wc -l) -ne 0 ] || 
+		       [ $(grep -o "integrator2" $INPUTFILE_GLOBALPATH | wc -l) -ne 0 ] || [ $(grep -o "integrationsteps2" $INPUTFILE_GLOBALPATH | wc -l) -ne 0 ]; then
+			printf "\e[0;31m The option \"use_mp\" is not present in the input file but one or more specification about how to use\n"
+                        printf " mass preconditioning are present. Suspicious situation, investigate! Skipping beta = $BETA .\n\n\e[0m"
+                        PROBLEM_BETA_ARRAY+=( $BETA )
+                        mv $ORIGINAL_INPUTFILE_GLOBALPATH $INPUTFILE_GLOBALPATH && continue
+		    else
+			echo "use_mp=1" >> $INPUTFILE_GLOBALPATH
+			echo "solver_mp=cg" >> $INPUTFILE_GLOBALPATH
+			echo "kappa_mp=0.${MASS_PRECONDITIONING_ARRAY[$BETA]#*,}" >> $INPUTFILE_GLOBALPATH
+			echo "integrator2=twomn" >> $INPUTFILE_GLOBALPATH
+			echo "integrationsteps2=${MASS_PRECONDITIONING_ARRAY[$BETA]%,*}" >> $INPUTFILE_GLOBALPATH
+			printf "\e[0;32m Added options \e[0;35muse_mp=1\n"
+			printf "\e[0;32m               \e[0;35msolver_mp=cg\n"
+			printf "\e[0;32m               \e[0;35mkappa_mp=0.${MASS_PRECONDITIONING_ARRAY[$BETA]#*,}\n"
+			printf "\e[0;32m               \e[0;35mintegrator2=twomn\n"
+			printf "\e[0;32m               \e[0;35mintegrationsteps2=${MASS_PRECONDITIONING_ARRAY[$BETA]%,*}"
+			printf "\e[0;32m to the \e[0;35m${INPUTFILE_GLOBALPATH#$(pwd)/}\e[0;32m file.\n\e[0m"
+			__static__ModifyOptionInInputFile "num_timescales=3"
+			[ $? == 1 ] && mv $ORIGINAL_INPUTFILE_GLOBALPATH $INPUTFILE_GLOBALPATH && continue
+			printf "\e[0;32m Set option \e[0;35mnum_timescales=3\e[0;32m into the \e[0;35m${INPUTFILE_GLOBALPATH#$(pwd)/}\e[0;32m file.\n\e[0m"
+			__static__ModifyOptionInInputFile "cg_iteration_block_size=10"
+			[ $? == 1 ] && mv $ORIGINAL_INPUTFILE_GLOBALPATH $INPUTFILE_GLOBALPATH && continue
+			printf "\e[0;32m Set option \e[0;35mcg_iteration_block_size=10\e[0;32m into the \e[0;35m${INPUTFILE_GLOBALPATH#$(pwd)/}\e[0;32m file.\n\e[0m"
+		    fi
+		    ;;
+		1 )
+		    #Here I assume that the specifications for mass preconditioning are already in the input file and I just modify them!
+		    __static__ModifyOptionInInputFile "use_mp=1"
+		    [ $? == 1 ] && mv $ORIGINAL_INPUTFILE_GLOBALPATH $INPUTFILE_GLOBALPATH && continue
+		    printf "\e[0;32m Set option \e[0;35muse_mp=1\e[0;32m into the \e[0;35m${INPUTFILE_GLOBALPATH#$(pwd)/}\e[0;32m file.\n\e[0m"
+		    __static__ModifyOptionInInputFile "kappa_mp=0.${MASS_PRECONDITIONING_ARRAY[$BETA]#*,}"
+		    [ $? == 1 ] && mv $ORIGINAL_INPUTFILE_GLOBALPATH $INPUTFILE_GLOBALPATH && continue
+		    printf "\e[0;32m Set option \e[0;35mkappa_mp=0.${MASS_PRECONDITIONING_ARRAY[$BETA]#*,}"
+		    printf "\e[0;32m into the \e[0;35m${INPUTFILE_GLOBALPATH#$(pwd)/}\e[0;32m file.\n\e[0m"
+		     __static__ModifyOptionInInputFile "num_timescales=3"
+                    [ $? == 1 ] && mv $ORIGINAL_INPUTFILE_GLOBALPATH $INPUTFILE_GLOBALPATH && continue
+                    printf "\e[0;32m Set option \e[0;35mnum_timescales=3\e[0;32m into the \e[0;35m${INPUTFILE_GLOBALPATH#$(pwd)/}\e[0;32m file.\n\e[0m"
+		    __static__ModifyOptionInInputFile "intsteps2=${MASS_PRECONDITIONING_ARRAY[$BETA]%,*}"
+		    [ $? == 1 ] && mv $ORIGINAL_INPUTFILE_GLOBALPATH $INPUTFILE_GLOBALPATH && continue
+		    printf "\e[0;32m Set option \e[0;35mintsteps2=${MASS_PRECONDITIONING_ARRAY[$BETA]%,*}"
+		    printf "\e[0;32m into the \e[0;35m${INPUTFILE_GLOBALPATH#$(pwd)/}\e[0;32m file.\n\e[0m"
+		     __static__ModifyOptionInInputFile "cg_iteration_block_size=10"
+                    [ $? == 1 ] && mv $ORIGINAL_INPUTFILE_GLOBALPATH $INPUTFILE_GLOBALPATH && continue
+                    printf "\e[0;32m Set option \e[0;35mcg_iteration_block_size=10\e[0;32m into the \e[0;35m${INPUTFILE_GLOBALPATH#$(pwd)/}\e[0;32m file.\n\e[0m"
+		    ;;
+		* ) 
+		    printf "\n\e[0;31m String use_mp occurs more than 1 time in file $INPUTFILE_GLOBALPATH! Skipping beta = $BETA .\n\n\e[0m"
+                    PROBLEM_BETA_ARRAY+=( $BETA )
+                    mv $ORIGINAL_INPUTFILE_GLOBALPATH $INPUTFILE_GLOBALPATH && continue
+		    ;;
+	    esac
+	else
+	    case $(grep -o "use_mp" $INPUTFILE_GLOBALPATH | wc -l) in
+		0 )
+		    #Assume that no other option regarding mass preconditioning is in the file (it should be the case) and just continue
+		    ;;
+		1 )
+		    #Switch off the mass preconditioning and set timescales to 2, as well as the cg_iteration_block_size to 50
+		     __static__ModifyOptionInInputFile "use_mp=0"
+                    [ $? == 1 ] && mv $ORIGINAL_INPUTFILE_GLOBALPATH $INPUTFILE_GLOBALPATH && continue
+                    printf "\e[0;32m Set option \e[0;35muse_mp=0\e[0;32m into the \e[0;35m${INPUTFILE_GLOBALPATH#$(pwd)/}\e[0;32m file.\n\e[0m"
+		     __static__ModifyOptionInInputFile "cg_iteration_block_size=50"
+                    [ $? == 1 ] && mv $ORIGINAL_INPUTFILE_GLOBALPATH $INPUTFILE_GLOBALPATH && continue
+                    printf "\e[0;32m Set option \e[0;35mcg_iteration_block_size=50\e[0;32m into the \e[0;35m${INPUTFILE_GLOBALPATH#$(pwd)/}\e[0;32m file.\n\e[0m"
+		     __static__ModifyOptionInInputFile "num_timescales=2"
+                    [ $? == 1 ] && mv $ORIGINAL_INPUTFILE_GLOBALPATH $INPUTFILE_GLOBALPATH && continue
+                    printf "\e[0;32m Set option \e[0;35mnum_timescales=2\e[0;32m into the \e[0;35m${INPUTFILE_GLOBALPATH#$(pwd)/}\e[0;32m file.\n\e[0m"
+		    ;;
+		* )
+                    printf "\n\e[0;31m String use_mp occurs more than 1 time in file $INPUTFILE_GLOBALPATH! Skipping beta = $BETA .\n\n\e[0m"
+                    PROBLEM_BETA_ARRAY+=( $BETA )
+                    mv $ORIGINAL_INPUTFILE_GLOBALPATH $INPUTFILE_GLOBALPATH && continue
+                    ;;
+	    esac
+	fi
 	#For each command line option, modify it in the inputfile.
 	#
 	#If CONTINUE_NUMBER is given, set automatically the number of remaining measurements.
 	# NOTE: If --measurements=... is (also) given, then --measurements will be used!
+	#
+	# ATTENTION: The ideal case is to recover the number of measurements done from the std. output of CL2QCD, and in particular
+	#            from the trajectory stored in the last configuration saved. This is better than to use the output file since it
+	#            could happen that the simulation is interrupted after having updated the output file but before having stored the
+	#            actual configuration. In this case setting the number of measurements to be done using the output file would mean
+	#            to do one trajectory less since the configuration from which the run would be resumed would be the last but one!!
 	if [ $CONTINUE_NUMBER -ne 0 ]; then
-	    if [ -f $OUTPUTFILE_GLOBALPATH ]; then
+	    local STDOUTPUT_FILE=`ls -lt $BETA_PREFIX$BETA | awk '{if($9 ~ /^hmc.[[:digit:]]+.out$/){print $9}}' | head -n1`
+            local STDOUTPUT_GLOBALPATH="$HOME_DIR_WITH_BETAFOLDERS/$BETA_PREFIX$BETA/$STDOUTPUT_FILE"
+	    if [ -f $STDOUTPUT_GLOBALPATH ] && [ $(grep "writing gaugefield at tr. [[:digit:]]\+" $STDOUTPUT_GLOBALPATH) -ne 0 ]; then
+		local NUMBER_DONE_TRAJECTORIES=$(( $(grep -o "writing gaugefield at tr. [[:digit:]]\+" $STDOUTPUT_GLOBALPATH | grep -o "[[:digit:]]\+" | tail -n1) - 1 ))
+	    elif [ -f $OUTPUTFILE_GLOBALPATH ]; then
 		local NUMBER_DONE_TRAJECTORIES=$(awk 'END{print $1 + 1}' $OUTPUTFILE_GLOBALPATH) #The +1 is here necessary because the first tr. is supposed to be the number 0.
 	    else
 		local NUMBER_DONE_TRAJECTORIES=0
 	    fi
-	    if [ $NUMBER_DONE_TRAJECTORIES -gt $CONTINUE_NUMBER ]; then
+	    if [ $NUMBER_DONE_TRAJECTORIES -ge $CONTINUE_NUMBER ]; then
 		printf "\e[0;31m From the output file $OUTPUTFILE_GLOBALPATH"
-		printf "\n we got that the number of done measurements is $NUMBER_DONE_TRAJECTORIES > $CONTINUE_NUMBER = CONTINUE_NUMBER."
+		printf "\n we got that the number of done measurements is $NUMBER_DONE_TRAJECTORIES >= $CONTINUE_NUMBER = CONTINUE_NUMBER."
 		printf "\n The option \"--continue=$CONTINUE_NUMBER\" cannot be applied. Skipping beta = $BETA .\n\n\e[0m"
                 PROBLEM_BETA_ARRAY+=( $BETA )
                 mv $ORIGINAL_INPUTFILE_GLOBALPATH $INPUTFILE_GLOBALPATH && continue
@@ -548,7 +641,7 @@ function __static__PackBetaValuesPerGpuAndCreateJobScriptFiles(){
 		mv $JOBSCRIPT_GLOBALPATH ${JOBSCRIPT_GLOBALPATH}_$(date +'%F_%H%M') || exit -2
 	    fi
 	    #Call the file to produce the jobscript file
-	    . $PRODUCEJOBSCRIPTSH
+	    ProduceJobscript_Loewe
 	    if [ -e $JOBSCRIPT_GLOBALPATH ]; then
 		SUBMIT_BETA_ARRAY+=( "${BETAS_STRING}" )
 	    else

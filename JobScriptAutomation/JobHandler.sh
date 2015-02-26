@@ -1,7 +1,6 @@
 #!/bin/bash
 
-#Some more or less important comments:
-#The scripts ProduceJobScript.sh and ProduceInputFile.sh are called via . (source) builtin, see e.g.
+#Some scripts could be called via . (source) builtin, see e.g.
 #https://developer.apple.com/library/mac/documentation/OpenSource/Conceptual/ShellScripting/SubroutinesandScoping/SubroutinesandScoping.html
 #Important: Unlike executing a script as a normal shell command, executing a script with the source builtin results in the second script executing within the same 
 #overall context as the first script. Any variables that are modified by the second script will be seen by the calling script.
@@ -100,13 +99,11 @@ ParseCommandLineOption $@
 
 #-----------------------------------------------------------------------------------------------------------------#
 # Check if the necessary scripts exist.
-if [ ! -f $PRODUCEJOBSCRIPTSH ] || [ ! -f $PRODUCEINPUTFILESH ] || [ ! -f $HMC_GLOBALPATH ]; then
-	printf "\n\e[0;31m One or more of the following files are missing:\n\e[0m"
-	printf "\n\e[0;31m   - $PRODUCEJOBSCRIPTSH\e[0m"
-	printf "\n\e[0;31m   - $PRODUCEINPUTFILESH\e[0m"
-	printf "\n\e[0;31m   - $HMC_GLOBALPATH\e[0m"
-	printf "\n\n\e[0;31m Aborting...\n\n\e[0m"
-	exit -1
+if [ ! -f $HMC_GLOBALPATH ]; then
+    printf "\n\e[0;31m The following file has not been found:\n\e[0m"
+    printf "\n\e[0;31m   - $HMC_GLOBALPATH\e[0m"
+    printf "\n\n\e[0;31m Aborting...\n\n\e[0m"
+    exit -1
 fi
 #-----------------------------------------------------------------------------------------------------------------#
 
@@ -139,6 +136,7 @@ PROBLEM_BETA_ARRAY=() #Arrays that will contain the beta values that actually wi
 declare -A INTSTEPS0_ARRAY
 declare -A INTSTEPS1_ARRAY
 declare -A CONTINUE_RESUMETRAJ_ARRAY 
+declare -A MASS_PRECONDITIONING_ARRAY 
 declare -A STARTCONFIGURATION_GLOBALPATH #NOTE: Before bash 4.2 associative array are LOCAL by default (from bash 4.2 one can do "declare -g ARRAY" to make it global).
                                          #      This is the reason why they are declared here and not in ReadBetaValuesFromFile where it would be natural!!
 

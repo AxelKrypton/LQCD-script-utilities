@@ -2,6 +2,7 @@
 
 # Just a short script to read out the situation from
 # the folders present where the script is run.
+SHOW_ONLY_MP="FALSE"
 
 function ParseCommandLineOption(){
     while [ "$1" != "" ]; do
@@ -14,6 +15,7 @@ function ParseCommandLineOption(){
 		echo "  -a | --orderAcceptance      ->    Print report with increasing Acceptance Rate"
 		echo "  -t | --orderTime            ->    Print report with increasing Simulation Time"
 		echo "  -f | --orderFolder          ->    Print report with increasing Folder Name"
+		echo "  -m | --showOnlyMP           ->    Print report of only mass preconditioning tuning"
 		echo ""
 		echo "NOTE: If more than one of the options -a, -t and -f are given, the last is used! By default -a is used."
 		printf "\n\e[0m"
@@ -22,6 +24,7 @@ function ParseCommandLineOption(){
 	    -a | --orderAcceptance )  ORDER_PARAMETER="ACCEPTANCE"; shift ;;
 	    -t | --orderTime )        ORDER_PARAMETER="DURATION"; shift ;;
 	    -f | --orderFolder )      ORDER_PARAMETER="FOLDERS"; shift ;;
+	    -m | --showOnlyMP )       SHOW_ONLY_MP="TRUE"; shift ;;
 	    * ) printf "\n\e[0;31mError parsing the options! Aborting...\n\n\e[0m" ; exit -1 ;;
 	esac
     done
@@ -64,36 +67,39 @@ fi
 ORDER_PARAMETER="ACCEPTANCE"
 ParseCommandLineOption $@
 FOLDERS=( $(ls) )
-index=0
-for NAME in ${FOLDERS[@]}; do
-    if [ ! -d $NAME ] || [[ ! $NAME =~ ^[0-9]{1,2}_[0-9]{1,2}$ ]]; then
-	unset FOLDERS[$index]
+for INDEX in "${!FOLDERS[@]}"; do
+    NAME=${FOLDERS[$INDEX]}
+    if [ ! -d $NAME ] || [[ ! $NAME =~ ^[0-9]{1,2}_[0-9]{1,2}.*$ ]]; then
+	unset FOLDERS[$INDEX]
     fi
-    index=$(($index+1))
+    if [[ $SHOW_ONLY_MP == "TRUE" ]] && [[ ! $NAME =~ ^[0-9]{1,2}_[0-9]{1,2}_[0-9]{1,2}_kmp[0-9]{3,4}$ ]]; then
+	unset FOLDERS[$INDEX]
+    fi
 done
+FOLDERS=( "${FOLDERS[@]}" ) #Make FOLDERS not sparse for the following!!!
 #-----------------------------------------------------------------------------------------------------------------#
 
 
 #-----------------------------------------------------------------------------------------------------------------#
-ACCEPTANCE=()
+ACCEPTED=()
 TRAJECTORIES=()
 DURATION=()
 MAX_DELTAS=()
 ALLRUNFINISHED=1
 for NAME in ${FOLDERS[@]}; do
     if [ -f $NAME/hmc_output ]; then
-	ACCEPTANCE+=( $(awk '{ sum+=$11} END {print 100*sum/(NR)}' $NAME/hmc_output) )
+	ACCEPTED+=( $(awk '{ sum+=$11} END {print sum}' $NAME/hmc_output) )
 	TRAJECTORIES+=( $(wc -l $NAME/hmc_output | awk '{print $1}') )
 	MAX_DELTAS+=( $(awk 'BEGIN {max=0} {if(sqrt($8^2)>max){max=sqrt($8^2)}} END {printf "%6g", max}' $NAME/hmc_output) )
     else
-	ACCEPTANCE+=( "--" )
+	ACCEPTED+=( "--" )
 	TRAJECTORIES+=( "--")
 	MAX_DELTAS+=( "--" )
 	ALLRUNFINISHED=0
     fi
     if [ -f $NAME/hmc*.out ]; then
-	START_TIME=( $(grep "\[[[:digit:]]\{2\}:[[:digit:]]\{2\}:[[:digit:]]\{2\}\] INFO:" $NAME/hmc*.out | head -n1 | grep -o "[[:digit:]]\{2\}:[[:digit:]]\{2\}:[[:digit:]]\{2\}" ) )
-	END_TIME=( $(grep "\[[[:digit:]]\{2\}:[[:digit:]]\{2\}:[[:digit:]]\{2\}\] INFO:" $NAME/hmc*.out | tail -n1 | grep -o "[[:digit:]]\{2\}:[[:digit:]]\{2\}:[[:digit:]]\{2\}") )
+	START_TIME=( $(grep "Start generation of configurations..." $NAME/hmc*.out | grep -o "[[:digit:]]\{2\}:[[:digit:]]\{2\}:[[:digit:]]\{2\}" ) )
+	END_TIME=( $(grep "...generation done" $NAME/hmc*.out | grep -o "[[:digit:]]\{2\}:[[:digit:]]\{2\}:[[:digit:]]\{2\}") )
 	START_TIME_SEC=$(TimeToSeconds $START_TIME)
 	END_TIME_SEC=$(TimeToSeconds $END_TIME)
 	if [ $START_TIME_SEC -gt $END_TIME_SEC ]; then
@@ -109,38 +115,44 @@ done
 
 
 #-----------------------------------------------------------------------------------------------------------------#
-printf "\n\e[0;36m=====================================================================\e[0m\n"
-printf "\e[0;35m\e[2m  kappa=0.$KAPPA  ns=$NSPACE  beta=$BETA\e[0m"
-TABLE_FORMAT="%-8s%-5s%-9s%-5s%-9s%3s%-15s%-5s%-8s"
-printf "\n\e[0;36m=====================================================================\e[0m\n"
-printf "\e[0;34m\e[2m$TABLE_FORMAT\e[0m\n"   "SETUP:" ""   "DURATION:" ""   "ACC-RATE:" "" "" "" "MAX_DS:"
+printf "\n\e[0;36m=======================================================================\e[0m\n"
+printf "\e[0;35m\t\tkappa=0.$KAPPA  ns=$NSPACE  beta=$BETA\e[0m"
+TABLE_FORMAT="%-$(LengthOfLongestEntryInArray "${FOLDERS[@]}")s%-5s%+17s%-5s%17s%-5s%-8s"
+printf "\n\e[0;36m=======================================================================\e[0m\n"
+printf "\e[0;36m$TABLE_FORMAT\e[0m\n"   "SETUP:" ""   "AV. TIME PER TR.:" ""   "ACCEPTANCE RATE:" "" "MAX_DS:"
+
+#
+
 
 if [ $ALLRUNFINISHED -eq 0 ]; then
     for ((i=0; i<${#FOLDERS[@]}; i++)); do
 	printf "$TABLE_FORMAT\e[0m\n"   "${FOLDERS[$i]}" ""\
-                                       " $(( (${DURATION[$i]}-${DURATION[$i]}%60)/60 ))m $(( ${DURATION[$i]}%60 ))s" ""\
-                                        "${ACCEPTANCE[$i]}%" "" "(out of ${TRAJECTORIES[$i]})" ""\
+                                        "$(echo "${DURATION[$i]} ${TRAJECTORIES[$i]}" | awk '{if($2=="--"){print "------------   "}else{sec_tr=(int($1/$2)+1); printf "%d min %2d sec   ", int(sec_tr/60.0),  int(sec_tr%60)}}' )" ""\
+                                        "$(echo "${ACCEPTED[$i]} ${TRAJECTORIES[$i]}" | awk '{if($2=="--"){print " ----- %  ( 0/0 )"}else{printf "%5.2f %%  (%d/%d)", 100*$1/$2, $1, $2}}')" ""\
                                         "${MAX_DELTAS[$i]}"
     done
 else
     while [ ${#FOLDERS[@]} -gt 0 ]; do
 	if [[ $ORDER_PARAMETER = "ACCEPTANCE" ]]; then
-	    i=$(FindPositionOfFirstMinimumOfArray "${ACCEPTANCE[@]}")
+	    i=$(FindPositionOfFirstMinimumOfArray "${ACCEPTED[@]}")
 	elif [[ $ORDER_PARAMETER = "DURATION" ]]; then
 	    i=$(FindPositionOfFirstMinimumOfArray "${DURATION[@]}")
 	else
 	    i=$(FindPositionOfFirstMinimumOfArray "${FOLDERS[@]}")
 	fi
+
 	printf "$TABLE_FORMAT\e[0m\n"   "${FOLDERS[$i]}" ""\
-                                       " $(( (${DURATION[$i]}-${DURATION[$i]}%60)/60 ))m $(( ${DURATION[$i]}%60 ))s" ""\
-                                        "${ACCEPTANCE[$i]}%" "" "(out of ${TRAJECTORIES[$i]})" ""\
+                                        "$(echo "${DURATION[$i]} ${TRAJECTORIES[$i]}" | awk '{if($2==0){print "------------"}else{sec_tr=(int($1/$2)+1); printf "%d min %2d sec   ", int(sec_tr/60.0),  int(sec_tr%60)}}' )" ""\
+                                        "$(echo "${ACCEPTED[$i]} ${TRAJECTORIES[$i]}" | awk '{if($2==0){print " ----- %   (0/0)"}else{printf "%5.2f %%  (%d/%d)", 100*$1/$2, $1, $2}}')" ""\
                                         "${MAX_DELTAS[$i]}"
+
 	unset FOLDERS[$i]; FOLDERS=( "${FOLDERS[@]}" )
 	unset DURATION[$i]; DURATION=( "${DURATION[@]}" )
-	unset ACCEPTANCE[$i]; ACCEPTANCE=( "${ACCEPTANCE[@]}" )
+	unset ACCEPTED[$i]; ACCEPTED=( "${ACCEPTED[@]}" )
 	unset TRAJECTORIES[$i]; TRAJECTORIES=( "${TRAJECTORIES[@]}" )
 	unset MAX_DELTAS[$i]; MAX_DELTAS=( "${MAX_DELTAS[@]}" )
+
     done    
 fi
-printf "\e[0;36m=====================================================================\e[0m\n\n"
+printf "\e[0;36m=======================================================================\e[0m\n\n"
 
