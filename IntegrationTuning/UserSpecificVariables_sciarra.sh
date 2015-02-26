@@ -4,7 +4,6 @@ HMC_BUILD_PATH="clhmc/build/RefExec"
 SIMULATION_PATH="IntegratorTest"
 HOME_DIR="/home/hfftheo/sciarra" 
 WORK_DIR="/scratch/hfftheo/sciarra" 
-SCRIPT_DIR="$HOME_DIR/Script/tmLQCD_Juqueen" #Needed on loewe?
 PRODUCEJOBSCRIPTSH="$HOME_DIR/Script/JobScriptAutomation/ProduceJobScript.sh"
 PRODUCEINPUTFILESH="$HOME_DIR/Script/JobScriptAutomation/ProduceInputFile.sh"
 HMC_FILENAME="hmc_ref"

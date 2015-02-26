@@ -32,7 +32,7 @@
 # IMPORTANT: Add here below your globalpath using a variable whose name is whoami.
 
 sciarra="/home/sciarra/Documents/PhD_project/Data_Elaboration_tools/AutomaticSyncronizationData"
-czaban="to_be_completed"
+czaban="/home/czaban/Promotion/Physics/AutomaticSyncImagMuDataReports"
 
 #Move to the correct sync folder
 identity=$(whoami)

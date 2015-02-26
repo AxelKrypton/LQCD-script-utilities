@@ -1,12 +1,11 @@
 #!/bin/bash
 
-#Some more or less important comments:
-#The scripts ProduceJobScript.sh and ProduceInputFile.sh are called via . (source) builtin, see e.g.
+#Some scripts could be called via . (source) builtin, see e.g.
 #https://developer.apple.com/library/mac/documentation/OpenSource/Conceptual/ShellScripting/SubroutinesandScoping/SubroutinesandScoping.html
 #Important: Unlike executing a script as a normal shell command, executing a script with the source builtin results in the second script executing within the same 
 #overall context as the first script. Any variables that are modified by the second script will be seen by the calling script.
 
-#COMMENT about --submit and --submitonly: ...############### INSERT COMMENT HERE ###################
+#COMMENT about -s | --submit and --submitonly: ...############### INSERT COMMENT HERE ###################
 
 # NOTE: Usually in this script, if an error occurs, a short description is given to the user.
 #       Nevertheless, it is annoying and not really necessary to check every single operation.
@@ -16,9 +15,8 @@
 #-----------------------------------------------------------------------------------------------------------------#
 # Load auxiliary bash files that will be used.
 source $HOME/Script/PathManagement.sh || exit -2
-source $HOME/Script/JobScriptAutomation/AuxiliaryFunction.sh || exit -2
+source $HOME/Script/JobScriptAutomation/AuxiliaryFunctions.sh || exit -2
 source $HOME/Script/JobScriptAutomation/AcceptanceRateReport.sh || exit -2
-source $HOME/Script/JobScriptAutomation/ListJobsStatus.sh || exit -2
 source $HOME/Script/JobScriptAutomation/BuildRegexPath.sh || exit -2
 source $HOME/Script/JobScriptAutomation/EmptyBetaDirectories.sh || exit -2
 #-----------------------------------------------------------------------------------------------------------------#
@@ -43,7 +41,6 @@ source $HOME/Script/JobScriptAutomation/EmptyBetaDirectories.sh || exit -2
 #-----------------------------------------------------------------------------------------------------------------#
 # Set default values for the command line parameters
 
-BETA_PREFIX="b"
 BETASFILE="betas"
 KAPPA="1000"
 WALLTIME="7-00:00:00"
@@ -57,10 +54,12 @@ NSAVE="50"
 INTSTEPS0="7"
 INTSTEPS1="5"
 INTSTEPS2="5"
-MEASURE_PBP="1"
+MEASURE_PBP="TRUE"
 INTERVAL="1000"
+USE_MULTIPLE_CHAINS="FALSE"
 SUBMIT="FALSE"
 SUBMITONLY="FALSE"
+THERMALIZE="FALSE"
 CONTINUE="FALSE"
 CONTINUE_NUMBER="0"
 LISTSTATUS="FALSE"
@@ -92,22 +91,19 @@ if [[ $(whoami) =~ ^hkf[[:digit:]]{3} ]]; then
     WALLTIME="00:30:00"
 fi
 
-
 SPECIFIED_COMMAND_LINE_OPTIONS=( $@ )
+ReadParametersFromPath $(pwd)
 ParseCommandLineOption $@
-
 #-----------------------------------------------------------------------------------------------------------------#
 
 
 #-----------------------------------------------------------------------------------------------------------------#
 # Check if the necessary scripts exist.
-if [ ! -f $PRODUCEJOBSCRIPTSH ] || [ ! -f $PRODUCEINPUTFILESH ] || [ ! -f $HMC_GLOBALPATH ]; then
-	printf "\n\e[0;31m One or more of the following files are missing:\n\e[0m"
-	printf "\n\e[0;31m   - $PRODUCEJOBSCRIPTSH\e[0m"
-	printf "\n\e[0;31m   - $PRODUCEINPUTFILESH\e[0m"
-	printf "\n\e[0;31m   - $HMC_GLOBALPATH\e[0m"
-	printf "\n\n\e[0;31m Aborting...\n\n\e[0m"
-	exit -1
+if [ ! -f $HMC_GLOBALPATH ]; then
+    printf "\n\e[0;31m The following file has not been found:\n\e[0m"
+    printf "\n\e[0;31m   - $HMC_GLOBALPATH\e[0m"
+    printf "\n\n\e[0;31m Aborting...\n\n\e[0m"
+    exit -1
 fi
 #-----------------------------------------------------------------------------------------------------------------#
 
@@ -117,93 +113,92 @@ fi
 if [ "$CLUSTER_NAME" = "JUQUEEN" ]; then
     CheckSingleOccurrenceInPath "homeb" "hkf8/" "hkf8[[:digit:]]\+" "mui" "k[[:digit:]]\+" "nt[[:digit:]]\+" "ns[[:digit:]]\+"
 else
-    CheckSingleOccurrenceInPath "home" "hfftheo" "$(whoami)" "mui" "k[[:digit:]]\+" "nt[[:digit:]]\+" "ns[[:digit:]]\+"
+    CheckSingleOccurrenceInPath $(echo $HOME_DIR | sed 's/\// /g') "$CHEMPOT_PREFIX" "${KAPPA_PREFIX}[[:digit:]]\+" "${NTIME_PREFIX}[[:digit:]]\+" "${NSPACE_PREFIX}[[:digit:]]\+"
 fi
 
-ReadParametersFromPath $(pwd)
 HOME_DIR_WITH_BETAFOLDERS="$HOME_DIR/$SIMULATION_PATH$PARAMETERS_PATH"
+WORK_DIR_WITH_BETAFOLDERS="$WORK_DIR/$SIMULATION_PATH$PARAMETERS_PATH"
 
 if [ "$HOME_DIR_WITH_BETAFOLDERS" != "$(pwd)" ]; then
         printf "\n\e[0;31m HOME_DIR_WITH_BETAFOLDERS=$HOME_DIR_WITH_BETAFOLDERS\n"
 	printf "\e[0;31m Constructed path to directory containing beta folders does not match the actual position! Aborting...\n\n\e[0m"
 	exit -1
 fi
-WORK_DIR_WITH_BETAFOLDERS="$WORK_DIR/$SIMULATION_PATH$PARAMETERS_PATH"
 #-----------------------------------------------------------------------------------------------------------------#
 
 
 #-----------------------------------------------------------------------------------------------------------------#
-# Check for correct specification of parallelization parameters, only on JUQUEEN
-#if [ $LISTSTATUS = "FALSE" ] && [ $SHOWJOBS = "FALSE" ] && [ $ACCRATE_REPORT = "FALSE" ]; then
-if [ ${#MUTUALLYEXCLUSIVEOPTS_PASSED[@]} = 0 ] || [ $CONTINUE = "TRUE" ] || [ $SUBMIT = "TRUE" ] || [ $SUBMITONLY = "TRUE" ]; then	
+# Treat each mutually exclusive option separately, even if some steps are in common. This improves readability!
+# It is also evident what the script does in the various options!
 
-    if [ "$CLUSTER_NAME" = "JUQUEEN" ]; then CheckParallelizationTmlqcdForJuqueen; fi
-
-fi
-#-----------------------------------------------------------------------------------------------------------------#
-
-
-#-----------------------------------------------------------------------------------------------------------------#
-# Read beta values from BETASFILE and write them into BETAVALUES array
-if [ ${#MUTUALLYEXCLUSIVEOPTS_PASSED[@]} = 0 ] || [ $SUBMIT = "TRUE" ] || [ $SUBMITONLY = "TRUE" ] || [ $CONTINUE = "TRUE" ]; then
-
-    declare -A INTSTEPS0_ARRAY
-    declare -A INTSTEPS1_ARRAY
-    declare -A CONTINUE_RESUMETRAJ_ARRAY
-    ReadBetaValuesFromFile  # Here we declare and fill the array BETAVALUES
-
-fi
-#-----------------------------------------------------------------------------------------------------------------#
-
-
-#-----------------------------------------------------------------------------------------------------------------#
-# Produce input file and jobscript for each beta and place it in the corresponding directory
 SUBMIT_BETA_ARRAY=()
 PROBLEM_BETA_ARRAY=() #Arrays that will contain the beta values that actually will be processed
+declare -A INTSTEPS0_ARRAY
+declare -A INTSTEPS1_ARRAY
+declare -A CONTINUE_RESUMETRAJ_ARRAY 
+declare -A MASS_PRECONDITIONING_ARRAY 
+declare -A STARTCONFIGURATION_GLOBALPATH #NOTE: Before bash 4.2 associative array are LOCAL by default (from bash 4.2 one can do "declare -g ARRAY" to make it global).
+                                         #      This is the reason why they are declared here and not in ReadBetaValuesFromFile where it would be natural!!
 
-if [ ${#MUTUALLYEXCLUSIVEOPTS_PASSED[@]} = 0 ]; then  
-	
+if [ ${#MUTUALLYEXCLUSIVEOPTS_PASSED[@]} = 0 ]; then
+
+    if [ "$CLUSTER_NAME" = "JUQUEEN" ]; then CheckParallelizationTmlqcdForJuqueen; fi
+    ReadBetaValuesFromFile  # Here we declare and fill the array BETAVALUES
     ProduceInputFileAndJobScriptForEachBeta
 
-elif [ $SUBMITONLY = "TRUE" ]; then  
-    
+elif [ $SUBMITONLY = "TRUE" ]; then
+
+    if [ "$CLUSTER_NAME" = "JUQUEEN" ]; then CheckParallelizationTmlqcdForJuqueen; fi
+    ReadBetaValuesFromFile  # Here we declare and fill the array BETAVALUES
     ProcessBetaValuesForSubmitOnly
-
-elif [ $CONTINUE = "TRUE" ]; then 
-
-    ProcessBetaValuesForContinue #TODO: Declare all possible local variable in this function as local! Use also only capital letters!
-
-fi
-#-----------------------------------------------------------------------------------------------------------------#
-
-
-#-----------------------------------------------------------------------------------------------------------------#
-if [ $LISTSTATUS = "TRUE" ] || [ $LISTSTATUSALL = "TRUE" ]; then
-
-    ListJobStatus_Main 
-    #TODO: On Juqueen, declare all possible local variable in this function as local! Use PARAMETERS_STRING/PATH where needed!
-    #TODO: Test on LOEWE! 
-
-fi
-#------------------------------------------------------------------------------------------------------------------------------#
-
-
-#------------------------------------------------------------------------------------------------------------------------------#
-# Submitting jobs
-if [ $SUBMIT = "TRUE" ] || [ $SUBMITONLY = "TRUE" ] || [ $CONTINUE = "TRUE" ] || [[ $CONTINUE =~ [[:digit:]]+ ]]; then #TODO: Check if this condition can be left out
-
     SubmitJobsForValidBetaValues #TODO: Declare all possible local variable in this function as local!
 
-fi
-#------------------------------------------------------------------------------------------------------------------------------#
+elif [ $SUBMIT = "TRUE" ]; then
 
-#------------------------------------------------------------------------------------------------------------------------------#
-# Showing queued jobs
-if [ $SHOWJOBS = "TRUE" ]; then
+    if [ "$CLUSTER_NAME" = "JUQUEEN" ]; then CheckParallelizationTmlqcdForJuqueen; fi
+    ReadBetaValuesFromFile  # Here we declare and fill the array BETAVALUES
+    ProduceInputFileAndJobScriptForEachBeta
+    SubmitJobsForValidBetaValues #TODO: Declare all possible local variable in this function as local!
 
-	ShowQueuedJobsLocal
+elif [ $THERMALIZE = "TRUE" ]; then
+
+    if [ $USE_MULTIPLE_CHAINS = "FALSE" ]; then
+	printf "\n\e[0;31mOption -t | --thermalize implemented ONLY combined with -u | --useMultipleChains option! Aborting...\n\n\e[0m"; exit -1
+    fi
+    if [ $MEASURE_PBP = "TRUE" ]; then
+	printf "\n\e[1;33;4mMeasurement of PBP switched off during thermalization!!\n\e[0m"
+	MEASURE_PBP="FALSE"
+    fi
+    ReadBetaValuesFromFile  # Here we declare and fill the array BETAVALUES
+    ProduceInputFileAndJobScriptForEachBeta
+    SubmitJobsForValidBetaValues #TODO: Declare all possible local variable in this function as local!
+
+elif [ $CONTINUE = "TRUE" ]; then
+
+    if [ "$CLUSTER_NAME" = "JUQUEEN" ]; then CheckParallelizationTmlqcdForJuqueen; fi
+    ReadBetaValuesFromFile  # Here we declare and fill the array BETAVALUES
+    ProcessBetaValuesForContinue #TODO: Declare all possible local variable in this function as local! Use also only capital letters!
+    SubmitJobsForValidBetaValues #TODO: Declare all possible local variable in this function as local!
+
+elif [ $LISTSTATUS = "TRUE" ] || [ $LISTSTATUSALL = "TRUE" ]; then
+
+    ListJobStatus   #TODO: On Juqueen, declare all possible local variable in this function as local! Use PARAMETERS_STRING/PATH where needed!
+
+elif [ $SHOWJOBS = "TRUE" ]; then
+
+    ShowQueuedJobsLocal
+
+elif [ $ACCRATE_REPORT = "TRUE" ]; then
+
+    AcceptanceRateReport
+
+elif [ $EMPTY_BETA_DIRS == "TRUE" ]; then
+    
+    BETASFILE="emptybetas"
+    ReadBetaValuesFromFile
+    EmptyBetaDirectories
+    
 fi
-#------------------------------------------------------------------------------------------------------------------------------#
 
 
 #------------------------------------------------------------------------------------------------------------------------------#
@@ -211,24 +206,7 @@ fi
 PrintReportForProblematicBeta
 #------------------------------------------------------------------------------------------------------------------------------#
 
-#------------------------------------------------------------------------------------------------------------------------------#
-# Print acceptance rate report
-if [ $ACCRATE_REPORT = "TRUE" ]; then
-
-	AcceptanceRateReport
-fi
-#------------------------------------------------------------------------------------------------------------------------------#
-
-#------------------------------------------------------------------------------------------------------------------------------#
-#Empty beta directories corresponding to the beta values specified in the betas file
-if [ $EMPTY_BETA_DIRS == "TRUE" ]; then
-
-	BETASFILE="emptybetas"
-	ReadBetaValuesFromFile
-	EmptyBetaDirectories
-fi
-#------------------------------------------------------------------------------------------------------------------------------#
-
 printf "\e[0;32m \n ...done!\n\n\e[0m"
 
 exit 0
+

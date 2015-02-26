@@ -7,6 +7,22 @@ function TimeToSeconds(){
     echo $((10#${T:0:2} * 3600 + 10#${T:3:2} * 60 + 10#${T:6:2})) 
 }
 
+function SecondsToTime(){
+    local T=$1; shift
+    local hours=$(( $T/3600 ))
+    local minutes=$(( ($T - $hours*3600)/60 ))
+    local seconds=$( echo $T | awk 'END{print $1 % 60}')
+    printf "%02d:%02d:%02d" "${hours}" "${minutes}" "${seconds}"
+}
+
+function SecondsToTimeString(){
+    local T=$1; shift
+    local hours=$(( $T/3600 ))
+    local minutes=$(( ($T - $hours*3600)/60 ))
+    local seconds=$( echo $T | awk 'END{print $1 % 60}')
+    printf "%02dh %02dm %02ds"  "${hours}" "${minutes}" "${seconds}"
+}
+
 function MinimumOfArray(){
     local MIN=$1; shift
     while [ "$1" != "" ]; do
@@ -30,6 +46,18 @@ function FindPositionOfFirstMinimumOfArray(){
     done
 }
 
+function LengthOfLongestEntryInArray(){
+    local LENGTH_MAX=${#1}; shift
+    while [ "$1" != "" ]; do
+	if [ ${#1} -gt $LENGTH_MAX ]; then
+	    LENGTH_MAX=${#1}
+	fi
+	shift
+    done
+    echo "$LENGTH_MAX"
+}
+
+
 function ElementInArray() {
     #Remember in BASH 0 means true and >0 means false
     local ELEMENT
@@ -39,7 +67,9 @@ function ElementInArray() {
 
 function KeyInArray() {
     #ATTENTION: the array has to be passed as name, not as ${name[@]};
-    #           the following function does not work if there are spaces in KEY
+    #           the following function does not work if there are spaces in KEY;
+    #           the following function does not work if there are spaces in ARRAY
+    #           but it would be really strange.....
     #Remember in BASH 0 means true and >0 means false
     local ARRAY=$2
     local KEY=$1
@@ -49,3 +79,22 @@ function KeyInArray() {
 	return 1;
     fi
 }
+
+function FindValueOfClosestElementInArrayToGivenValue(){
+    local VALUE=$1
+    shift
+    local ARRAY=( $@ )
+    echo ${ARRAY[@]} | awk -v value="$VALUE" 'BEGIN{RS=" "} \
+                                              NR==1{result=$1; difference=sqrt(($1-value)^2)} \
+                                              NR>1{if(sqrt(($1-value)^2)<difference){result=$1; difference=sqrt(($1-value)^2)}} \
+                                              END{print result}'
+}
+
+function PrintArray(){
+    local NAME_OF_THE_ARRAY=$1
+    local INDEX=""
+    for INDEX in $(eval echo "\${!$NAME_OF_THE_ARRAY[@]}"); do
+	echo "$NAME_OF_THE_ARRAY[$INDEX]=$(eval echo "\${$NAME_OF_THE_ARRAY[$INDEX]}")"
+    done
+}
+
