@@ -16,7 +16,7 @@
 #            using a variable whose name is $(whoami).
 
 sciarra="${HOME}/Documents/PhD_project/Data_Elaboration_tools/LQCD_SimulationManagementUtilities/ImagMu/ImagMuSync.py"
-czaban="to_be_completed"
+czaban="${HOME}/LQCD_SimulationManagementUtilities/ImagMu/ImagMuSync.py"
 
 identity=$(whoami)
 
