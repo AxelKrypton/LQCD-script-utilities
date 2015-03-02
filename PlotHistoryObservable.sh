@@ -111,7 +111,8 @@ for BETA in ${BETAVALUES[@]}; do
     printf "\e[0;32m Found ${#BETA_FOLDERS[@]} datafile to plot for beta = ${BETA}  ( ${BETA_FOLDERS[*]} )\n\e[0m"
     #printf "\e[0;32m Found ${#BETA_FOLDERS[@]} datafile to plot for beta = ${BETA}  ( ${BETA_FOLDERS[@]} )\n\e[0m"
 
-    echo "set term wxt $INDEX_WINDOW" >> $GNUPLOT_TEMP_SCRIPT
+    SCREEN_DIMENSTIONS=$(xdpyinfo  | grep dimensions | awk '{print $2}' | sed 's/x/,/g')
+    echo "set term wxt $INDEX_WINDOW size $SCREEN_DIMENSTIONS" >> $GNUPLOT_TEMP_SCRIPT
     add_plot 
     INDEX_WINDOW=$(($INDEX_WINDOW + 1))
 done
