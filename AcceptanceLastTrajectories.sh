@@ -34,6 +34,15 @@ else
 fi
 ReadParametersFromPath $(pwd)
 
+#Treat in the right way some prefixes
+if [ "${BETA##*_}" = "NC" ]; then
+    BETA="${BETA%_*}_continueWithNewChain"
+elif [ "${BETA##*_}" = "fC" ]; then
+    BETA="${BETA%_*}_thermalizeFromConf"
+elif [ "${BETA##*_}" = "fH" ]; then
+    BETA="${BETA%_*}_thermalizeFromHot"
+fi
+
 # Build the path with the output file
 SCRATCH_PATH=$(pwd)
 SCRATCH_PATH="/scratch/hfftheo/sciarra/${SCRATCH_PATH#*sciarra/}"
