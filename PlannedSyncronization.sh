@@ -57,7 +57,8 @@ if [ $# -eq 1 ]; then
 	
 	RUNS_NAMES=($(awk 'BEGIN{ORS=" ";}{if(!($1 ~ /^#/)){print $0}}' $1))
     	OUTPUT_FILENAME="syncronization_"
-	${HOME}/Script/DataSyncronization.sh ${RUNS_NAMES[@]} &> $OUTPUT_FILENAME$(date +'%d.%m.%y-%Hh%M')
+    	ERROR_FILENAME="errors_"
+	${HOME}/Script/DataSyncronization.sh ${RUNS_NAMES[@]} 1> $OUTPUT_FILENAME$(date +'%d.%m.%y-%Hh%M') 2> $ERROR_FILENAME$(date +'%d.%m.%y-%Hh%M')
 	
     done
 
