@@ -3,7 +3,8 @@
 # This script is intended to calculate the Chiral Condensate on a set of configurations
 # placed in the folder from which it is invoked.
 # Basically the "inverter" executable of CL2QCD is called per each configuration. 
-# Such an executable, by default should be in the folder, otherwise it has to be specified.
+# Such an executable, by default should be in the folder given in the --help,
+# otherwise it has to be specified.
 # Since several options that could be given to such an executable are here fixed,
 # we parse only those that are realistically sometimes changed. In any case all have
 # some default value (see below).
@@ -87,7 +88,7 @@ if [ "$HOST" == "loewe" ]; then
     fi
    
     # Build string that will be used later
-    PROGRAM_OPTIONS="--use_cpu=$USE_CPU --use_gpu=$USE_GPU --start=continue --ntime=$NTIME --nspace=$NSPACE --kappa=0.$KAPPA --measure_pbp=$MEASURE_PBP --measure_correlators=$MEASURE_CORRELATORS --solver=$SOLVER --cgmax=$SOLVER_ITER --sourcetype=$SOURCETYPE --sourcecontent=$SOURCECONTENT --ferm_obs_corr_postfix=$FERM_OBS_CORR_POSTFIX --num_sources=$NUM_SOURCES --beta=$BETA --theta_fermion_temporal=1"
+    PROGRAM_OPTIONS="--use_cpu=$USE_CPU --use_gpu=$USE_GPU --use_eo=1 --start=continue --ntime=$NTIME --nspace=$NSPACE --kappa=0.$KAPPA --measure_pbp=$MEASURE_PBP --measure_correlators=$MEASURE_CORRELATORS --solver=$SOLVER --cgmax=$SOLVER_ITER --sourcetype=$SOURCETYPE --sourcecontent=$SOURCECONTENT --ferm_obs_corr_postfix=$FERM_OBS_CORR_POSTFIX --num_sources=$NUM_SOURCES --beta=$BETA --theta_fermion_temporal=1 --theta_fermion_spatial=0 --use_chem_pot_im=1 --chem_pot_im=0.523598775598299"
 
     # First of all we have to wrte the job script, whose name is "job.calculate.pbp"
     JOBFILENAME="job.calculate.pbp"
@@ -107,31 +108,50 @@ if [ "$HOST" == "loewe" ]; then
     echo "#SBATCH --partition=parallel" >> $JOBFILENAME
     echo "#SBATCH --constraint=gpu" >> $JOBFILENAME
     echo "" >> $JOBFILENAME
-    echo "WORKDIR=/scratch/hfftheo/sciarra/WilsonProject$PARAMETERS_PATH/b${BETA}" >> $JOBFILENAME
+    echo "WORKDIR=/scratch/hfftheo/sciarra/WilsonProject$PARAMETERS_PATH/b${BETA}/CalculatePbp" >> $JOBFILENAME
     echo "" >> $JOBFILENAME
     echo "cd \$WORKDIR || exit 2" >> $JOBFILENAME
+    echo "cp $EXECUTABLE inverter || exit 2" >> $JOBFILENAME
     echo "" >> $JOBFILENAME
     echo "echo \"Date and time: \$(date)\"" >> $JOBFILENAME
     echo "" >> $JOBFILENAME
     echo "printf \"\n=============================================================================================================\n\"" >> $JOBFILENAME
     echo "mkdir StdOutput/ || exit 2" >> $JOBFILENAME
     echo "mkdir Pbp/ || exit 2" >> $JOBFILENAME
-    echo "NUMBER_OF_CONFIGURATIONS=\$(ls conf* | wc -l) " >> $JOBFILENAME
-    echo "CONFIGURATIONS_DONE=0" >> $JOBFILENAME
-    echo "for CONF in conf* ; do" >> $JOBFILENAME
-    echo "    CONFIGURATIONS_DONE=\$(( \$CONFIGURATIONS_DONE+1 ))" >> $JOBFILENAME
-    echo "    printf \"  -  Calculating chiral condensate (\$CONFIGURATIONS_DONE of \$NUMBER_OF_CONFIGURATIONS)\"" >> $JOBFILENAME
-    echo "    printf \" on \$CONF using $NUM_SOURCES $SOURCETYPE-sources on a lattice ${NTIME}x${NSPACE}^3...\"" >> $JOBFILENAME
-    echo "    srun -n 1 $EXECUTABLE --device=0 --sourcefile=\$CONF $PROGRAM_OPTIONS >> \${CONF}$FERM_OBS_CORR_POSTFIX.out" >> $JOBFILENAME
-    echo "    if [ \$? -ne 0 ]; then" >> $JOBFILENAME
-    echo "        printf \"\n     Error occurred executing \\\"$EXECUTABLE\\\". Please check...\"" >> $JOBFILENAME
-    #echo "        exit -1" >> $JOBFILENAME
+    echo "GPU_PER_NODE=4" >> $JOBFILENAME
+    echo "SRUN_NUMBER=0" >> $JOBFILENAME
+    echo "PID_SRUN=()" >> $JOBFILENAME
+    echo "" >> $JOBFILENAME
+    echo "if [ ! -f sourcefiles ]; then" >> $JOBFILENAME
+    echo "    echo \" File sourcefile not existing in \$WORKDIR folder! Aborting...\"" >> $JOBFILENAME
+    echo "    exit -1" >> $JOBFILENAME
+    echo "fi" >> $JOBFILENAME
+    echo "" >> $JOBFILENAME
+    echo "echo \"\nStarting calculation from \$(pwd)\n\n\"" >> $JOBFILENAME
+    echo "" >> $JOBFILENAME
+    echo "for CONF in \$(cat sourcefiles) ; do" >> $JOBFILENAME
+    echo "    cp ../\$CONF . || exit -2" >> $JOBFILENAME
+    echo "    [ \$SRUN_NUMBER -eq 0 ] && printf \"  -  Calculating chiral condensate on configurations \"" >> $JOBFILENAME
+    echo "    if [ \$SRUN_NUMBER -lt \$GPU_PER_NODE ]; then" >> $JOBFILENAME
+    echo "        srun -n 1 inverter --device=\$SRUN_NUMBER --sourcefile=\$CONF $PROGRAM_OPTIONS > \${CONF}.out 2> \${CONF}.err & PID_SRUN+=( \"\$!\" )" >> $JOBFILENAME
+    echo "        printf \"\${CONF} \"" >> $JOBFILENAME
+    echo "        SRUN_NUMBER=\$(( \$SRUN_NUMBER+1 ))" >> $JOBFILENAME
+    echo "        continue" >> $JOBFILENAME
+    echo "    else" >> $JOBFILENAME
+    echo "        #Execute wait \$PID job after job" >> $JOBFILENAME
+    echo "        for PID in \"\${PID_SRUN[@]}\"; do" >> $JOBFILENAME
+    echo "            wait \$PID || printf \"       Error occurred calculating pbp on \"\$CONF\". Please check...\n\"" >> $JOBFILENAME
+    echo "        done" >> $JOBFILENAME
+    echo "        printf \"...done!\n\"" >> $JOBFILENAME
+    echo "        SRUN_NUMBER=0" >> $JOBFILENAME
+    echo "        PID_SRUN=()" >> $JOBFILENAME
+    echo "        mv conf*.out StdOutput/" >> $JOBFILENAME
+    echo "        mv conf*.err StdOutput/" >> $JOBFILENAME
+    echo "        mv *$FERM_OBS_CORR_POSTFIX.dat Pbp/" >> $JOBFILENAME
     echo "    fi" >> $JOBFILENAME
-    echo "    mv \${CONF}$FERM_OBS_CORR_POSTFIX.out StdOutput/" >> $JOBFILENAME
-    echo "    mv \${CONF}$FERM_OBS_CORR_POSTFIX.dat Pbp/" >> $JOBFILENAME
     echo "    rm -f general_time_output" >> $JOBFILENAME
     echo "    rm -f prng.save" >> $JOBFILENAME
-    echo "    printf \" done!\n\"" >> $JOBFILENAME
+    echo "    rm \$(ls conf.* | grep -v pbp) || exit -2" >> $JOBFILENAME
     echo "done" >> $JOBFILENAME
     echo "printf \"===================================================================================================================\n\n\"" >> $JOBFILENAME
     echo "" >> $JOBFILENAME
@@ -150,7 +170,7 @@ if [ "$HOST" == "loewe" ]; then
 
 else # Assume user want to do it from where he is without job
 
-    echo "Script has to be adjusted, so far it doesn't read parameters from path as for the job! Exiting..."
+    echo "Script has to be adjusted (e.g. so far it doesn't read parameters from path as for the job)! Not usable yet! Exiting..."
     exit
 
     printf "\n\e[0;31m Interactive pbp-calculation TEMPORARILY not available! Modify the script \"$0\" to switch it on! Aborting...\n\n\e[0m"
