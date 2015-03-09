@@ -62,8 +62,8 @@ fi
 #Just do and print acceptances
 printf "\n\e[0;36m======================================\e[0m\n"
 for TR in 100 200 300 400 500 600 700 800 900; do
-    tail -n${TR} $SCRATCH_PATH | awk '{sum+=$11} END {if(sum/NR>0.7){printf "\033[0;32m  Accepted %3d over %d (%lf%%)\n\033[0m", sum, NR, 100*sum/(NR)}\
-                                  else if(sum/NR<=0.7 && sum/NR>0.5){printf "\033[0;33m  Accepted %3d over %d (%lf%%)\n\033[0m", sum, NR, 100*sum/(NR)}
-                                                                else{printf "\033[0;31m  Accepted %3d over %d (%lf%%)\n\033[0m", sum, NR, 100*sum/(NR)}}'
+    tail -n${TR} $SCRATCH_PATH | awk '{sum+=$11} END {if(sum/NR>=0.7){printf "\033[0;32m  Accepted %3d over %d (%lf%%)\n\033[0m", sum, NR, 100*sum/(NR)}\
+                                    else if(sum/NR<0.7 && sum/NR>0.5){printf "\033[0;33m  Accepted %3d over %d (%lf%%)\n\033[0m", sum, NR, 100*sum/(NR)}
+                                                                 else{printf "\033[0;31m  Accepted %3d over %d (%lf%%)\n\033[0m", sum, NR, 100*sum/(NR)}}'
 done
 printf "\e[0;36m======================================\e[0m\n\n"
