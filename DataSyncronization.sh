@@ -114,7 +114,7 @@ for RUN in ${DATA_GLOBALPATHS[@]}; do
     PrintSituationDataFolder ${BETAVALUES[@]}
     printf "\n\e[0;32m--------------------------------------------------------------\e[0m\n"
     # Then syncronize
-    python ${!identity} --syncConfs -f=$BETASFILE
+    python ${!identity} -f=$BETASFILE
     # Then clean data files
     CleanDataFiles ${BETAVALUES[@]}
     # For Staggered runs unmerge pbp file and check if it was ok
