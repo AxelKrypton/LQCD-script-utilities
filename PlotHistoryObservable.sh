@@ -50,7 +50,11 @@ add_plot() {
 
 COLUMN_X_AXIS="1"
 COLUMN_Y_AXIS="6"
-DATAFILE_NAME="hmc_output"
+if [ $(echo $PWD | grep "Staggered") ]; then
+    DATAFILE_NAME="rhmc_output"
+else
+    DATAFILE_NAME="hmc_output"
+fi
 BETAVALUES=()
 
 # extract options and their arguments into variables.
