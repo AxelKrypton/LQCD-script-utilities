@@ -41,7 +41,8 @@ else
              observables[namesArray[i]]=columnsArray[i];
            }
         }
-        { if($(observables["Accepted"]) == 0){ 
+        NR>1{
+          if($(observables["Accepted"]) == 0){ 
             for(obs in observables){
               if(obs=="TrajectoryNr" || obs=="Accepted"){continue};
               if($(observables[obs]) != oldObservables[obs]){
@@ -55,6 +56,7 @@ else
               wrongLines++
             }
           }
+        }{
           for(obs in observables){
              oldObservables[obs]=$(observables[obs])
           }
