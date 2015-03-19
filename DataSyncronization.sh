@@ -55,6 +55,10 @@ function CleanDataFiles(){
 	    rm -f $d/rhmc_output_raw
 	    ${HOME}/Script/tmLQCD_Juqueen/CleanOutputData.sh $d/rhmc_output
 	fi
+	if [ -e $d/rhmc_output_pbp.dat ]; then
+	    rm -f $d/rhmc_output_pbp.dat_raw
+	    ${HOME}/Script/tmLQCD_Juqueen/CleanOutputData.sh $d/rhmc_output_pbp.dat
+	fi
 	printf "\e[0m"
     done
 }
