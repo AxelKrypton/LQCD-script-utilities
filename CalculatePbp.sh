@@ -9,10 +9,10 @@
 # we parse only those that are realistically sometimes changed. In any case all have
 # some default value (see below).
 #
-# NOTE: To write this script quickly, everything starting with "conf" is considered
-#       as configuration, i.e. as lime file. This means that if there is something that
-#       is not such a file, it will produce some error.
-#       This should not be the case but however is up to the user to manage it.
+# NOTE: To write this script quickly, one has to create the folder "CalculatePbp" inside
+#       the beta folder on scratch and then put inside the file "sourcefiles" in which
+#       there must be the configuration filenames on which pbp has to be calculated
+#       one per line.
 #
 
 # Source the common global script supposed to be in $(HOME)/Script
@@ -120,40 +120,45 @@ if [ "$HOST" == "loewe" ]; then
     echo "mkdir Pbp/ || exit 2" >> $JOBFILENAME
     echo "GPU_PER_NODE=4" >> $JOBFILENAME
     echo "SRUN_NUMBER=0" >> $JOBFILENAME
-    echo "PID_SRUN=()" >> $JOBFILENAME
+    echo "declare -A PID_SRUN" >> $JOBFILENAME
     echo "" >> $JOBFILENAME
     echo "if [ ! -f sourcefiles ]; then" >> $JOBFILENAME
-    echo "    echo \" File sourcefile not existing in \$WORKDIR folder! Aborting...\"" >> $JOBFILENAME
+    echo "    echo \" File \\\"sourcefile\\\" not existing in \$WORKDIR folder! Aborting...\"" >> $JOBFILENAME
     echo "    exit -1" >> $JOBFILENAME
     echo "fi" >> $JOBFILENAME
     echo "" >> $JOBFILENAME
-    echo "echo \"\nStarting calculation from \$(pwd)\n\n\"" >> $JOBFILENAME
+    echo "printf \"\nStarting calculation from \$(pwd)\n\n\"" >> $JOBFILENAME
     echo "" >> $JOBFILENAME
     echo "for CONF in \$(cat sourcefiles) ; do" >> $JOBFILENAME
-    echo "    cp ../\$CONF . || exit -2" >> $JOBFILENAME
-    echo "    [ \$SRUN_NUMBER -eq 0 ] && printf \"  -  Calculating chiral condensate on configurations \"" >> $JOBFILENAME
-    echo "    if [ \$SRUN_NUMBER -lt \$GPU_PER_NODE ]; then" >> $JOBFILENAME
-    echo "        srun -n 1 inverter --device=\$SRUN_NUMBER --sourcefile=\$CONF $PROGRAM_OPTIONS > \${CONF}.out 2> \${CONF}.err & PID_SRUN+=( \"\$!\" )" >> $JOBFILENAME
-    echo "        printf \"\${CONF} \"" >> $JOBFILENAME
-    echo "        SRUN_NUMBER=\$(( \$SRUN_NUMBER+1 ))" >> $JOBFILENAME
-    echo "        continue" >> $JOBFILENAME
-    echo "    else" >> $JOBFILENAME
+    echo "    if [ \$SRUN_NUMBER -eq \$GPU_PER_NODE ]; then" >> $JOBFILENAME
     echo "        #Execute wait \$PID job after job" >> $JOBFILENAME
-    echo "        for PID in \"\${PID_SRUN[@]}\"; do" >> $JOBFILENAME
-    echo "            wait \$PID || printf \"       Error occurred calculating pbp on \"\$CONF\". Please check...\n\"" >> $JOBFILENAME
+    echo "        for PID in \"\${!PID_SRUN[@]}\"; do" >> $JOBFILENAME
+    echo "            wait \$PID || printf \"\n       Error occurred calculating pbp on \\\"\${PID_SRUN[\"\$PID\"]}\\\". Please check (process pid \${PID})...\n\"" >> $JOBFILENAME
     echo "        done" >> $JOBFILENAME
-    echo "        printf \"...done!\n\"" >> $JOBFILENAME
+    echo "        printf \"     ...done!\n\"" >> $JOBFILENAME
     echo "        SRUN_NUMBER=0" >> $JOBFILENAME
     echo "        PID_SRUN=()" >> $JOBFILENAME
+    echo "    fi" >> $JOBFILENAME
+    echo "    cp ../\$CONF . || continue" >> $JOBFILENAME
+    echo "    [ \$SRUN_NUMBER -eq 0 ] && printf \"  -  Calculating chiral condensate on configurations \"" >> $JOBFILENAME
+    echo "    srun -n 1 inverter --device=\$SRUN_NUMBER --sourcefile=\$CONF $PROGRAM_OPTIONS > \${CONF}.out 2> \${CONF}.err & PID_SRUN[\"\${!}\"]=\"\$CONF\"" >> $JOBFILENAME
+    echo "    printf \"\${CONF} \"" >> $JOBFILENAME
+    echo "    SRUN_NUMBER=\$(( \$SRUN_NUMBER+1 ))" >> $JOBFILENAME
+    echo "    if [ \"\$CONF\" == \"\$(tail -n1 sourcefiles)\" ]; then" >> $JOBFILENAME
+    echo "        #Just to be sure everything has finished -> TODO: Check if it is necessary!!" >> $JOBFILENAME
+    echo "        wait" >> $JOBFILENAME
+    echo "        printf \"     ...done!\n\"" >> $JOBFILENAME
     echo "        mv conf*.out StdOutput/" >> $JOBFILENAME
     echo "        mv conf*.err StdOutput/" >> $JOBFILENAME
     echo "        mv *$FERM_OBS_CORR_POSTFIX.dat Pbp/" >> $JOBFILENAME
+    echo "        rm -f general_time_output" >> $JOBFILENAME
+    echo "        rm -f prng.*" >> $JOBFILENAME
+    echo "        rm -f gaugeObs.dat" >> $JOBFILENAME
+    echo "        rm -f inverter*" >> $JOBFILENAME
+    echo "        rm -f \$(ls conf.* | grep -v pbp)" >> $JOBFILENAME
     echo "    fi" >> $JOBFILENAME
-    echo "    rm -f general_time_output" >> $JOBFILENAME
-    echo "    rm -f prng.save" >> $JOBFILENAME
-    echo "    rm \$(ls conf.* | grep -v pbp) || exit -2" >> $JOBFILENAME
     echo "done" >> $JOBFILENAME
-    echo "printf \"===================================================================================================================\n\n\"" >> $JOBFILENAME
+    echo "printf \"\n===================================================================================================================\n\n\"" >> $JOBFILENAME
     echo "" >> $JOBFILENAME
     echo "echo \"Date and time: \$(date)\"" >> $JOBFILENAME
     echo "" >> $JOBFILENAME
@@ -164,7 +169,6 @@ if [ "$HOST" == "loewe" ]; then
     #echo "echo \"---------------------------\"" >> $JOBFILENAME
     echo "# go back to the submitting directory" >> $JOBFILENAME
     echo "cd \$SLURM_SUBMIT_DIR" >> $JOBFILENAME
-
     # Now that the job script is ready we can submit it
     sbatch $JOBFILENAME
 
