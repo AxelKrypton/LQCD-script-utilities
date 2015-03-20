@@ -98,8 +98,12 @@ for NAME in ${FOLDERS[@]}; do
 	ALLRUNFINISHED=0
     fi
     if [ -f $NAME/hmc*.out ]; then
-	START_TIME=( $(grep "Start generation of configurations..." $NAME/hmc*.out | grep -o "[[:digit:]]\{2\}:[[:digit:]]\{2\}:[[:digit:]]\{2\}" ) )
-	END_TIME=( $(grep "...generation done" $NAME/hmc*.out | grep -o "[[:digit:]]\{2\}:[[:digit:]]\{2\}:[[:digit:]]\{2\}") )
+	START_TIME=$(grep "Start generation of configurations..." $NAME/hmc*.out | grep -o "[[:digit:]]\{2\}:[[:digit:]]\{2\}:[[:digit:]]\{2\}" )
+	if [ "$(grep "...generation done" $NAME/hmc*.out)" != "" ]; then
+	    END_TIME=$(grep "...generation done" $NAME/hmc*.out | grep -o "[[:digit:]]\{2\}:[[:digit:]]\{2\}:[[:digit:]]\{2\}")
+	else
+	    END_TIME=$(grep "saving current prng state" $NAME/hmc*.out | tail -n1 | grep -o "[[:digit:]]\{2\}:[[:digit:]]\{2\}:[[:digit:]]\{2\}")
+	fi
 	START_TIME_SEC=$(TimeToSeconds $START_TIME)
 	END_TIME_SEC=$(TimeToSeconds $END_TIME)
 	if [ $START_TIME_SEC -gt $END_TIME_SEC ]; then
