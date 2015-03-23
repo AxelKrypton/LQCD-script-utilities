@@ -1,4 +1,4 @@
-# Load auxiliary bash files that will be used.
+gg# Load auxiliary bash files that will be used.
 source $HOME/Script/JobScriptAutomation/ProduceInputFileForLoewe.sh || exit -2
 source $HOME/Script/JobScriptAutomation/ProduceJobScriptForLoewe.sh || exit -2
 #------------------------------------------------------------------------------------#
@@ -435,7 +435,7 @@ function ProcessBetaValuesForContinue_Loewe() {
 	    local STDOUTPUT_FILE=`ls -lt $BETA_PREFIX$BETA | awk '{if($9 ~ /^hmc.[[:digit:]]+.out$/){print $9}}' | head -n1`
             local STDOUTPUT_GLOBALPATH="$HOME_DIR_WITH_BETAFOLDERS/$BETA_PREFIX$BETA/$STDOUTPUT_FILE"
 	    if [ -f $STDOUTPUT_GLOBALPATH ] && [ $(grep "writing gaugefield at tr. [[:digit:]]\+" $STDOUTPUT_GLOBALPATH | wc -l) -ne 0 ]; then
-		local NUMBER_DONE_TRAJECTORIES=$(( $(grep -o "writing gaugefield at tr. [[:digit:]]\+" $STDOUTPUT_GLOBALPATH | grep -o "[[:digit:]]\+" | tail -n1) - 1 ))
+		local NUMBER_DONE_TRAJECTORIES=$(grep -o "writing gaugefield at tr. [[:digit:]]\+" $STDOUTPUT_GLOBALPATH | grep -o "[[:digit:]]\+" | tail -n1)
 	    elif [ -f $OUTPUTFILE_GLOBALPATH ]; then
 		local NUMBER_DONE_TRAJECTORIES=$(awk 'END{print $1 + 1}' $OUTPUTFILE_GLOBALPATH) #The +1 is here necessary because the first tr. is supposed to be the number 0.
 	    else
