@@ -30,7 +30,7 @@ add_plot() {
     echo "set title \"Beta $BETA\"" >> $GNUPLOT_TEMP_SCRIPT
     [ $COLUMN_X_AXIS = "1" ] && echo "set xlabel \"Trajectory number\"" >> $GNUPLOT_TEMP_SCRIPT
     [ $COLUMN_Y_AXIS = "6" ] && echo "set ylabel \"Im(L)\"" >> $GNUPLOT_TEMP_SCRIPT
-	[ "$USE_ABSVALUES" = "true" ] && COLUMN_Y_AXIS="(abs(\$${COLUMN_Y_AXIS}))"
+	[ "$USE_ABSVALUES" = "TRUE" ] && COLUMN_Y_AXIS="(abs(\$${COLUMN_Y_AXIS}))"
     BETA_FOLDERS=(${BETA_FOLDERS[@]}) #Make BETA_FOLDERS not sparse
     for INDEX in "${!BETA_FOLDERS[@]}"; do
 	local FILENAME="${BETA_FOLDERS[$INDEX]}/$DATAFILE_NAME"
@@ -57,7 +57,7 @@ else
     DATAFILE_NAME="hmc_output"
 fi
 BETAVALUES=()
-USE_ABSVALUES=false
+USE_ABSVALUES="FALSE"
 
 # extract options and their arguments into variables.
 while [ "$1" != "" ]; do
@@ -66,7 +66,7 @@ while [ "$1" != "" ]; do
 	  printf "\n\e[0;32m"
 	  echo "Call the script $0 with the following optional arguments:"
 	  echo "  -h | --help"
-	  echo "  -a | --absoluteValues   ->    plot absolute values"
+	  echo "  -a | --useAbsoluteValue ->    plot absolute value of y-column"
 	  echo "  -x | --columnXaxis      ->    default value = $COLUMN_X_AXIS"
 	  echo "  -y | --columnYaxis      ->    default value = $COLUMN_Y_AXIS"
 	  echo "  -b | --betaValues       ->    default value = []"
@@ -77,7 +77,7 @@ while [ "$1" != "" ]; do
       -x=* | --columnXaxis=* )         COLUMN_X_AXIS=${1#*=}; shift ;;
       -y=* | --columnYaxis=* )         COLUMN_Y_AXIS=${1#*=}; shift ;;
       -b=\[*\] | --betaValues=\(*\) )  BETAVALUES=${1#*"["}; BETAVALUES=${BETAVALUES%"]"}; BETAVALUES=( $(echo $BETAVALUES | sed 's/,/ /g') ); shift ;;
-  	  -a | --absoluteValues )  		   USE_ABSVALUES=true;   shift;;
+  	  -a | --useAbsoluteValue )  		   USE_ABSVALUES="TRUE";   shift;;
       * ) printf "\n\e[0;31mError parsing the options! Aborting...\n\n\e[0m" ; exit -1 ;;
     esac
 done
