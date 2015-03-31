@@ -24,7 +24,7 @@ function __static__ExtractBetasFromJOBNAME(){
     local BETAVALUES_ARRAY=()
     for ELEMENT in "${TEMPORAL_ARRAY[@]}"; do
 	local BETAVALUE=${ELEMENT%%_*}
-	local SEEDS_ARRAY=( $(echo ${ELEMENT#*_} | grep -o "${SEED_PREFIX}[[:digit:]]\{4\}") )
+	local SEEDS_ARRAY=( $(echo ${ELEMENT#*_} | grep -o "${SEED_PREFIX}[[:digit:]x]\{4\}") )
 	if [ ${#SEEDS_ARRAY[@]} -gt 0 ]; then
 	    for SEED in "${SEEDS_ARRAY[@]}"; do
 		BETAVALUES_ARRAY+=( "${BETA_PREFIX}${BETAVALUE}_${SEED}" )
@@ -74,7 +74,9 @@ function __static__ExtractMetaInformationFromJOBNAME(){
 	    JOB_PARAMETERS_STRING="$JOB_PARAMETERS_STRING${PREFIXES[$i]}${JOB_PARAMETERS_VALUE[$i]}_"
 	done
 	JOB_PARAMETERS_STRING=${JOB_PARAMETERS_STRING%?} #Remove last underscore
-	METAINFORMATION_ARRAY+=( $(echo "${JOB_PARAMETERS_STRING} | $( echo "${JOBNAME_BETAS[@]}" | sed 's/ /_/g') | ${JOBNAME_POSTFIX} | ${JOB_STATUS}" | sed 's/ //g') )
+	#If JOB_PARAMETERS_STRING is not at the beginning of the jobname, skip job
+	[ $(echo "$JOBNAME" | grep "^${JOB_PARAMETERS_STRING}" | wc -l) -eq 0 ] && continue
+	METAINFORMATION_ARRAY+=( $(echo "${JOB_PARAMETERS_STRING} | $( echo "${JOBNAME_BETAS[@]}" | sed 's/ /_/g') | postfix=${JOBNAME_POSTFIX} | ${JOB_STATUS}" | sed 's/ //g') )
     done
     echo "${METAINFORMATION_ARRAY[@]}"
 }
@@ -95,14 +97,14 @@ function ListJobStatus_Loewe(){
 	#Select only folders with old or new names
 	BETA=${BETA#$BETA_PREFIX}
 	if [[ ! $BETA =~ ^[[:digit:]][.][[:digit:]]{4}$ ]] &&
-	   [[ ! $BETA =~ ^[[:digit:]][.][[:digit:]]{4}_"$SEED_PREFIX"[[:digit:]]{4}_continueWithNewChain$ ]] &&
+	   [[ ! $BETA =~ ^[[:digit:]][.][[:digit:]]{4}_"$SEED_PREFIX"[[:digit:]x]{4}_continueWithNewChain$ ]] &&
 	   [[ ! $BETA =~ ^[[:digit:]][.][[:digit:]]{4}_"$SEED_PREFIX"[[:digit:]]{4}_thermalizeFromHot$ ]] &&
 	   [[ ! $BETA =~ ^[[:digit:]][.][[:digit:]]{4}_"$SEED_PREFIX"[[:digit:]]{4}_thermalizeFromConf$ ]]; then continue; fi
 
 	local POSTFIX_FROM_FOLDER=$(echo ${BETA##*_} | grep -o "[[:alpha:]]\+\$")
 
 	local STATUS=( )
-	for JOB_MATCHING in $(echo ${JOB_METAINFORMATION_ARRAY[@]} | sed 's/ /\n/g' | grep "${PARAMETERS_STRING}" | grep "${BETA_PREFIX}${BETA%_*}" | grep "${POSTFIX_FROM_FOLDER}"); do
+	for JOB_MATCHING in $(echo ${JOB_METAINFORMATION_ARRAY[@]} | sed 's/ /\n/g' | grep "${PARAMETERS_STRING}" | grep "${BETA_PREFIX}${BETA%_*}" | grep "postfix=${POSTFIX_FROM_FOLDER}|"); do
 	    STATUS+=( "${JOB_MATCHING##*|}" )
 	done
 	if [ ${#STATUS[@]} -eq 0 ]; then
@@ -137,14 +139,19 @@ function ListJobStatus_Loewe(){
 			[ $(TimeToSeconds ${TIMES_ARRAY[0]}) -le $(TimeToSeconds ${TIMES_ARRAY[@]:(-1)}) ] && NUMBER_OF_DAYS=$(($NUMBER_OF_DAYS + 1))
 		    fi
 		fi
-	        #Now we can calculate the total time and then the average time
-		local TOTAL_TIME_OF_SIMULATION=$(( $(date -d "${TIMES_ARRAY[@]:(-1)}" +%s) - $(date -d "${TIMES_ARRAY[0]}" +%s) ))
-		[ $TOTAL_TIME_OF_SIMULATION -lt 0 ] && TOTAL_TIME_OF_SIMULATION=$(( $TOTAL_TIME_OF_SIMULATION + 86400 ))
-		TOTAL_TIME_OF_SIMULATION=$(( $TOTAL_TIME_OF_SIMULATION + $NUMBER_OF_DAYS*86400 ))
-		local AVERAGE_TIME_PER_TRAJECTORY=$(( $TOTAL_TIME_OF_SIMULATION / (${#TIMES_ARRAY[@]}-1) +1)) #The +1 is to round to the following integer
-	        #Calculate also last trajectory time
-		local TIME_LAST_TRAJECTORY=$(( $(date -d "${TIMES_ARRAY[@]:(-1)}" +%s) - $(date -d "${TIMES_ARRAY[$((${#TIMES_ARRAY[@]}-2))]}" +%s) ))
-		[ $TIME_LAST_TRAJECTORY -lt 0 ] && TIME_LAST_TRAJECTORY=$(( $TIME_LAST_TRAJECTORY + 86400 ))
+	        #Now we can calculate the total time and then the average time if we have done more than one trajectory!
+		if [ ${#TIMES_ARRAY[@]} -gt 1 ]; then
+		    local TOTAL_TIME_OF_SIMULATION=$(( $(date -d "${TIMES_ARRAY[@]:(-1)}" +%s) - $(date -d "${TIMES_ARRAY[0]}" +%s) ))
+		    [ $TOTAL_TIME_OF_SIMULATION -lt 0 ] && TOTAL_TIME_OF_SIMULATION=$(( $TOTAL_TIME_OF_SIMULATION + 86400 ))
+		    TOTAL_TIME_OF_SIMULATION=$(( $TOTAL_TIME_OF_SIMULATION + $NUMBER_OF_DAYS*86400 ))
+		    local AVERAGE_TIME_PER_TRAJECTORY=$(( $TOTAL_TIME_OF_SIMULATION / (${#TIMES_ARRAY[@]}-1) +1)) #The +1 is to round to the following integer
+	            #Calculate also last trajectory time
+		    local TIME_LAST_TRAJECTORY=$(( $(date -d "${TIMES_ARRAY[@]:(-1)}" +%s) - $(date -d "${TIMES_ARRAY[$((${#TIMES_ARRAY[@]}-2))]}" +%s) ))
+		    [ $TIME_LAST_TRAJECTORY -lt 0 ] && TIME_LAST_TRAJECTORY=$(( $TIME_LAST_TRAJECTORY + 86400 ))
+		else
+		    local AVERAGE_TIME_PER_TRAJECTORY="----"
+		    local TIME_LAST_TRAJECTORY="----"
+		fi
 	    else
 		local AVERAGE_TIME_PER_TRAJECTORY="----"
 		local TIME_LAST_TRAJECTORY="----"
@@ -219,8 +226,8 @@ function ListJobStatus_Loewe(){
 	printf \
 "\e[0;36m%-15s\t  \
 \e[0;$((36-$TO_BE_CLEANED*5))m%8s\e[0;36m \
-(\e[0;$(GoodAcc $ACCEPTANCE)m%s %%\e[0;36m) \
-[\e[0;$(GoodAcc $ACCEPTANCE_LAST)m%s %%\e[0;36m]  \
+(\e[38;5;$(GoodAcc $ACCEPTANCE)m%s %%\e[0;36m) \
+[\e[38;5;$(GoodAcc $ACCEPTANCE_LAST)m%s %%\e[0;36m]  \
 %s-%s%s%s\t \
 \e[0;$(ColorStatus $STATUS)m%9s\e[0;36m\
 \t%s\t   \
@@ -262,7 +269,7 @@ function GetShortenedBetaString(){
 }
 
 function GoodAcc(){
-    echo "$1" | awk '{if($1<68){print 31}else if($1>78 || $1<70){print 33}else{print 32}}'
+    echo "$1" | awk '{if($1<68){print 9}else if($1<70){print 208}else if($1>78){print 11}else if($1>90){print 202}else{print 10}}'
 }
 
 function ColorStatus(){

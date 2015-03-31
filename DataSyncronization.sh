@@ -55,6 +55,10 @@ function CleanDataFiles(){
 	    rm -f $d/rhmc_output_raw
 	    ${HOME}/Script/tmLQCD_Juqueen/CleanOutputData.sh $d/rhmc_output
 	fi
+	if [ -e $d/rhmc_output_pbp.dat ]; then
+	    rm -f $d/rhmc_output_pbp.dat_raw
+	    ${HOME}/Script/tmLQCD_Juqueen/CleanOutputData.sh $d/rhmc_output_pbp.dat
+	fi
 	printf "\e[0m"
     done
 }
@@ -114,7 +118,7 @@ for RUN in ${DATA_GLOBALPATHS[@]}; do
     PrintSituationDataFolder ${BETAVALUES[@]}
     printf "\n\e[0;32m--------------------------------------------------------------\e[0m\n"
     # Then syncronize
-    python ${!identity} --syncConfs -f=$BETASFILE
+    python ${!identity} -f=$BETASFILE
     # Then clean data files
     CleanDataFiles ${BETAVALUES[@]}
     # For Staggered runs unmerge pbp file and check if it was ok
