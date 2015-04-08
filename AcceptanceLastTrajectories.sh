@@ -5,6 +5,7 @@
 WILSON="true"
 STAGGERED="false"
 BETA=""
+NUM_LAST_TR=0
 
 # extract options and their arguments into variables.
 while [ "$1" != "" ]; do
@@ -15,6 +16,7 @@ while [ "$1" != "" ]; do
           echo "  -h | --help"
           echo "  -s   ->    for Staggered simulations"
           echo "  -b   ->    the beta to be considered (the other parameters are taken from pwd)"
+          echo "  -t   ->    how many trajectory from the end of the run to calculate the acceptance on"
 	  echo ""
           echo "NOTE: By default Wilson simulations are considered"
           printf "\n\e[0m"
@@ -22,6 +24,7 @@ while [ "$1" != "" ]; do
           shift;;
       -s )             WILSON="false"; STAGGERED="true"; shift ;;
       -b=* )    BETA=${1#*=}; shift ;;
+      -t=* )    NUM_LAST_TR=${1#*=}; shift ;;
       * ) printf "\n\e[0;31mError parsing the options! Aborting...\n\n\e[0m" ; exit -1 ;;
     esac
 done
@@ -61,9 +64,17 @@ fi
 
 #Just do and print acceptances
 printf "\n\e[0;36m======================================\e[0m\n"
-for TR in 100 200 300 400 500 600 700 800 900; do
-    tail -n${TR} $SCRATCH_PATH | awk '{sum+=$11} END {if(sum/NR>=0.7){printf "\033[0;32m  Accepted %3d over %d (%lf%%)\n\033[0m", sum, NR, 100*sum/(NR)}\
-                                    else if(sum/NR<0.7 && sum/NR>0.5){printf "\033[0;33m  Accepted %3d over %d (%lf%%)\n\033[0m", sum, NR, 100*sum/(NR)}
-                                                                 else{printf "\033[0;31m  Accepted %3d over %d (%lf%%)\n\033[0m", sum, NR, 100*sum/(NR)}}'
-done
+if [ $NUM_LAST_TR -eq 0 ]; then
+    for TR in 100 200 300 400 500 600 700 800 900; do
+	tail -n${TR} $SCRATCH_PATH | awk '{sum+=$11} END {if(sum/NR>=0.7){printf "\033[38;5;10m  Accepted %3d over %d (%lf%%)\n\033[0m", sum, NR, 100*sum/(NR)}\
+                                       else if(sum/NR<0.7 && sum/NR>=0.6){printf "\033[38;5;11m  Accepted %3d over %d (%lf%%)\n\033[0m", sum, NR, 100*sum/(NR)}
+                                       else if(sum/NR<0.6 && sum/NR>=0.5){printf "\033[38;5;202m  Accepted %3d over %d (%lf%%)\n\033[0m", sum, NR, 100*sum/(NR)}
+                                                                     else{printf "\033[38;5;9m  Accepted %3d over %d (%lf%%)\n\033[0m", sum, NR, 100*sum/(NR)}}'
+    done
+else
+    tail -n${NUM_LAST_TR} $SCRATCH_PATH | awk '{sum+=$11} END {if(sum/NR>=0.7){printf "\033[38;5;10m  Accepted %3d over %d (%lf%%)\n\033[0m", sum, NR, 100*sum/(NR)}\
+                                            else if(sum/NR<0.7 && sum/NR>=0.6){printf "\033[38;5;11m  Accepted %3d over %d (%lf%%)\n\033[0m", sum, NR, 100*sum/(NR)}
+                                            else if(sum/NR<0.6 && sum/NR>=0.5){printf "\033[38;5;202m  Accepted %3d over %d (%lf%%)\n\033[0m", sum, NR, 100*sum/(NR)}
+                                                                          else{printf "\033[38;5;9m  Accepted %3d over %d (%lf%%)\n\033[0m", sum, NR, 100*sum/(NR)}}'
+fi    
 printf "\e[0;36m======================================\e[0m\n\n"
