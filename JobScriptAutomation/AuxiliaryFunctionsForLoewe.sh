@@ -264,7 +264,7 @@ function ProcessBetaValuesForContinue_Loewe() {
 	    if [ -f $WORK_BETADIRECTORY/prng.save ]; then mv $WORK_BETADIRECTORY/prng.save $TRASH_NAME; fi
 	    #Copy the hmc_output file to Trash, edit it leaving out all the trajectories after ${CONTINUE_RESUMETRAJ_ARRAY[$BETA]}, including ${CONTINUE_RESUMETRAJ_ARRAY[$BETA]}
 	    cp $OUTPUTFILE_GLOBALPATH $TRASH_NAME || exit 2 
-	    local LINES_TO_BE_CANCELED_IN_OUTPUTFILE=$(tac $OUTPUTFILE_GLOBALPATH | awk -v resumeFrom=${CONTINUE_RESUMETRAJ_ARRAY[$BETA]} 'BEGIN{found=0}{if($1==resumeFrom){found=1; print NR; exit}}END{if(found==0){print -1}}')
+	    local LINES_TO_BE_CANCELED_IN_OUTPUTFILE=$(tac $OUTPUTFILE_GLOBALPATH | awk -v resumeFrom=${CONTINUE_RESUMETRAJ_ARRAY[$BETA]} 'BEGIN{found=0}{if($1==(resumeFrom-1)){found=1; print NR-1; exit}}END{if(found==0){print -1}}')
 	    if [ $LINES_TO_BE_CANCELED_IN_OUTPUTFILE -eq -1 ]; then
 		printf "\n\e[0;31m Measurement for trajectory ${CONTINUE_RESUMETRAJ_ARRAY[$BETA]} not found in outputfile.\n\e[0m"
 		printf "\e[0;31m Simulation cannot be continued. Leaving out beta = $BETA .\n\n\e[0m"
@@ -439,7 +439,7 @@ function ProcessBetaValuesForContinue_Loewe() {
 		#If the simulation was resumed from a previous configuration, here NUMBER_DONE_TRAJECTORIES is wrong, correct it.
 		#Note than it is better to correct it with the following check rather than see if the simulation is beeing resumed,
 		#because sometimes a simulation is resumed but not submitted, and just continued later
-		if [ $NUMBER_DONE_TRAJECTORIES > $(awk 'END{print $1 + 1}' $OUTPUTFILE_GLOBALPATH) ]; then
+		if [ $NUMBER_DONE_TRAJECTORIES -gt $(awk 'END{print $1 + 1}' $OUTPUTFILE_GLOBALPATH) ]; then
 		    NUMBER_DONE_TRAJECTORIES=$(awk 'END{print $1 + 1}' $OUTPUTFILE_GLOBALPATH)
 		fi
 	    elif [ -f $OUTPUTFILE_GLOBALPATH ]; then
@@ -579,7 +579,7 @@ function SubmitJobsForValidBetaValues_Loewe() {
 		local PREFIX_TO_BE_GREPPED_FOR="$SEED_PREFIX"
 	    fi
 	    local TEMP_ARRAY=( $(echo $BETA | sed 's/_/ /g') )
-	    if [ $(echo $BETA | grep -o "${PREFIX_TO_BE_GREPPED_FOR}\([[:digit:]][.]\)\?[[:digit:]]\{4\}" | wc -l) -ne $GPU_PER_NODE ]; then
+	    if [ $(echo $BETA | grep -o "${PREFIX_TO_BE_GREPPED_FOR}\([[:digit:]][.]\)\?[[:alnum:]]\{4\}" | wc -l) -ne $GPU_PER_NODE ]; then
 		printf "\n\e[0;33m \e[1m\e[4mWARNING\e[24m:\e[0;33m At least one job is being submitted with less than\n"
 		printf "          $GPU_PER_NODE runs inside. Would you like to submit in any case (Y/N)? \e[0m"
 		local CONFIRM="";
