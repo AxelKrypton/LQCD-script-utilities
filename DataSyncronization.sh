@@ -113,7 +113,7 @@ for RUN in ${DATA_GLOBALPATHS[@]}; do
     fi
     BETAVALUES=( $(grep -o "^[[:blank:]]*[[:digit:]]\.[[:digit:]]\{4\}" $BETASFILE) )
     for((i=0; i<${#BETAVALUES[@]}; i++)); do
-	BETAVALUES[$i]="b${BETAVALUES[$i]}"
+	BETAVALUES[$i]="b${BETAVALUES[$i]}*"
     done
     PrintSituationDataFolder ${BETAVALUES[@]}
     printf "\n\e[0;32m--------------------------------------------------------------\e[0m\n"
