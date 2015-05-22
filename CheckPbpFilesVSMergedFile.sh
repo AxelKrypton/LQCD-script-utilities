@@ -7,9 +7,11 @@
 PREFIX="conf."
 POSTFIX="_pbp.dat"
 DIGITS=5
-MERGED_FILENAME="rhmc_output_pbp.dat"
+MERGED_FILENAME="pbp.dat"
 NUM_SOURCES=16
 FOLDER_WITH_PBP_FILES="."
+[ $(grep "Staggered" <<< "$PWD" | wc -l) -gt 0 ] && MERGED_FILENAME="rhmc_oputput_pbp.dat"
+[ $(grep "Wilson" <<< "$PWD" | wc -l) -gt 0 ] && MERGED_FILENAME="hmc_oputput_pbp.dat"
 
 while [ "$1" != "" ]; do
     case $1 in
