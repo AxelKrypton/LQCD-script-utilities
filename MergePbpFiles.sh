@@ -88,7 +88,7 @@ function __static__isFileBroken(){
     local FILE_PROCESS_RESULT=$(awk -v trNum="$TRAJECTORY_IN_PBP_FILE" 'BEGIN{errorCode=0; pbpMerged=""}\
                                   {if(NF!=2){errorCode=2; exit}
                                    if($1 !~ /^[[:digit:]]+$/){errorCode=3; exit}
-                                   if($2 !~ /^[+-]?[[:digit:]]{1}[.][[:digit:]]+[e][+-]?[[:digit:]]+$/){errorCode=4; exit}
+                                   if($2 !~ /^[+-]?[[:digit:]][.][[:digit:]]+[e][+-]?[[:digit:]]+$/){errorCode=4; exit}
                                    pbpMerged = pbpMerged "   " $2 
                                   }END{print errorCode"|"$1"|"pbpMerged}' $FILE)
     if [ ${FILE_PROCESS_RESULT%%|*} -ne 0 ]; then
