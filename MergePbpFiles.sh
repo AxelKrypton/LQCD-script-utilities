@@ -93,16 +93,15 @@ fi
 if [[ "$MERGE_FILES" == "TRUE" ]]; then
     if [ $MOVE_PBP_FILES == "TRUE" ]; then
 	if [ -d $FOLDER_TO_MOVE_SINGLE_FILES_TO ]; then
-	    FOLDER_TO_MOVE_SINGLE_FILES_TO_BACKUP=${FOLDER_TO_MOVE_SINGLE_FILES_TO}_$(date +'%F_%H%M')
-	    printf "\n\e[38;5;11m WARNING: Found \"$FOLDER_TO_MOVE_SINGLE_FILES_TO\" folder, renamed to \"$FOLDER_TO_MOVE_SINGLE_FILES_TO_BACKUP\"\n\e[0m"
-	    mv $FOLDER_TO_MOVE_SINGLE_FILES_TO $FOLDER_TO_MOVE_SINGLE_FILES_TO_BACKUP || exit -2
+	    printf "\n\e[38;5;11m WARNING: Found \"$FOLDER_TO_MOVE_SINGLE_FILES_TO\" existing folder, files will be added there!\n\e[0m"
+	else
+	    mkdir $FOLDER_TO_MOVE_SINGLE_FILES_TO || exit -2
 	fi
-	mkdir $FOLDER_TO_MOVE_SINGLE_FILES_TO || exit -2
     fi
     if [ -f $OUTPUT_FILENAME ]; then
+	printf "\n\e[38;5;11m WARNING: Found \"$OUTPUT_FILENAME\" existing file, new pbp values will be appended to it!\n\e[0m"
 	OUTPUT_FILENAME_BACKUP=${OUTPUT_FILENAME}_$(date +'%F_%H%M')
-	printf "\n\e[38;5;11m WARNING: Found \"$OUTPUT_FILENAME\" file, renamed to \"$OUTPUT_FILENAME_BACKUP\"\n\e[0m"
-	mv $OUTPUT_FILENAME $OUTPUT_FILENAME_BACKUP || exit -2
+	cp $OUTPUT_FILENAME $OUTPUT_FILENAME_BACKUP || exit -2
     fi
     printf "\n\e[38;5;14m Merging: \r\e[0m"
     COUNTER=0
@@ -130,7 +129,11 @@ if [[ "$MERGE_FILES" == "TRUE" ]]; then
 	COUNTER=$(($COUNTER+1))
 	#Move
 	if [ $MOVE_PBP_FILES == "TRUE" ]; then
-	    mv $FILE $FOLDER_TO_MOVE_SINGLE_FILES_TO || exit -2
+	    if [ -f $FOLDER_TO_MOVE_SINGLE_FILES_TO/$FILE ]; then
+		printf "\e[38;5;9m ATTENTION: In folder \"$FOLDER_TO_MOVE_SINGLE_FILES_TO\", file \"$FILE\" already exists! It will be not moved!!\e[0m\e[K\n\e[0m$PROGRESS_BAR"
+	    else
+		mv $FILE $FOLDER_TO_MOVE_SINGLE_FILES_TO || exit -2
+	    fi
 	fi
     done
     printf "\e[38;5;14m Merging: \e[0m [$(printf '%0.s=' {1..100})] ($COUNTER/${#PBP_FILENAMES[@]})\e[K\n"
