@@ -67,11 +67,17 @@ if [ ${#PBP_FILENAMES[@]} -eq 0 ]; then exit -1; fi
 
 if [[ "$IGNORE_BROKEN_FILES" == "TRUE" ]]; then
     BROKEN_FILENAMES=()	
-    #for FILE in ${PBP_FILENAMES[@]}; do
     for INDEX in ${!PBP_FILENAMES[@]}; do
 	if [ $(wc -l < ${PBP_FILENAMES[$INDEX]}) -ne $NUMBER_OF_SOURCES ]; then
 	    BROKEN_FILENAMES+=( "${PBP_FILENAMES[$INDEX]}" )
 	    unset -v 'PBP_FILENAMES[$INDEX]'
+	    continue
+	fi
+	TRAJECTORY_IN_PBP_FILE=$(grep -o "[[:digit:]]*" <<< "${PBP_FILENAMES[$INDEX]}") 
+	if [ $(awk -v trNum="$TRAJECTORY_IN_PBP_FILE" 'BEGIN{wrong=0}{if($1 != trNum){wrong=1; exit}}END{print wrong}' ${PBP_FILENAMES[$INDEX]}) -eq 1 ]; then
+	    BROKEN_FILENAMES+=( "${PBP_FILENAMES[$INDEX]}" )
+            unset -v 'PBP_FILENAMES[$INDEX]'
+            continue
 	fi
     done  
     if [ ${#BROKEN_FILENAMES[@]} -eq 0 ]; then
@@ -101,6 +107,7 @@ if [[ "$MERGE_FILES" == "TRUE" ]]; then
     printf "\n\e[38;5;14m Merging: \e[0m"
     COUNTER=0
     PROGRESS_BAR_LAST_UPDATE=0
+    START_TIME=`date +%s`
     for FILE in ${PBP_FILENAMES[@]}; do
 	#Progress bar for the user
 	# NOTE: The default behavior for printf if you give it more arguments than there are specified in the format string is to loop back to the beginning of the format string and run it again.
@@ -111,12 +118,15 @@ if [[ "$MERGE_FILES" == "TRUE" ]]; then
 	    if [ $PERCENTAGE_DONE -eq 0 ]; then
 		PROGRESS_BAR="\e[38;5;14m Merging: \e[0m [$(printf '%0.s.' {1..100})] ($COUNTER/${#PBP_FILENAMES[@]})\e[K\r"
 	    elif [ $PERCENTAGE_DONE -ne 100 ]; then
-		PROGRESS_BAR="\e[38;5;14m Merging: \e[0m [$(printf '%0.s=' $(seq 1 $PERCENTAGE_DONE))$(printf '%0.s.' $(seq 1 $((100-$PERCENTAGE_DONE))))] ($COUNTER/${#PBP_FILENAMES[@]})\e[K\r"
+		TIME_TO_END=$(bc -l <<< "($(date +%s) - $START_TIME)/$PERCENTAGE_DONE*(100-$PERCENTAGE_DONE)" | awk '{printf "%5d", $1}')
+		PROGRESS_BAR="\e[38;5;14m Merging: \e[0m [$(printf '%0.s=' $(seq 1 $PERCENTAGE_DONE))$(printf '%0.s.' $(seq 1 $((100-$PERCENTAGE_DONE))))] ($COUNTER/${#PBP_FILENAMES[@]})   $TIME_TO_END sec. to end\e[K\r"
 	    fi
 	    printf "$PROGRESS_BAR"
 	fi
 	#Merge
-	awk 'NR==1{printf "%s\t\t", $1}{printf "%s   ", $2}END{printf "\n"}' $FILE >> $OUTPUT_FILENAME
+	TRAJECTORY_IN_PBP_FILE=$(grep -o "[[:digit:]]\{$DIGITS\}" <<< "$FILE")
+	printf "%s\t\t" "$TRAJECTORY_IN_PBP_FILE" >> $OUTPUT_FILENAME
+	awk '{printf "%s   ", $2}END{printf "\n"}' $FILE >> $OUTPUT_FILENAME
 	COUNTER=$(($COUNTER+1))
 	#Move
 	if [ $MOVE_PBP_FILES == "TRUE" ]; then
