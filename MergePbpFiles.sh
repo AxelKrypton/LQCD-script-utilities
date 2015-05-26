@@ -192,6 +192,7 @@ if [[ "$SKIP_BROKEN_FILES" == "TRUE" ]]; then
     #Report to user and move broken files to own folder
     if [ ${#BROKEN_FILENAMES[@]} -eq 0 ] && [ ${#EMPTY_FILENAMES[@]} -eq 0 ]; then
 	printf "\n\e[38;5;10m No pbp file has been detected as broken!\n\e[0m"
+	rm -r $BROKEN_FILES_FOLDER || exit -2
     else
 	printf "\n\e[38;5;9m Found ${#BROKEN_FILENAMES[@]} broken pbp file(s) and ${#EMPTY_FILENAMES[@]} pbp file(s):\n\e[0m"
     fi
