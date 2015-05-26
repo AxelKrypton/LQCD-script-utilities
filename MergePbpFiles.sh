@@ -104,7 +104,7 @@ if [[ "$MERGE_FILES" == "TRUE" ]]; then
 	printf "\n\e[38;5;11m WARNING: Found \"$OUTPUT_FILENAME\" file, renamed to \"$OUTPUT_FILENAME_BACKUP\"\n\e[0m"
 	mv $OUTPUT_FILENAME $OUTPUT_FILENAME_BACKUP || exit -2
     fi
-    printf "\n\e[38;5;14m Merging: \e[0m"
+    printf "\n\e[38;5;14m Merging: \r\e[0m"
     COUNTER=0
     PROGRESS_BAR_LAST_UPDATE=0
     START_TIME=`date +%s`
