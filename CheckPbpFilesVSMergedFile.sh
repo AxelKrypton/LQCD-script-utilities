@@ -85,7 +85,7 @@ printf "\n\e[38;5;69m Extracting trajectories numbers... \e[0m"
 PBP_FILENAMES=( $(ls ${FOLDER_WITH_PBP_FILES}/${PREFIX}*${POSTFIX} 2>/dev/null) )
 NUMBER_PBP_FILES=${#PBP_FILENAMES[@]}
 LINES_MERGED_FILE=$(wc -l < ${MERGED_FILENAME})
-TRAJECTORY_IN_PBP_FILES=( $(grep -o "[[:digit:]]*" <<< "${PBP_FILENAMES[@]}" | awk '{print $1}') ) #Awk will strip leading zeros
+TRAJECTORY_IN_PBP_FILES=( $(grep -o "[[:digit:]]*" <<< "${PBP_FILENAMES[@]}" | awk '{printf "%d ", $1}') ) #Awk will strip leading zeros
 TRAJECTORY_IN_MERGED_FILE=( $(awk '{print $1}' $MERGED_FILENAME | sort | uniq) )
 printf "\e[38;5;69m done in $(( $(date +%s) - $START_TIME )) seconds!\n\e[0m"
 #Check repeated lines
@@ -129,7 +129,7 @@ printf "\e[38;5;69m done in $(( $(date +%s) - $START_TIME )) seconds!\n\e[0m"
 COUNTER=0
 PROGRESS_BAR_LAST_UPDATE=0
 START_TIME=`date +%s`
-printf "\n\e[38;5;21m Checking pbp values: \r\e[0m"
+printf "\n\e[38;5;14m Checking pbp values: \r\e[0m"
 for FILE in ${PBP_FILENAMES[@]}; do
     PERCENTAGE_DONE=$(($COUNTER*100/${#PBP_FILENAMES[@]}))
     if [ $PERCENTAGE_DONE -ge $PROGRESS_BAR_LAST_UPDATE ]; then
