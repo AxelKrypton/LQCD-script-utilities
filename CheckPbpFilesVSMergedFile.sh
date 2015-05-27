@@ -8,8 +8,8 @@ PREFIX="conf."
 POSTFIX="_pbp.dat"
 DIGITS=5
 MERGED_FILENAME="pbp.dat"
-NUM_SOURCES=16
 FOLDER_WITH_PBP_FILES="."
+CREATE_ARCHIVE_AND_DELETE_PBP_FOLDER="TRUE"
 [ $(grep "Staggered" <<< "$PWD" | wc -l) -gt 0 ] && MERGED_FILENAME="rhmc_oputput_pbp.dat"
 [ $(grep "Wilson" <<< "$PWD" | wc -l) -gt 0 ] && MERGED_FILENAME="hmc_oputput_pbp.dat"
 
@@ -20,20 +20,20 @@ while [ "$1" != "" ]; do
             echo "Call the script $0 with the following optional arguments:"
             echo "  -h | --help"
             echo "  -f | --mergedFilename          ->    default value = $MERGED_FILENAME"
-            echo "  -s | --numberOfSources         ->    default value = $NUM_SOURCES"
 	    echo "  -d | --digitsInConfName        ->    default value = $DIGITS"
 	    echo "  --folderWithPbpFiles           ->    default value = $FOLDER_WITH_PBP_FILES"
 	    echo "  --prefixInConfName             ->    default value = $PREFIX"
 	    echo "  --postfixInConfName            ->    default value = $POSTFIX"
+	    echo "  --doNotMakeTarAndDoNotDelete   ->    if given, the .tar is not created and pbp files are not deleted"
             printf "\n\e[0m"
             exit
             shift;;
 	-f=* | --mergedFilename=* )      MERGED_FILENAME=${1#*=}; shift ;;
-	-s=* | --numberOfSources=* )     NUMBER_OF_SOURCES=${1#*=}; shift ;;
 	-d=* | --digitsInConfName=* )    DIGITS=${1#*=}; shift ;;
 	--folderWithPbpFiles=* )         FOLDER_WITH_PBP_FILES=${1#*=}; shift ;;
 	--prefixInConfName=* )           PREFIX=${1#*=}; shift ;;
 	--postfixInConfName=* )          POSTFIX=${1#*=}; shift ;;
+	--doNotMakeTarAndDoNotDelete )   CREATE_ARCHIVE_AND_DELETE_PBP_FOLDER="FALSE"; shift ;;
 	* ) printf "\n\e[0;31mError parsing the options! Aborting...\n\n\e[0m" ; exit -1 ;;
     esac
 done
@@ -70,6 +70,10 @@ if [ ! -d $FOLDER_WITH_PBP_FILES ]; then
     printf "\n\e[38;5;9m Directory \"$FOLDER_WITH_PBP_FILES\" not found! Aborting...\n\e[0m"
     printf "\n\e[0;36m$(printf '%0.s=' $( seq 1 $(($(tput cols)/2)) ))\n\n\e[0m"
     exit -1
+else
+    if [ $(grep -o "/" <<< "$FOLDER_WITH_PBP_FILES" | wc -l) -eq 0 ]; then
+	FOLDER_WITH_PBP_FILES="./$FOLDER_WITH_PBP_FILES"
+    fi
 fi
 
 #Gather information
@@ -144,8 +148,27 @@ for FILE in ${PBP_FILENAMES[@]}; do
 done
 printf "\e[38;5;14m Checking pbp values: \e[0m [$(printf '%0.s=' {1..100})] ($COUNTER/${#PBP_FILENAMES[@]})\e[K\n"
 
-#If everything fine exit 0
+#If everything fine create the .tar archive and delete folder with pbp files
 printf "\n\e[1;32m Merged file and unmerged files match!\n\e[0m"
+if [ $CREATE_ARCHIVE_AND_DELETE_PBP_FOLDER = "TRUE" ]; then
+    FOLDER_WITH_PBP_FILES_BASENAME=${FOLDER_WITH_PBP_FILES##*/}
+    PATH_TO_FOLDER_WITH_PBP_FILES=${FOLDER_WITH_PBP_FILES%/*}
+    ARCHIVE_NAME="${FOLDER_WITH_PBP_FILES_BASENAME}.tar.gz"
+    if [ -f $ARCHIVE_NAME ]; then
+	ARCHIVE_NAME_BACKUP="${ARCHIVE_NAME/.tar.gz/}_$(date +'%F_%H%M').tar.gz"
+	printf "\n\e[38;5;11m WARNING: Found \"$ARCHIVE_NAME\" existing archive, renaming it to \"$ARCHIVE_NAME_BACKUP\"!\n\e[0m"
+	mv $ARCHIVE_NAME $ARCHIVE_NAME_BACKUP || exit -2
+    fi
+    cd $PATH_TO_FOLDER_WITH_PBP_FILES
+    printf "\n\e[38;5;69m Creating archive \"$ARCHIVE_NAME\" in $PWD folder... \e[0m"
+    tar czf ${ARCHIVE_NAME} ${FOLDER_WITH_PBP_FILES_BASENAME}
+    printf "\e[38;5;69m done!\n\e[0m"
+    printf "\n\e[38;5;69m Removing folder \"$FOLDER_WITH_PBP_FILES_BASENAME\" from $PWD folder... \e[0m"
+    rm -r ${FOLDER_WITH_PBP_FILES_BASENAME}
+    printf "\e[38;5;69m done!\n\e[0m"
+    cd - >> /dev/null
+fi
+
 printf "\n\e[0;36m$(printf '%0.s=' $( seq 1 $(($(tput cols)/2)) ))\n\n\e[0m"
 
 exit 0
