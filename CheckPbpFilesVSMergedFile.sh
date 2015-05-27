@@ -10,8 +10,8 @@ DIGITS=5
 MERGED_FILENAME="pbp.dat"
 FOLDER_WITH_PBP_FILES="."
 CREATE_ARCHIVE_AND_DELETE_PBP_FOLDER="TRUE"
-[ $(grep "[sS]taggered" <<< "$PWD" | wc -l) -gt 0 ] && MERGED_FILENAME="rhmc_oputput_pbp.dat"
-[ $(grep "[wW]ilson" <<< "$PWD" | wc -l) -gt 0 ] && MERGED_FILENAME="hmc_oputput_pbp.dat"
+[ $(grep "[sS]taggered" <<< "$PWD" | wc -l) -gt 0 ] && MERGED_FILENAME="rhmc_output_pbp.dat"
+[ $(grep "[wW]ilson" <<< "$PWD" | wc -l) -gt 0 ] && MERGED_FILENAME="hmc_output_pbp.dat"
 
 while [ "$1" != "" ]; do
     case $1 in
