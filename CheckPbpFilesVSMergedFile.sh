@@ -71,6 +71,9 @@ if [ ! -d $FOLDER_WITH_PBP_FILES ]; then
     printf "\n\e[0;36m$(printf '%0.s=' $( seq 1 $(($(tput cols)/2)) ))\n\n\e[0m"
     exit -1
 else
+    if [ "${FOLDER_WITH_PBP_FILES: -1}" = "/" ]; then
+	FOLDER_WITH_PBP_FILES="${FOLDER_WITH_PBP_FILES%?}"
+    fi
     if [ $(grep -o "/" <<< "$FOLDER_WITH_PBP_FILES" | wc -l) -eq 0 ]; then
 	FOLDER_WITH_PBP_FILES="./$FOLDER_WITH_PBP_FILES"
     fi
