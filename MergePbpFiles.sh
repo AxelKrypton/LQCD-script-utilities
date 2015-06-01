@@ -179,7 +179,7 @@ if [[ "$SKIP_BROKEN_FILES" == "TRUE" ]]; then
 	printf "\n\e[38;5;10m No pbp file has been detected as broken!\n\e[0m"
 	rm -r $BROKEN_FILES_FOLDER || exit -2
     else
-	printf "\n\e[38;5;9m Found ${#BROKEN_FILENAMES[@]} broken pbp file(s) and ${#EMPTY_FILENAMES[@]} pbp file(s):\n\e[0m"
+	printf "\n\e[38;5;9m Found ${#BROKEN_FILENAMES[@]} broken pbp file(s) and ${#EMPTY_FILENAMES[@]} empty pbp file(s):\n\e[0m"
     fi
     for FILE in "${BROKEN_FILENAMES[@]}"; do
 	printf "\e[38;5;202m  - $FILE   \e[0m"
