@@ -22,8 +22,8 @@ else
 	exit -1
     fi
 
-    TIMES=( `grep "saving current prng state to file" $1 | awk '{print substr($1,2,8)}'` )
-    NUMBER_DONE_TR_STDOUTPUT=`grep "saving current prng state to file" $1 | wc -l`
+    TIMES=( `grep "finished trajectory" $1 | awk '{print substr($1,2,8)}'` )
+    NUMBER_DONE_TR_STDOUTPUT=`grep "finished trajectory" $1 | wc -l`
     #The array TIMES is not sparse, then the following code work
     TOTAL_TIME_SEC=0
     for((INDEX=1; INDEX<${#TIMES[@]}; INDEX++)); do
