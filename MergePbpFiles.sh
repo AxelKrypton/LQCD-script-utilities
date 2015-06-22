@@ -48,19 +48,6 @@ done
 
 #=================================================================================================================================
 
-function __static__getAnswer() {
-    local CONFIRM="";
-    while read CONFIRM; do
-        if [ "$CONFIRM" = "Y" ]; then
-            break;
-        elif [ "$CONFIRM" = "N" ]; then
-            exit 0
-        else
-            printf "\n\e[38;5;196m            Please enter Y (yes) or N (no): \e[0m"
-        fi
-    done
-}
-
 function __static__drawProgressBar() {
     STEPS_DONE="$1"
     TOTAL_STEPS="$2"
@@ -130,19 +117,17 @@ fi
 
 if [ $MOVE_PBP_FILES == "TRUE" ]; then
     if [ -d $FOLDER_TO_MOVE_SINGLE_FILES_TO ]; then
-	printf "\n\e[38;5;11m WARNING: Found \"$FOLDER_TO_MOVE_SINGLE_FILES_TO\" existing folder, files will be added there!\n\e[0m"
+	printf "\n\e[38;5;11m WARNING: Found \"$FOLDER_TO_MOVE_SINGLE_FILES_TO\" existing folder, files will be added there ONLY IF NOT EXISTING!\n\e[0m"
     else
 	mkdir $FOLDER_TO_MOVE_SINGLE_FILES_TO || exit -2
     fi
     if [ -d $BROKEN_FILES_FOLDER ]; then
-	printf "\n\e[38;5;196m ATTENTION: Found \"$BROKEN_FILES_FOLDER\" existing folder, files will be moved there: risk of overwriting existing files, continue (Y/N)? \e[0m"
-	__static__getAnswer
+	printf "\n\e[38;5;196m WARNING: Found \"$BROKEN_FILES_FOLDER\" existing folder, files will be moved there ONLY IF NOT EXISTING!\n\e[0m"
     else
 	mkdir $BROKEN_FILES_FOLDER || exit -2
     fi
     if [ -d $BROKEN_FILES_FOLDER/$EMPTY_FILES_FOLDER ]; then
-	printf "\e[38;5;196m ATTENTION: Found \"$EMPTY_FILES_FOLDER\" existing folder, files will be moved there: risk of overwriting existing files, continue (Y/N)? \e[0m"
-	__static__getAnswer
+	printf "\e[38;5;196m WARNING: Found \"$EMPTY_FILES_FOLDER\" existing folder, files will be moved there! \n\e[0m"
     else
 	mkdir -p $BROKEN_FILES_FOLDER/$EMPTY_FILES_FOLDER || exit -2
     fi
@@ -194,12 +179,17 @@ if [[ "$SKIP_BROKEN_FILES" == "TRUE" ]]; then
 	printf "\n\e[38;5;10m No pbp file has been detected as broken!\n\e[0m"
 	rm -r $BROKEN_FILES_FOLDER || exit -2
     else
-	printf "\n\e[38;5;9m Found ${#BROKEN_FILENAMES[@]} broken pbp file(s) and ${#EMPTY_FILENAMES[@]} pbp file(s):\n\e[0m"
+	printf "\n\e[38;5;9m Found ${#BROKEN_FILENAMES[@]} broken pbp file(s) and ${#EMPTY_FILENAMES[@]} empty pbp file(s):\n\e[0m"
     fi
     for FILE in "${BROKEN_FILENAMES[@]}"; do
-	printf "\e[38;5;202m  - $FILE\n\e[0m"
+	printf "\e[38;5;202m  - $FILE   \e[0m"
 	if [ $MOVE_PBP_FILES == "TRUE" ]; then
-	    mv $FILE $BROKEN_FILES_FOLDER || exit -2
+	    if [ -f $BROKEN_FILES_FOLDER/$FILE ]; then
+		printf "\e[38;5;9m ATTENTION: In folder \"$BROKEN_FILES_FOLDER\", file \"$FILE\" already exists! It will be not moved!!\n\e[0m"
+	    else
+		mv $FILE $BROKEN_FILES_FOLDER || exit -2
+		echo ""
+	    fi
 	fi
     done
     for FILE in "${EMPTY_FILENAMES[@]}"; do

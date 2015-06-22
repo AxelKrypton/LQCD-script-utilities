@@ -10,8 +10,8 @@ DIGITS=5
 MERGED_FILENAME="pbp.dat"
 FOLDER_WITH_PBP_FILES="."
 CREATE_ARCHIVE_AND_DELETE_PBP_FOLDER="TRUE"
-[ $(grep "[sS]taggered" <<< "$PWD" | wc -l) -gt 0 ] && MERGED_FILENAME="rhmc_oputput_pbp.dat"
-[ $(grep "[wW]ilson" <<< "$PWD" | wc -l) -gt 0 ] && MERGED_FILENAME="hmc_oputput_pbp.dat"
+[ $(grep "[sS]taggered" <<< "$PWD" | wc -l) -gt 0 ] && MERGED_FILENAME="rhmc_output_pbp.dat"
+[ $(grep "[wW]ilson" <<< "$PWD" | wc -l) -gt 0 ] && MERGED_FILENAME="hmc_output_pbp.dat"
 
 while [ "$1" != "" ]; do
     case $1 in
@@ -71,6 +71,9 @@ if [ ! -d $FOLDER_WITH_PBP_FILES ]; then
     printf "\n\e[0;36m$(printf '%0.s=' $( seq 1 $(($(tput cols)/2)) ))\n\n\e[0m"
     exit -1
 else
+    if [ "${FOLDER_WITH_PBP_FILES: -1}" = "/" ]; then
+	FOLDER_WITH_PBP_FILES="${FOLDER_WITH_PBP_FILES%?}"
+    fi
     if [ $(grep -o "/" <<< "$FOLDER_WITH_PBP_FILES" | wc -l) -eq 0 ]; then
 	FOLDER_WITH_PBP_FILES="./$FOLDER_WITH_PBP_FILES"
     fi
@@ -82,7 +85,7 @@ printf "\n\e[38;5;69m Extracting trajectories numbers... \e[0m"
 PBP_FILENAMES=( $(ls ${FOLDER_WITH_PBP_FILES}/${PREFIX}*${POSTFIX} 2>/dev/null) )
 NUMBER_PBP_FILES=${#PBP_FILENAMES[@]}
 LINES_MERGED_FILE=$(wc -l < ${MERGED_FILENAME})
-TRAJECTORY_IN_PBP_FILES=( $(grep -o "[[:digit:]]*" <<< "${PBP_FILENAMES[@]}" | awk '{print $1}') ) #Awk will strip leading zeros
+TRAJECTORY_IN_PBP_FILES=( $(grep -o "[[:digit:]]*" <<< "${PBP_FILENAMES[@]}" | awk '{printf "%d ", $1}') ) #Awk will strip leading zeros
 TRAJECTORY_IN_MERGED_FILE=( $(awk '{print $1}' $MERGED_FILENAME | sort | uniq) )
 printf "\e[38;5;69m done in $(( $(date +%s) - $START_TIME )) seconds!\n\e[0m"
 #Check repeated lines
@@ -126,7 +129,7 @@ printf "\e[38;5;69m done in $(( $(date +%s) - $START_TIME )) seconds!\n\e[0m"
 COUNTER=0
 PROGRESS_BAR_LAST_UPDATE=0
 START_TIME=`date +%s`
-printf "\n\e[38;5;21m Checking pbp values: \r\e[0m"
+printf "\n\e[38;5;14m Checking pbp values: \r\e[0m"
 for FILE in ${PBP_FILENAMES[@]}; do
     PERCENTAGE_DONE=$(($COUNTER*100/${#PBP_FILENAMES[@]}))
     if [ $PERCENTAGE_DONE -ge $PROGRESS_BAR_LAST_UPDATE ]; then
