@@ -122,7 +122,7 @@ for RUN in ${DATA_GLOBALPATHS[@]}; do
     # Then clean data files
     CleanDataFiles ${BETAVALUES[@]}
     # For Staggered runs unmerge pbp file and check if it was ok
-    UnmergeAndCheck ${BETAVALUES[@]}
+    #UnmergeAndCheck ${BETAVALUES[@]}
     # Then give an other overview of the status of the folder
     printf "\n\e[0;32m--------------------------------------------------------------\e[0m\n"
     PrintSituationDataFolder ${BETAVALUES[@]}
