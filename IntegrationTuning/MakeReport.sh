@@ -3,6 +3,7 @@
 # Just a short script to read out the situation from
 # the folders present where the script is run.
 SHOW_ONLY_MP="FALSE"
+SHOW_ONLY_ST="FALSE"
 
 function ParseCommandLineOption(){
     while [ "$1" != "" ]; do
@@ -16,6 +17,7 @@ function ParseCommandLineOption(){
 		echo "  -t | --orderTime            ->    Print report with increasing Simulation Time"
 		echo "  -f | --orderFolder          ->    Print report with increasing Folder Name"
 		echo "  -m | --showOnlyMP           ->    Print report of only mass preconditioning tuning"
+		echo "  -s | --showOnlyStandard     ->    Print report of only standard tuning"
 		echo ""
 		echo "NOTE: If more than one of the options -a, -t and -f are given, the last is used! By default -a is used."
 		printf "\n\e[0m"
@@ -25,6 +27,7 @@ function ParseCommandLineOption(){
 	    -t | --orderTime )        ORDER_PARAMETER="DURATION"; shift ;;
 	    -f | --orderFolder )      ORDER_PARAMETER="FOLDERS"; shift ;;
 	    -m | --showOnlyMP )       SHOW_ONLY_MP="TRUE"; shift ;;
+	    -s | --showOnlyStandard ) SHOW_ONLY_ST="TRUE"; shift ;;
 	    * ) printf "\n\e[0;31mError parsing the options! Aborting...\n\n\e[0m" ; exit -1 ;;
 	esac
     done
@@ -70,11 +73,14 @@ FOLDERS=( $(ls) )
 for INDEX in "${!FOLDERS[@]}"; do
     NAME=${FOLDERS[$INDEX]}
     if [ ! -d $NAME ] || [[ ! $NAME =~ ^[0-9]{1,2}_[0-9]{1,2}.*$ ]]; then
-	unset FOLDERS[$INDEX]
+	    unset FOLDERS[$INDEX]
     fi
     if [[ $SHOW_ONLY_MP == "TRUE" ]] && [[ ! $NAME =~ ^[0-9]{1,2}_[0-9]{1,2}_[0-9]{1,2}_kmp[0-9]{3,4}$ ]]; then
-	unset FOLDERS[$INDEX]
+	    unset FOLDERS[$INDEX]
     fi
+    if [[ $SHOW_ONLY_ST == "TRUE" ]] && [[ ! $NAME =~ ^[0-9]{1,2}_[0-9]{1,2}$ ]]; then
+	    unset FOLDERS[$INDEX]
+    fi    
 done
 FOLDERS=( "${FOLDERS[@]}" ) #Make FOLDERS not sparse for the following!!!
 #-----------------------------------------------------------------------------------------------------------------#
@@ -88,31 +94,39 @@ MAX_DELTAS=()
 ALLRUNFINISHED=1
 for NAME in ${FOLDERS[@]}; do
     if [ -f $NAME/hmc_output ]; then
-	ACCEPTED+=( $(awk '{ sum+=$11} END {print sum}' $NAME/hmc_output) )
-	TRAJECTORIES+=( $(wc -l $NAME/hmc_output | awk '{print $1}') )
-	MAX_DELTAS+=( $(awk 'BEGIN {max=0} {if(sqrt($8^2)>max){max=sqrt($8^2)}} END {printf "%6g", max}' $NAME/hmc_output) )
+	    ACCEPTED+=( $(awk '{ sum+=$11} END {print sum}' $NAME/hmc_output) )
+	    TRAJECTORIES+=( $(wc -l $NAME/hmc_output | awk '{print $1}') )
+	    MAX_DELTAS+=( $(awk 'BEGIN {max=0} {if(sqrt($8^2)>max){max=sqrt($8^2)}} END {printf "%6g", max}' $NAME/hmc_output) )
     else
-	ACCEPTED+=( "--" )
-	TRAJECTORIES+=( "--")
-	MAX_DELTAS+=( "--" )
-	ALLRUNFINISHED=0
+	    ACCEPTED+=( "--" )
+	    TRAJECTORIES+=( "--")
+	    MAX_DELTAS+=( "--" )
+	    ALLRUNFINISHED=0
     fi
+    [ $(ls $NAME/hmc*.out | wc -l) -gt 1 ] && "Error, in folder \"$NAME\" found several stdout files! Aborting..." && exit -1
     if [ -f $NAME/hmc*.out ]; then
-	START_TIME=$(grep "Start generation of configurations..." $NAME/hmc*.out | grep -o "[[:digit:]]\{2\}:[[:digit:]]\{2\}:[[:digit:]]\{2\}" )
-	if [ "$(grep "...generation done" $NAME/hmc*.out)" != "" ]; then
-	    END_TIME=$(grep "...generation done" $NAME/hmc*.out | grep -o "[[:digit:]]\{2\}:[[:digit:]]\{2\}:[[:digit:]]\{2\}")
-	else
-	    END_TIME=$(grep "saving current prng state" $NAME/hmc*.out | tail -n1 | grep -o "[[:digit:]]\{2\}:[[:digit:]]\{2\}:[[:digit:]]\{2\}")
-	fi
-	START_TIME_SEC=$(TimeToSeconds $START_TIME)
-	END_TIME_SEC=$(TimeToSeconds $END_TIME)
-	if [ $START_TIME_SEC -gt $END_TIME_SEC ]; then
-            END_TIME_SEC=$(( $END_TIME_SEC + 24*3600 ))
-	fi
-	DURATION+=( $(( $END_TIME_SEC - $START_TIME_SEC )) )
+        TIMES_ARRAY=( $(grep "finished trajectory" $NAME/hmc*.out | awk '{print substr($1,2,8)}') )
+        UNIQUE_HOURS_ARRAY=( $(grep "finished trajectory" $NAME/hmc*.out | awk '{print substr($1,2,2)}' | uniq -d) )
+        if [ ${#UNIQUE_HOURS_ARRAY[@]} -lt 2 ]; then
+            NUMBER_OF_DAYS=0
+        else
+            NUMBER_OF_DAYS=$(echo ${UNIQUE_HOURS_ARRAY[@]} | awk 'BEGIN{RS=" "}NR==2{secondHour=$1}{hours[$1]++}END{print hours[secondHour]-1}')
+            if [ ${UNIQUE_HOURS_ARRAY[0]} -eq ${UNIQUE_HOURS_ARRAY[@]:(-1)} ]; then
+                [ $(TimeToSeconds ${TIMES_ARRAY[0]}) -le $(TimeToSeconds ${TIMES_ARRAY[@]:(-1)}) ] && NUMBER_OF_DAYS=$(($NUMBER_OF_DAYS + 1))
+            fi
+        fi
+        if [ ${#TIMES_ARRAY[@]} -gt 1 ]; then
+            TOTAL_TIME_OF_SIMULATION=$(( $(date -d "${TIMES_ARRAY[@]:(-1)}" +%s) - $(date -d "${TIMES_ARRAY[0]}" +%s) ))
+            [ $TOTAL_TIME_OF_SIMULATION -lt 0 ] && TOTAL_TIME_OF_SIMULATION=$(( $TOTAL_TIME_OF_SIMULATION + 86400 ))
+            TOTAL_TIME_OF_SIMULATION=$(( $TOTAL_TIME_OF_SIMULATION + $NUMBER_OF_DAYS*86400 ))
+            #AVERAGE_TIME_PER_TRAJECTORY=$(( $TOTAL_TIME_OF_SIMULATION / (${#TIMES_ARRAY[@]}-1) +1)) #The +1 is to round to the following integer                                                                                                                      
+        else
+            TOTAL_TIME_OF_SIMULATION=0
+        fi
+        DURATION+=( $TOTAL_TIME_OF_SIMULATION )
     else
-	DURATION+=( 0 )
-	ALLRUNFINISHED=0
+	    DURATION+=( 0 )
+	    ALLRUNFINISHED=0
     fi
 done
 #-----------------------------------------------------------------------------------------------------------------#

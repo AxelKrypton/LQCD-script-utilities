@@ -1,7 +1,7 @@
 # Paths on LOEWE using CL2QCD
 USER_MAIL="sciarra@th.physik.uni-frankfurt.de"
 HMC_BUILD_PATH="clhmc/build/RefExec"
-SIMULATION_PATH="IntegratorTest"
+SIMULATION_PATH="IntegratorTestWilson"
 HOME_DIR="/home/hfftheo/sciarra" 
 WORK_DIR="/scratch/hfftheo/sciarra" 
 PRODUCEJOBSCRIPTSH="$HOME_DIR/Script/JobScriptAutomation/ProduceJobScript.sh"

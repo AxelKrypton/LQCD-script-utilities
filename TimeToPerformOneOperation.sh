@@ -14,7 +14,7 @@ source $HOME/Script/UtilityFunctions.sh || exit -2
 
 if [ $# -ne 2 ]; then
     printf "\n\e[0;34mPlease use the following syntax:\n"
-    printf "\t\e[0;32m $0 <file with CL2QCD standard output>\e[0m\n\n"
+    printf "\t\e[0;32m $0 <file with CL2QCD standard output> <operation_to_grep_for>\e[0m\n\n"
     exit -1
 else
     if [ ! -f $1 ]; then
@@ -24,18 +24,20 @@ else
 
     TIMES=( "-" `grep -A1 "$2" $1 | awk '{print substr($1,2,8)}'` )
     
+    #echo "${TIMES[@]}"
+
     TOTAL_TIME_SEC=()
     for((INDEX=1; INDEX<${#TIMES[@]}; INDEX++)); do
 	if [ ${TIMES[$INDEX]} == "-" ]; then
 	    START_TIME_SEC=$(TimeToSeconds ${TIMES[$(($INDEX+1))]})
 	    END_TIME_SEC=$(TimeToSeconds ${TIMES[$(($INDEX+2))]})
+	    if [ $START_TIME_SEC -gt $END_TIME_SEC ]; then
+		END_TIME_SEC=$(( $END_TIME_SEC + 24*3600 ))
+	    fi
+	    TOTAL_TIME_SEC+=( "$(( $TOTAL_TIME_SEC + ($END_TIME_SEC - $START_TIME_SEC) ))" )
 	fi
-	if [ $START_TIME_SEC -gt $END_TIME_SEC ]; then
-            END_TIME_SEC=$(( $END_TIME_SEC + 24*3600 ))
-	fi
-	TOTAL_TIME_SEC+=( $(( $TOTAL_TIME_SEC + ($END_TIME_SEC - $START_TIME_SEC) )) )
     done
     
-    printf "\n\e[0;32m ${TOTAL_TIME_SEC[@]}\e[0m\n\n"
+    printf "\n\e[0;32m ${TOTAL_TIME_SEC[*]} \e[0m\n\n"
 
 fi
