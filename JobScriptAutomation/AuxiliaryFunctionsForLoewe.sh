@@ -258,9 +258,11 @@ function ProcessBetaValuesForContinue_Loewe() {
                     fi
                 fi
             done
-            #Move to trash conf.save and prng.save files if existing
+            #Move to trash conf.save(_backup) and prng.save(_backup) files if existing
             if [ -f $WORK_BETADIRECTORY/conf.save ]; then mv $WORK_BETADIRECTORY/conf.save $TRASH_NAME; fi
             if [ -f $WORK_BETADIRECTORY/prng.save ]; then mv $WORK_BETADIRECTORY/prng.save $TRASH_NAME; fi
+            if [ -f $WORK_BETADIRECTORY/conf.save_backup ]; then mv $WORK_BETADIRECTORY/conf.save_backup $TRASH_NAME; fi
+            if [ -f $WORK_BETADIRECTORY/prng.save_backup ]; then mv $WORK_BETADIRECTORY/prng.save_backup $TRASH_NAME; fi
             #Copy the output file to Trash, edit it leaving out all the trajectories after ${CONTINUE_RESUMETRAJ_ARRAY[$BETA]}, including ${CONTINUE_RESUMETRAJ_ARRAY[$BETA]}
             cp $OUTPUTFILE_GLOBALPATH $TRASH_NAME || exit -2 
             local LINES_TO_BE_CANCELED_IN_OUTPUTFILE=$(tac $OUTPUTFILE_GLOBALPATH | awk -v resumeFrom=${CONTINUE_RESUMETRAJ_ARRAY[$BETA]} 'BEGIN{found=0}{if($1==(resumeFrom-1)){found=1; print NR-1; exit}}END{if(found==0){print -1}}')
@@ -316,6 +318,10 @@ function ProcessBetaValuesForContinue_Loewe() {
             local MEASURE_PBP_VALUE_FOR_INPUTFILE=0
         elif [ $MEASURE_PBP = "TRUE" ]; then
             local MEASURE_PBP_VALUE_FOR_INPUTFILE=1
+            #If the pbp file already exists, append a line to it to be sure the prompt is at the beginning to the line
+            if [ -f ${OUTPUTFILE_GLOBALPATH}_pbp.dat ]; then
+                echo "" >> ${OUTPUTFILE_GLOBALPATH}_pbp.dat
+            fi
         fi
         if [ $(grep -o "measure_pbp" $INPUTFILE_GLOBALPATH | wc -l) -eq 0 ]; then
             if  [ $(grep -o "sourcetype" $INPUTFILE_GLOBALPATH | wc -l) -ne 0 ] ||
