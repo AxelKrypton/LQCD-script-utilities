@@ -51,7 +51,7 @@ NRYPROCS="2"
 NRZPROCS="2"
 OMPNUMTHREADS="64"
 NSAVE="100"
-NSAVEPOINT="1"
+NSAVEPOINT="20"
 INTSTEPS0="7"
 INTSTEPS1="5"
 INTSTEPS2="5"
@@ -79,7 +79,7 @@ EMPTY_BETA_DIRS="FALSE"
 CLEAN_OUTPUT_FILES="FALSE"
 SECONDARY_OPTION_ALL="FALSE"
 if [ $STAGGERED = "TRUE" ]; then
-    NUM_TASTES="3"
+    NUM_TASTES="2"
     USE_RATIONAL_APPROXIMATION_FILE="TRUE"
 fi
 
@@ -134,6 +134,9 @@ if [ "$CLUSTER_NAME" = "JUQUEEN" ]; then
     CheckSingleOccurrenceInPath "homeb" "hkf8/" "hkf8[[:digit:]]\+" "mui" "k[[:digit:]]\+" "nt[[:digit:]]\+" "ns[[:digit:]]\+"
 else
     CheckSingleOccurrenceInPath $(echo $HOME_DIR | sed 's/\// /g') "$CHEMPOT_PREFIX" "${KAPPA_PREFIX}[[:digit:]]\+" "${NTIME_PREFIX}[[:digit:]]\+" "${NSPACE_PREFIX}[[:digit:]]\+"
+    if [ $STAGGERED = "TRUE" ]; then
+        CheckSingleOccurrenceInPath "Nf${NUM_TASTES}"
+    fi
 fi
 
 HOME_DIR_WITH_BETAFOLDERS="$HOME_DIR/$SIMULATION_PATH$PARAMETERS_PATH"
