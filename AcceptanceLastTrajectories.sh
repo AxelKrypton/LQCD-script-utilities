@@ -48,7 +48,9 @@ fi
 
 # Build the path with the output file
 SCRATCH_PATH=$(pwd)
-SCRATCH_PATH="/scratch/hfftheo/sciarra/${SCRATCH_PATH#*sciarra/}"
+if [ $(whoami) = "sciarra" ]; then
+   SCRATCH_PATH="/scratch/hfftheo/sciarra/${SCRATCH_PATH#*sciarra/}"
+fi
 if [[ $STAGGERED == "true" ]]; then
     SCRATCH_PATH+="/b${BETA}/rhmc_output"
 else

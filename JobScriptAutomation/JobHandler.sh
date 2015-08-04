@@ -51,7 +51,7 @@ NRYPROCS="2"
 NRZPROCS="2"
 OMPNUMTHREADS="64"
 NSAVE="100"
-NSAVEPOINT="1"
+NSAVEPOINT="20"
 INTSTEPS0="7"
 INTSTEPS1="5"
 INTSTEPS2="5"
@@ -78,8 +78,10 @@ ACCRATE_REPORT_GLOBAL="FALSE"
 EMPTY_BETA_DIRS="FALSE"
 CLEAN_OUTPUT_FILES="FALSE"
 SECONDARY_OPTION_ALL="FALSE"
+COMPLETE_BETAS_FILE="FALSE"
+NUMBER_OF_CHAINS_TO_BE_IN_THE_BETAS_FILE="4"
 if [ $STAGGERED = "TRUE" ]; then
-    NUM_TASTES="3"
+    NUM_TASTES="2"
     USE_RATIONAL_APPROXIMATION_FILE="TRUE"
 fi
 
@@ -99,8 +101,10 @@ source $HOME/Script/JobScriptAutomation/CommandLineParser.sh || exit -2
 if [[ $(whoami) =~ ^hkf[[:digit:]]{3} ]]; then
     CLUSTER_NAME="JUQUEEN"
     WALLTIME="00:30:00"
-elif [ "$(hostname)" = "lqcd-login" ]; then
+elif [ "$(hostname)" = "lxlcsc0001" ]; then
     CLUSTER_NAME="LCSC"
+elif [ "$(hostname)" = "lqcd-login" ]; then
+    CLUSTER_NAME="LCSC_OLD" #Temporary, until all nodes will be moved to gsi
 fi
 
 SPECIFIED_COMMAND_LINE_OPTIONS=( $@ )
@@ -132,6 +136,9 @@ if [ "$CLUSTER_NAME" = "JUQUEEN" ]; then
     CheckSingleOccurrenceInPath "homeb" "hkf8/" "hkf8[[:digit:]]\+" "mui" "k[[:digit:]]\+" "nt[[:digit:]]\+" "ns[[:digit:]]\+"
 else
     CheckSingleOccurrenceInPath $(echo $HOME_DIR | sed 's/\// /g') "$CHEMPOT_PREFIX" "${KAPPA_PREFIX}[[:digit:]]\+" "${NTIME_PREFIX}[[:digit:]]\+" "${NSPACE_PREFIX}[[:digit:]]\+"
+    if [ $STAGGERED = "TRUE" ]; then
+        CheckSingleOccurrenceInPath "Nf${NUM_TASTES}"
+    fi
 fi
 
 HOME_DIR_WITH_BETAFOLDERS="$HOME_DIR/$SIMULATION_PATH$PARAMETERS_PATH"
@@ -233,7 +240,12 @@ elif [ $EMPTY_BETA_DIRS = "TRUE" ]; then
     ReadBetaValuesFromFile
     EmptyBetaDirectories
     
+elif [ $COMPLETE_BETAS_FILE = "TRUE" ]; then
+
+    CompleteBetasFile
+    
 fi
+
 
 
 #------------------------------------------------------------------------------------------------------------------------------#
