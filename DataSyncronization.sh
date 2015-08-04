@@ -22,45 +22,46 @@ identity=$(whoami)
 
 #-----------------------------------------------------------------------------------------------------------------------------#
 
-function PrintSituationDataFolder(){
-    for d in $@; do 
-	if [ -d $d ]; then
-	    printf " \e[0;32mNumber of files in directory $d: \e[0;34m\e[2m"
-	    ls $d | wc -l
-	    printf " \e[0;33mNumber of files \"conf*_pbp.dat\" in directory $d: \e[0;34m\e[2m"
-	    ls $d/conf*_pbp.dat | wc -l 
-	    if [ -e $d/hmc_output ]; then
-		printf " \e[0;35m\e[2mNumber of data in \"hmc_output\" in directory $d: \e[0;34m\e[2m"
-		wc -l < $d/hmc_output
-	    fi
-	    if [ -e $d/rhmc_output ]; then
-		printf " \e[0;35m\e[2mNumber of data in \"rhmc_output\" in directory $d: \e[0;34m\e[2m"
-		wc -l < $d/rhmc_output
-	    fi
-	    printf " \e[0m---------------------------------------------------\n"
-	fi
+function PrintSituationVolume(){
+    [ $(grep "[sS]taggered" <<< "$PWD" | wc -l) -gt 0 ] && DATA_FILENAME="rhmc_output"
+    [ $(grep "[wW]ilson" <<< "$PWD" | wc -l) -gt 0 ] && DATA_FILENAME="hmc_output"
+	printf "\n\e[38;5;14m----------------------------------------------------------------------------------------------------------------------------\e[0m\n"
+    printf "  \e[38;5;202m%-40s%-20s%-20s%-20s%-20s\n\e[0m" "BetaFolder" "NumFiles" "NumPbpFiles" "$DATA_FILENAME" "${DATA_FILENAME}_pbp.dat"
+    for FOLDER in b[0-9].????_s*; do
+        local NUMBER_OF_FILES=$(ls $FOLDER 2>/dev/null | wc -l)
+        local NUMBER_OF_PBP_FILES=$(ls $FOLDER/conf.*_pbp.dat 2>/dev/null | wc -l)
+        local NUMBER_OF_LINES_DATA=$(wc -l 2>/dev/null < $FOLDER/$DATA_FILENAME)
+        local NUMBER_OF_LINES_PBP=$(wc -l 2>/dev/null < $FOLDER/${DATA_FILENAME}_pbp.dat)
+        [ "$NUMBER_OF_LINES_DATA" == "" ] && NUMBER_OF_LINES_DATA=0
+        [ "$NUMBER_OF_LINES_PBP" == "" ] && NUMBER_OF_LINES_PBP=0
+        printf "  \e[38;5;14m%-40s%-20s%-20s%-20s%-20s\n\e[0m" "$FOLDER" "$NUMBER_OF_FILES" "$NUMBER_OF_PBP_FILES" "$NUMBER_OF_LINES_DATA lines" "$NUMBER_OF_LINES_PBP lines"
     done
-    printf " \e[0m"
+	printf "\e[38;5;14m----------------------------------------------------------------------------------------------------------------------------\e[0m\n"
+    unset -v 'FOLDER'
 }
 
-
 function CleanDataFiles(){
-    for d in $@; do
-	printf "\n\e[0;34m"
-	if [ -e $d/hmc_output ]; then
-	    rm -f $d/hmc_output_raw
-	    ${HOME}/Script/tmLQCD_Juqueen/CleanOutputData.sh $d/hmc_output
-	fi
-	if [ -e $d/rhmc_output ]; then
-	    rm -f $d/rhmc_output_raw
-	    ${HOME}/Script/tmLQCD_Juqueen/CleanOutputData.sh $d/rhmc_output
-	fi
-	if [ -e $d/rhmc_output_pbp.dat ]; then
-	    rm -f $d/rhmc_output_pbp.dat_raw
-	    ${HOME}/Script/tmLQCD_Juqueen/CleanOutputData.sh $d/rhmc_output_pbp.dat
-	fi
-	printf "\e[0m"
-    done
+	printf "\n\e[0;34m Cleaning:\n\e[38;5;45m"
+    for FOLDER in b[0-9].????_s*; do
+        printf " - $FOLDER\n"
+	    if [ -e $FOLDER/hmc_output ]; then
+	        rm -f $FOLDER/hmc_output_raw
+	        ${HOME}/Script/tmLQCD_Juqueen/CleanOutputData.sh $FOLDER/hmc_output >/dev/null
+	    fi
+	    if [ -e $FOLDER/hmc_output_pbp.dat ]; then
+	        rm -f $FOLDER/hmc_output_pbp.dat_raw
+	        ${HOME}/Script/tmLQCD_Juqueen/CleanOutputData.sh $FOLDER/hmc_output_pbp.dat >/dev/null
+	    fi
+	    if [ -e $FOLDER/rhmc_output ]; then
+	        rm -f $FOLDER/rhmc_output_raw
+	        ${HOME}/Script/tmLQCD_Juqueen/CleanOutputData.sh $FOLDER/rhmc_output >/dev/null
+	    fi
+	    if [ -e $FOLDER/rhmc_output_pbp.dat ]; then
+	        rm -f $FOLDER/rhmc_output_pbp.dat_raw
+	        ${HOME}/Script/tmLQCD_Juqueen/CleanOutputData.sh $FOLDER/rhmc_output_pbp.dat >/dev/null
+	    fi
+	done
+    printf "\e[0m"
 }
 
 
@@ -88,13 +89,39 @@ printf "\n\n\e[1mScript \"$0\" run from $STARTING_POSITION...\n\e[0m"
 
 DATA_GLOBALPATHS=()
 SKIPPED_DIRECTORIES=()
+REMOTE="loewe"
 
 while [ "$1" != "" ]; do
-    DATA_GLOBALPATHS+=( $1 )
-    shift
+    case $1 in
+        -h | --help )
+            printf "\n\e[0;32m"
+            echo "Call the script $0 with the following optional arguments:"
+            echo -e "  -r | --remote           ->    default value = $REMOTE"
+            echo -e "  -p | --globalPaths      ->    to specify the folders to syncronize"
+            printf "\n\e[0m"
+            exit
+            shift ;;
+        
+        -r | --remote )
+            while [[ ! "$2" =~ ^- ]] && [ "$2" != "" ]; do
+                echo $2
+                REMOTE=$2
+                shift
+            done
+            shift ;;
+
+        -p | --globalPaths )
+            while [[ ! "$2" =~ ^- ]] && [ "$2" != "" ]; do
+                DATA_GLOBALPATHS+=( $2 )
+                shift
+            done
+            shift ;;
+            
+        * ) printf "\n\e[0;31m Invalid option \e[1m$1\e[0;31m (see help for further information)! Aborting...\n\n\e[0m" ; exit -1 ;;
+    esac
 done
 
-printf "\n \e[0;32m\e[4mStarting time: $(date +'%Hh%M on %d.%m.%y')\n\e[0m"
+printf "\n \e[0;32m\e[4mStarting time: $(date +'%Hh%M on %d.%m.%y') (from $REMOTE)\n\e[0m"
 for RUN in ${DATA_GLOBALPATHS[@]}; do
     if [ ! -d $RUN ]; then
 	printf "\n\e[0;31m The directory \"$RUN\" has not been found! It will be skipped!\n\n\e[0m"
@@ -103,29 +130,31 @@ for RUN in ${DATA_GLOBALPATHS[@]}; do
     fi
     cd $RUN || exit -2
     printf "\n\e[0;36m=======================================================================\e[0m\n"
-    printf "\e[0;35m\e[2m  $(pwd)\e[0m"
+    printf "\e[38;5;13m\e[2m  $(pwd)\e[0m"
     printf "\n\e[0;36m=======================================================================\e[0m\n"
     # Before syncronize just give an overview of the status of the folder
     if [ -e betasSync ]; then
-	BETASFILE="betasSync"
+	    BETASFILE="betasSync"
     else
-	BETASFILE="betas"
+	    BETASFILE="betas"
     fi
     BETAVALUES=( $(grep -o "^[[:blank:]]*[[:digit:]]\.[[:digit:]]\{4\}" $BETASFILE) )
     for((i=0; i<${#BETAVALUES[@]}; i++)); do
-	BETAVALUES[$i]="b${BETAVALUES[$i]}*"
+	    BETAVALUES[$i]="b${BETAVALUES[$i]}*"
     done
-    PrintSituationDataFolder ${BETAVALUES[@]}
-    printf "\n\e[0;32m--------------------------------------------------------------\e[0m\n"
+    PrintSituationVolume
+    #printf "\n\e[0;32m--------------------------------------------------------------\e[0m\n"
     # Then syncronize
-    python ${!identity} -f=$BETASFILE
+    printf "\n\e[38;5;10m Syncronizing..."
+    python ${!identity} -f=$BETASFILE --remote=$REMOTE >/dev/null
+    printf " done!\e[0m\n" 
     # Then clean data files
     CleanDataFiles ${BETAVALUES[@]}
     # For Staggered runs unmerge pbp file and check if it was ok
     #UnmergeAndCheck ${BETAVALUES[@]}
     # Then give an other overview of the status of the folder
-    printf "\n\e[0;32m--------------------------------------------------------------\e[0m\n"
-    PrintSituationDataFolder ${BETAVALUES[@]}
+    #printf "\n\e[0;32m--------------------------------------------------------------\e[0m\n"
+    PrintSituationVolume
     printf "\n\e[0;36m=======================================================================\e[0m\n\n"
 done
 

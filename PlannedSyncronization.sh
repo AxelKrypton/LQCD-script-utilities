@@ -6,16 +6,16 @@
 # I decided to workaround using sleep and endless loop)
 #
 # Since it uses the script DataSyncronization.sh, a file with the
-# partial path to the folder to be syncronized is needed. Partial
-# path means only the parameters string. For example a file whose content is
+# global path to the folder to be syncronized is needed. For example
 #
-# muiPiT/k1550/nt6/ns16
-# muiPiT/k1550/nt6/ns20
-# muiPiT/k1550/nt6/ns24
-# muiPiT/k1650/nt6/ns16
-# muiPiT/k1650/nt6/ns20
-# muiPiT/k1650/nt6/ns24
+# /user-dependent-path/muiPiT/k1550/nt6/ns16    loewe
+# /user-dependent-path/muiPiT/k1550/nt6/ns20    loewe
+# /user-dependent-path/muiPiT/k1550/nt6/ns24    loewe
+# /user-dependent-path/muiPiT/k1625/nt6/ns18    lcsc
+# /user-dependent-path/muiPiT/k1625/nt6/ns24    lcsc
 #
+# the second column is needed to specify which remote to use. Please
+# use here the name of the host as it is given to the python script.
 #
 # ATTENTION: In order to get it work constantly, you have to:
 #             1) Do an ssh to go to kampala (server that is 24h a day on)
@@ -39,29 +39,36 @@ identity=$(whoami)
 cd ${!identity} || exit 2 
 
 if [ $# -eq 1 ]; then
-
+    
     #Check file given in $1 exists
     if [ ! -f $1 ]; then
-	printf "\n \e[0;31m File \"$1\" not found! Aborting...\e[0m\n\n"
-	exit -1
+	    printf "\n \e[0;31m File \"$1\" not found! Aborting...\e[0m\n\n"
+	    exit -1
     fi
     
     while :
     do
-
-	#Just to wait 1a.m.
-	CURRENT_EPOCH=$(date +%s)
-	TARGET_EPOCH=$(date -d '01 + 1 days' +%s)
-	SLEEP_SECONDS=$(( $TARGET_EPOCH - $CURRENT_EPOCH ))
-	sleep $SLEEP_SECONDS
-	
-	RUNS_NAMES=($(awk 'BEGIN{ORS=" ";}{if(!($1 ~ /^#/)){print $0}}' $1))
-    	OUTPUT_FILENAME="syncronization_"
-    	ERROR_FILENAME="errors_"
-	${HOME}/Script/DataSyncronization.sh ${RUNS_NAMES[@]} 1> $OUTPUT_FILENAME$(date +'%d.%m.%y-%Hh%M') 2> $ERROR_FILENAME$(date +'%d.%m.%y-%Hh%M')
-	
+        
+	    #Just to wait 1a.m.
+	    CURRENT_EPOCH=$(date +%s)
+	    TARGET_EPOCH=$(date -d '01 + 1 days' +%s)
+	    SLEEP_SECONDS=$(( $TARGET_EPOCH - $CURRENT_EPOCH ))
+	    sleep $SLEEP_SECONDS
+	    
+        declare -A RUN_NAMES
+        while read SYNC_FOLDER_GLOBAL_PATH REMOTE_NAME; do
+            RUN_NAMES[$REMOTE_NAME]="${RUN_NAMES[$REMOTE_NAME]} $SYNC_FOLDER_GLOBAL_PATH"
+        done <<< "$(awk '/^($|[#]+)/{next} {print $0}' $1 )"
+        
+    	OUTPUT_FILENAME="syncronization_$(date +'%d.%m.%y-%Hh%M')"
+    	ERROR_FILENAME="errors_$(date +'%d.%m.%y-%Hh%M')"
+        for REMOTE in "${!RUN_NAMES[@]}"; do
+	        ${HOME}/Script/DataSyncronization.sh -r $REMOTE -p ${RUN_NAMES[$REMOTE]} 1>> $OUTPUT_FILENAME 2>> $ERROR_FILENAME
+        done
+	    
+        unset -v 'RUN_NAMES'
     done
-
+    
 else
     printf "\n\e[0;34mPlease use the following syntax:\n"
     printf "\t\e[0;32m $0 <file with parameters strings>\e[0m\n\n"
