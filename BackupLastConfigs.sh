@@ -63,7 +63,7 @@ fi
 
 #Variables
 REMOTE_NAME="loewe"
-RSYNC_OPTIONS="qltuz"
+RSYNC_OPTIONS="qluz"
 ParseCommandLineOptions $@
 CONF_LIST_FILE="ConfigurationListFrom_${REMOTE_NAME}_$(whoami)_on_$(date +'%F_%H%M')"
 
