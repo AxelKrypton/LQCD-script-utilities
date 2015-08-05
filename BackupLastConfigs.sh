@@ -17,11 +17,14 @@ function ParseCommandLineOptions(){
         case $1 in
             -h | --help )
                 printf "\n\e[0;32m"
-                echo "Call the script $0 with the following optional arguments:"
-                echo "  -h | --help"
-                echo "  -r | --remote      ->    remote name (default = $REMOTE_NAME)"
-                echo "  --remotePrefix     ->    remote prefix (default = ${REMOTE_PREFIX[$(whoami)]})"
-                echo "  --rsyncOptions     ->    options passed to rsync (default = $RSYNC_OPTIONS)"
+                echo " Call the script $0 with the following optional arguments:"
+                echo "   -h | --help"
+                echo "   -r | --remote      ->    remote name (default = $REMOTE_NAME)"
+                echo "   --remotePrefix     ->    remote prefix (default = ${REMOTE_PREFIX[$(whoami)]})"
+                echo "   --rsyncOptions     ->    options passed to rsync (default = $RSYNC_OPTIONS)"
+                echo " "
+                echo " NOTE: Change rsyng permissions could affect permissions on reciever that are"
+                echo "       by default set to \"--chmod=Du=rwx,Dg=rwx,Do=r,Fu=rw,Fog=r\" how it should be."
                 printf "\n\e[0m"
                 exit
                 shift;;
@@ -58,7 +61,7 @@ fi
 
 #Variables
 REMOTE_NAME="loewe"
-RSYNC_OPTIONS="quaz"
+RSYNC_OPTIONS="qltuz"
 ParseCommandLineOptions $@
 CONF_LIST_FILE="ConfigurationListFrom_${REMOTE_NAME}_$(whoami)_on_$(date +'%F_%H%M')"
 
@@ -105,7 +108,7 @@ printf "\e[38;5;39m ...obtained $(wc -l < $CONF_LIST_FILE) files!\n\e[0m"
 sed -i 's@'${REMOTE_PREFIX[$(whoami)]}/'@@g' $CONF_LIST_FILE
 #Copy the files from remote
 printf "\n\e[38;5;39m Syncronizing with the remote... \n\e[0m"
-rsync -${RSYNC_OPTIONS} --files-from=$CONF_LIST_FILE $REMOTE_NAME:${REMOTE_PREFIX[$(whoami)]} .
+rsync -${RSYNC_OPTIONS} --files-from=$CONF_LIST_FILE --perms --chmod=Du=rwx,Dg=rwx,Do=r,Fu=rw,Fog=r $REMOTE_NAME:${REMOTE_PREFIX[$(whoami)]} .
 printf "\e[38;5;39m ...done!\n\n\e[0m"
 
 exit 0
