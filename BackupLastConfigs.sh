@@ -49,16 +49,18 @@ declare -A EXPECTED_POSITION
 if [ $STAGGERED = "TRUE" ]; then
     EXPECTED_POSITION["sciarra"]="/home/phil-configs/Staggered/Nf2/mui0/LastConfigurations"
     REMOTE_PREFIX["sciarra"]="/scratch/hfftheo/sciarra/StaggeredNf2Project/muiPiT"
+    MASS_PREFIX="mass"
 elif [ $WILSON = "TRUE" ]; then
     REMOTE_PREFIX["sciarra"]="/scratch/hfftheo/sciarra/WilsonProject/muiPiT"
     EXPECTED_POSITION["sciarra"]="/home/phil-configs/wilson_nf2_muipi4/ImagMu/muiPiT/LastConfigurations"
+    MASS_PREFIX="k"
 fi
 
 #Variables
 REMOTE_NAME="loewe"
 RSYNC_OPTIONS="quaz"
 ParseCommandLineOptions $@
-CONF_LIST_FILE="ConfigurationListFrom_${REMOTE_NAME}_on_$(date +'%F_%H%M')"
+CONF_LIST_FILE="ConfigurationListFrom_${REMOTE_NAME}_$(whoami)_on_$(date +'%F_%H%M')"
 
 #If I am not in the expected position, I ask the user:
 if [ $(pwd) != ${EXPECTED_POSITION[$(whoami)]} ]; then
@@ -80,7 +82,7 @@ fi
 #Getting configurations from remote (supposing folder structure)
 printf "\n\e[38;5;39m Obtaining list of files from remote... \n\e[0m"
 ssh $REMOTE_NAME 'bash -s' > $CONF_LIST_FILE << EOF
-    for BETA in ${REMOTE_PREFIX[$(whoami)]}/k????/nt?/ns??/b?.????*; do
+    for BETA in ${REMOTE_PREFIX[$(whoami)]}/${MASS_PREFIX}????/nt?/ns*/b?.????*; do
         printf "\$BETA/"
         ls \$BETA | grep "conf.[[:digit:]]\+" | sort -V | tail -n1
         echo
