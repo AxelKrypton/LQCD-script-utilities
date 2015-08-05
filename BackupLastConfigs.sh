@@ -89,10 +89,10 @@ printf "\n\e[38;5;39m Obtaining list of files from remote... \n\e[0m"
 ssh $REMOTE_NAME 'bash -s' > $CONF_LIST_FILE << EOF
     for BETA in ${REMOTE_PREFIX[$(whoami)]}/${MASS_PREFIX}????/nt?/ns*/b?.????*; do
         printf "\$BETA/"
-        ls \$BETA | grep "conf.[[:digit:]]\+" | sort -V | tail -n1
+        ls \$BETA | grep "^conf.[[:digit:]]\+$" | sort -V | tail -n1
         echo
         printf "\$BETA/"
-        ls \$BETA | grep "prng.[[:digit:]]\+" | sort -V | tail -n1
+        ls \$BETA | grep "^prng.[[:digit:]]\+$" | sort -V | tail -n1
         echo
     done
 EOF
