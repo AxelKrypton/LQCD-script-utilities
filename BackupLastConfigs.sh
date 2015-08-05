@@ -58,6 +58,8 @@ elif [ $WILSON = "TRUE" ]; then
     EXPECTED_POSITION["sciarra"]="/home/phil-configs/wilson_nf2_muipi4/ImagMu/muiPiT/LastConfigurations"
     REMOTE_PREFIX["czaban"]="/scratch/hfftheo/czaban/ImagMu_Output_Data/muiPiT"
     EXPECTED_POSITION["czaban"]="/home/phil-configs/wilson_nf2_muipi4/ImagMu/muiPiT/LastConfigurations"
+    REMOTE_PREFIX["cuteri"]="/scratch/hfftheo/cuteri/ImagMu/muiPiT"
+    EXPECTED_POSITION["cuteri"]="/home/phil-configs/wilson_nf2_muipi4/ImagMu/muiPiT/LastConfigurations"
     MASS_PREFIX="k"
 fi
 
