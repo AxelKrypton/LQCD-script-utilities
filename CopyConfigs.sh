@@ -8,7 +8,7 @@
 #
 #      bash CopyConfigsFromRemote.sh  <path_to_configs_folder> <destination_folder>
 #
-# NOTE: To right this script quickly, everything starting with "conf." is copied
+# NOTE: To write this script quickly, everything starting with "conf." is copied
 #       back to the destination folder. This means that if there is something that
 #       is not a configuration (i.e. not a lime file), it is copied back as well.
 #       This should not be the case but however is up to the user to manage it.
