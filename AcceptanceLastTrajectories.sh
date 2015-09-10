@@ -2,8 +2,6 @@
 
 #Script to get quickly the Acceptance of the last trajectories
 
-WILSON="true"
-STAGGERED="false"
 BETA=""
 NUM_LAST_TR=0
 
@@ -14,7 +12,6 @@ while [ "$1" != "" ]; do
           printf "\n\e[0;32m"
           echo "Call the script $0 with the following optional arguments:"
           echo "  -h | --help"
-          echo "  -s   ->    for Staggered simulations"
           echo "  -b   ->    the beta to be considered (the other parameters are taken from pwd)"
           echo "  -t   ->    how many trajectory from the end of the run to calculate the acceptance on"
 	  echo ""
@@ -22,7 +19,6 @@ while [ "$1" != "" ]; do
           printf "\n\e[0m"
           exit
           shift;;
-      -s )             WILSON="false"; STAGGERED="true"; shift ;;
       -b=* )    BETA=${1#*=}; shift ;;
       -t=* )    NUM_LAST_TR=${1#*=}; shift ;;
       * ) printf "\n\e[0;31mError parsing the options! Aborting...\n\n\e[0m" ; exit -1 ;;
@@ -30,11 +26,7 @@ while [ "$1" != "" ]; do
 done
 
 # Load auxiliary bash files that will be used.
-if [[ $STAGGERED == "true" ]]; then
-    source $HOME/ScriptStaggered/PathManagement.sh || exit -2
-else
-    source $HOME/Script/PathManagement.sh || exit -2
-fi
+source $HOME/Script/PathManagement.sh || exit -2
 ReadParametersFromPath $(pwd)
 
 #Treat in the right way some prefixes
@@ -48,10 +40,10 @@ fi
 
 # Build the path with the output file
 SCRATCH_PATH=$(pwd)
-if [ $(whoami) = "sciarra" ]; then
+if [ $(whoami) = "sciarra" ]; then #For LOEWE where homedir and workdir are different
    SCRATCH_PATH="/scratch/hfftheo/sciarra/${SCRATCH_PATH#*sciarra/}"
 fi
-if [[ $STAGGERED == "true" ]]; then
+if [[ $STAGGERED == "TRUE" ]]; then #STAGGERED initialized in PathManagement.sh
     SCRATCH_PATH+="/b${BETA}/rhmc_output"
 else
     SCRATCH_PATH+="/b${BETA}/hmc_output"
