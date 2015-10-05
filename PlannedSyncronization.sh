@@ -38,41 +38,53 @@ czaban="/home/czaban/Promotion/Physics/AutomaticSyncImagMuDataReports"
 identity=$(whoami)
 cd ${!identity} || exit 2 
 
-if [ $# -eq 1 ]; then
-    
-    #Check file given in $1 exists
-    if [ ! -f $1 ]; then
-	    printf "\n \e[0;31m File \"$1\" not found! Aborting...\e[0m\n\n"
-	    exit -1
-    fi
-    
-    while :
-    do
-        
+# extract options and their arguments into variables.
+if [ $# -eq 0 ]; then
+    printf "\n\e[0;31m  A file containing the syncronization directives must be provided as first argument! Aborting...\e[0m\n"
+    printf "\n\e[0;34m  Please use the following syntax:\n"
+    printf "\t\e[0;32m  $0 <file with parameters strings> [--now]\e[0m\n\n"
+    exit -1
+fi
+
+SYNC_NOW="FALSE"
+FILE_WITH_DIRECTIONS="$1"
+while [ "$2" != "" ]; do
+    case $2 in
+      --now )   SYNC_NOW="TRUE"; shift ;;
+      * ) printf "\n\e[0;31mError parsing the options! Aborting...\n\n\e[0m" ; exit -1 ;;
+    esac
+done
+
+#Check file given in $FILE_WITH_DIRECTIONS exists
+if [ ! -f $FILE_WITH_DIRECTIONS ]; then
+	printf "\n \e[0;31m File \"$FILE_WITH_DIRECTIONS\" not found! Aborting...\e[0m\n\n"
+	exit -1
+fi
+
+#Actual syncronization
+while :
+do
+    if [ $SYNC_NOW = "FALSE" ]; then
 	    #Just to wait 1a.m.
 	    CURRENT_EPOCH=$(date +%s)
 	    TARGET_EPOCH=$(date -d '01 + 1 days' +%s)
 	    SLEEP_SECONDS=$(( $TARGET_EPOCH - $CURRENT_EPOCH ))
 	    sleep $SLEEP_SECONDS
-	    
-        declare -A RUN_NAMES
-        while read SYNC_FOLDER_GLOBAL_PATH REMOTE_NAME; do
-            RUN_NAMES[$REMOTE_NAME]="${RUN_NAMES[$REMOTE_NAME]} $SYNC_FOLDER_GLOBAL_PATH"
-        done <<< "$(awk '/^($|[#]+)/{next} {print $0}' $1 )"
-        
-    	OUTPUT_FILENAME="syncronization_$(date +'%d.%m.%y-%Hh%M')"
-    	ERROR_FILENAME="errors_$(date +'%d.%m.%y-%Hh%M')"
-        for REMOTE in "${!RUN_NAMES[@]}"; do
-	        ${HOME}/Script/DataSyncronization.sh -r $REMOTE -p ${RUN_NAMES[$REMOTE]} 1>> $OUTPUT_FILENAME 2>> $ERROR_FILENAME
-        done
-	    
-        unset -v 'RUN_NAMES'
-    done
+	fi
     
-else
-    printf "\n\e[0;34mPlease use the following syntax:\n"
-    printf "\t\e[0;32m $0 <file with parameters strings>\e[0m\n\n"
-    exit -1
-fi
-
+    declare -A RUN_NAMES
+    while read SYNC_FOLDER_GLOBAL_PATH REMOTE_NAME; do
+        RUN_NAMES[$REMOTE_NAME]="${RUN_NAMES[$REMOTE_NAME]} $SYNC_FOLDER_GLOBAL_PATH"
+    done <<< "$(awk '/^($|[#]+)/{next} {print $0}' $FILE_WITH_DIRECTIONS )"
+    
+    OUTPUT_FILENAME="syncronization_$(date +'%d.%m.%y-%Hh%M')"
+    ERROR_FILENAME="errors_$(date +'%d.%m.%y-%Hh%M')"
+    for REMOTE in "${!RUN_NAMES[@]}"; do
+	    ${HOME}/Script/DataSyncronization.sh -r $REMOTE -p ${RUN_NAMES[$REMOTE]} 1>> $OUTPUT_FILENAME 2>> $ERROR_FILENAME
+    done
+	
+    unset -v 'RUN_NAMES'
+    [ $SYNC_NOW = "TRUE" ] && break
+done
+    
 cd ${HOME}
