@@ -29,7 +29,7 @@ function ReadBetaValuesFromFile(){
     local INTSTEPS1_ARRAY_TEMP=()
     local CONTINUE_RESUMETRAJ_TEMP=()
     local MASS_PRECONDITIONING_TEMP=()
-    local RESUME_REGEXPR="resumefrom=[[:digit:]]\+"
+    local RESUME_REGEXPR="resumefrom=\([[:digit:]]\+\|last\)"
     local MP_REGEXPR="MP=(.*)"
     local SEARCH_RESULT=""  # Auxiliary variable to help to parse the file
     local OLD_IFS=$IFS      # save the field separator           
@@ -148,7 +148,7 @@ function ReadBetaValuesFromFile(){
         local TEMP_STR=${CONTINUE_RESUMETRAJ_TEMP[$INDEX]}
         if [[ $TEMP_STR != "notFound" ]]; then
             TEMP_STR=${TEMP_STR#"resumefrom="}
-            if [[ ! $TEMP_STR =~ ^[1-9][[:digit:]]*$ ]]; then
+            if [[ ! $TEMP_STR =~ ^[1-9][[:digit:]]*$ ]] && [ $TEMP_STR != "last" ]; then
                 printf "\n\e[0;31m Invalid resume trajectory number in betasfile! Aborting...\n\n\e[0m"
                 exit -1
             fi
@@ -174,7 +174,7 @@ function ReadBetaValuesFromFile(){
     for BETA in ${BETAVALUES[@]}; do
         printf "  - $BETA\t [Integrator steps ${INTSTEPS0_ARRAY[$BETA]}-${INTSTEPS1_ARRAY[$BETA]}]"
         if KeyInArray $BETA CONTINUE_RESUMETRAJ_ARRAY; then
-            printf "   [resume from tr. %5d]" "${CONTINUE_RESUMETRAJ_ARRAY[$BETA]}"
+            printf "   [resume from tr. %+6s]" "${CONTINUE_RESUMETRAJ_ARRAY[$BETA]}"
         else
             printf "                          "
         fi
@@ -186,9 +186,9 @@ function ReadBetaValuesFromFile(){
     printf "\e[0;36m============================================================================================================\n\e[0m"
 
     #If we are not in the continue scenario (and not in other script use cases), look for the correct configuration to start from and set the global path
-    if [ $CONTINUE = "FALSE" ] && [ $CLEAN_OUTPUT_FILES = "FALSE" ] && [ $EMPTY_BETA_DIRS = "FALSE" ]; then
+    if [ $CONTINUE = "FALSE" ] && [ $CLEAN_OUTPUT_FILES = "FALSE" ] && [ $EMPTY_BETA_DIRS = "FALSE" ] && [ $INVERT_CONFIGURATIONS = "FALSE" ]; then
         for BETA in "${BETAVALUES[@]}"; do
-            if [ "$BETA_POSTFIX" == "" ]; then
+            if [ "$BETA_POSTFIX" == "" ]; then #Old nomenclature case: no beta postfix!
                 local FOUND_CONFIGURATIONS=( $(ls $THERMALIZED_CONFIGURATIONS_PATH | grep "conf.${PARAMETERS_STRING}_${BETA_PREFIX}${BETA}.*") )
                 if [ ${#FOUND_CONFIGURATIONS[@]} -eq 0 ]; then
                     STARTCONFIGURATION_GLOBALPATH[$BETA]="notFoundHenceStartFromHot"
@@ -196,7 +196,7 @@ function ReadBetaValuesFromFile(){
                     STARTCONFIGURATION_GLOBALPATH[$BETA]="${THERMALIZED_CONFIGURATIONS_PATH}/${FOUND_CONFIGURATIONS[0]}"
                 else
                     printf "\n\e[0;31m No valid starting configuration found for beta = ${BETA%%_*} in \"$THERMALIZED_CONFIGURATIONS_PATH\"\n"
-                    printf " Zero or more than 1 configurations match the following name: \"conf.${PARAMETERS_STRING}_${BETA_PREFIX}${BETA%%_*}_fromConf*\"! Aborting...\n\n\e[0m"
+                    printf " Zero or more than 1 configurations match the following name: \"conf.${PARAMETERS_STRING}_${BETA_PREFIX}${BETA}.*\"! Aborting...\n\n\e[0m"
                     exit -1
                 fi
             elif [ $BETA_POSTFIX == "_continueWithNewChain" ]; then
@@ -355,6 +355,65 @@ function CompleteBetasFile(){
 }
 
 
+function UncommentEntriesInBetasFile()
+{
+    if [ $UNCOMMENT_BETAS = "TRUE" ]
+    then
+        #at first comment all lines
+        sed -i "s/^\([^#].*\)/#\1/" $BETASFILE
+
+        local IFS=' '
+        local OLD_IFS=$IFS
+        for i in ${UNCOMMENT_BETAS_SEED_ARRAY[@]}
+        do
+            #echo entry: $i
+            IFS='_'
+            local U_ARRAY=( $i )
+            local U_BETA=${U_ARRAY[0]}
+            local U_SEED=${U_ARRAY[1]}
+            local U_SEED=${U_SEED#s}
+
+            sed -i "s/^#\(.*$U_BETA.*$U_SEED.*\)$/\1/" $BETASFILE #If there is a "#" in front of the line, remove it
+        done
+        IFS=$OLD_IFS
+
+        for i in ${UNCOMMENT_BETAS_ARRAY[@]}
+        do
+            U_BETA=$i
+            sed -i "s/^#\(.*$U_BETA.*\)$/\1/" $BETASFILE #If there is a "#" in front of the line, remove it
+        done
+
+    elif [ $COMMENT_BETAS = "TRUE" ] #Basically the reverse case of the above
+    then
+        #at first uncomment all lines
+        sed -i "s/^#\(.*\)/\1/" $BETASFILE
+
+        local IFS=' '
+        local OLD_IFS=$IFS
+        for i in ${UNCOMMENT_BETAS_SEED_ARRAY[@]}
+        do
+            #echo entry: $i
+            IFS='_'
+            local U_ARRAY=( $i )
+            local U_BETA=${U_ARRAY[0]}
+            local U_SEED=${U_ARRAY[1]}
+            local U_SEED=${U_SEED#s}
+
+            sed -i "s/^\($U_BETA.*$U_SEED.*\)$/#\1/" $BETASFILE #If there is no "#" in front of the line, put one
+        done
+        IFS=$OLD_IFS
+
+        for i in ${UNCOMMENT_BETAS_ARRAY[@]}
+        do
+            U_BETA=$i
+            sed -i "s/^\($U_BETA.*\)$/#\1/" $BETASFILE #If there is no "#" in front of the line, put one
+        done
+    fi
+
+    less $BETASFILE
+}
+
+
 
 function ProduceInputFileAndJobScriptForEachBeta()
 {
@@ -385,6 +444,17 @@ function ProcessBetaValuesForContinue()
         ProcessBetaValuesForContinue_Juqueen
     else
         ProcessBetaValuesForContinue_Loewe
+    fi
+}
+
+
+function ProcessBetaValuesForInversion()
+{    
+    if [ "$CLUSTER_NAME" = "JUQUEEN" ]
+    then
+        printf "\n\e[0;31mOption --invertConfigurations not yet implemented on the Juqueen! Aborting...\n\n\e[0m"; exit -1
+    else
+        ProcessBetaValuesForInversion_Loewe
     fi
 }
 

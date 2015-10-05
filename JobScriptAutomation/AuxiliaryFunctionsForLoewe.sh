@@ -1,6 +1,8 @@
 # Load auxiliary bash files that will be used.
 source $HOME/Script/JobScriptAutomation/ProduceInputFileForLoewe.sh || exit -2
 source $HOME/Script/JobScriptAutomation/ProduceJobScriptForLoewe.sh || exit -2
+source $HOME/Script/JobScriptAutomation/ProduceSrunCommandsFileForInversions.sh || exit -2
+source $HOME/Script/JobScriptAutomation/ProduceInverterJobScriptForLoewe.sh || exit -2
 #------------------------------------------------------------------------------------#
 
 # Collection of function needed in the job handler script (mostly in AuxiliaryFunctions).
@@ -14,29 +16,29 @@ function ProduceInputFileAndJobScriptForEachBeta_Loewe(){
     #      (otherwise the authomatic packing would fail in the sense that it would include a problematic beta).
     local BETAVALUES_COPY=(${BETAVALUES[@]})
     #---------------------------------------------------------------------------------------------------------------------#
-    for BETA in "${!BETAVALUES_COPY[@]}"; do
-	local HOME_BETADIRECTORY="$HOME_DIR_WITH_BETAFOLDERS/$BETA_PREFIX${BETAVALUES_COPY[$BETA]}"
-	if [ -d "$HOME_BETADIRECTORY" ]; then
-	    if [ $(ls $HOME_BETADIRECTORY | wc -l) -gt 0 ]; then
-		printf "\n\e[0;31m There are already files in $HOME_BETADIRECTORY.\n The value beta = ${BETAVALUES_COPY[$BETA]} will be skipped!\n\n\e[0m"
-		PROBLEM_BETA_ARRAY+=( ${BETAVALUES_COPY[$BETA]} )
-		unset BETAVALUES_COPY[$BETA] #Here BETAVALUES_COPY becomes sparse
-		continue
-	    fi
-	fi
+    for INDEX in "${!BETAVALUES_COPY[@]}"; do
+	    local HOME_BETADIRECTORY="$HOME_DIR_WITH_BETAFOLDERS/$BETA_PREFIX${BETAVALUES_COPY[$INDEX]}"
+        if [ -d "$HOME_BETADIRECTORY" ]; then
+            if [ $(ls $HOME_BETADIRECTORY | wc -l) -gt 0 ]; then
+            printf "\n\e[0;31m There are already files in $HOME_BETADIRECTORY.\n The value BETA = ${BETAVALUES_COPY[$INDEX]} will be skipped!\n\n\e[0m"
+            PROBLEM_BETA_ARRAY+=( ${BETAVALUES_COPY[$INDEX]} )
+            unset BETAVALUES_COPY[$INDEX] #Here BETAVALUES_COPY becomes sparse
+            continue
+            fi
+        fi
     done
     #Make BETAVALUES_COPY not sparse
     BETAVALUES_COPY=(${BETAVALUES_COPY[@]})
     #If the previous for loop went through, we create the beta folders (just to avoid to create some folders and then abort)
     for INDEX in "${!BETAVALUES_COPY[@]}"; do
-	local HOME_BETADIRECTORY="$HOME_DIR_WITH_BETAFOLDERS/$BETA_PREFIX${BETAVALUES_COPY[$INDEX]}"
-	printf "\e[0;34m Creating directory \e[1m$BETA_PREFIX${BETAVALUES_COPY[$INDEX]}\e[0;34m..."
+        local HOME_BETADIRECTORY="$HOME_DIR_WITH_BETAFOLDERS/$BETA_PREFIX${BETAVALUES_COPY[$INDEX]}"
+        printf "\e[0;34m Creating directory \e[1m$BETA_PREFIX${BETAVALUES_COPY[$INDEX]}\e[0;34m..."
         mkdir $HOME_BETADIRECTORY || exit -2
         printf "\e[0;34m done!\n\e[0m"
-	printf "\e[0;36m   Configuration used: \"${STARTCONFIGURATION_GLOBALPATH[${BETAVALUES_COPY[$INDEX]}]}\"\n\e[0m"
-	#Call the file to produce the input file
-	local INPUTFILE_GLOBALPATH="${HOME_BETADIRECTORY}/$INPUTFILE_NAME"
-	ProduceInputFile_Loewe
+        printf "\e[0;36m   Configuration used: \"${STARTCONFIGURATION_GLOBALPATH[${BETAVALUES_COPY[$INDEX]}]}\"\n\e[0m"
+        #Call the file to produce the input file
+        local INPUTFILE_GLOBALPATH="${HOME_BETADIRECTORY}/$INPUTFILE_NAME"
+        ProduceInputFile_Loewe
     done
     # Partition the BETAVALUES_COPY array into group of GPU_PER_NODE and create the JobScript files inside the JOBSCRIPT_FOLDER
     mkdir -p ${HOME_DIR_WITH_BETAFOLDERS}/$JOBSCRIPT_LOCALFOLDER || exit -2
@@ -165,7 +167,8 @@ function ProcessBetaValuesForContinue_Loewe() {
     local LOCAL_SUBMIT_BETA_ARRAY=()
     #Remove -c | --continue option from command line
     for INDEX in "${!SPECIFIED_COMMAND_LINE_OPTIONS[@]}"; do
-        if [[ "${SPECIFIED_COMMAND_LINE_OPTIONS[$INDEX]}" == --continue* ]] || [[ "${SPECIFIED_COMMAND_LINE_OPTIONS[$INDEX]}" == -c* ]]; then
+        if [[ "${SPECIFIED_COMMAND_LINE_OPTIONS[$INDEX]}" == --continue* ]] || [[ "${SPECIFIED_COMMAND_LINE_OPTIONS[$INDEX]}" == -c* ]] ||
+           [[ "${SPECIFIED_COMMAND_LINE_OPTIONS[$INDEX]}" == --continueThermalization* ]] || [[ "${SPECIFIED_COMMAND_LINE_OPTIONS[$INDEX]}" == -C* ]]; then
             unset SPECIFIED_COMMAND_LINE_OPTIONS[$INDEX]
             SPECIFIED_COMMAND_LINE_OPTIONS=( "${SPECIFIED_COMMAND_LINE_OPTIONS[@]}" )
         fi
@@ -209,6 +212,15 @@ function ProcessBetaValuesForContinue_Loewe() {
 
         #If the option resumefrom is given in the betasfile we have to clean the $WORK_BETADIRECTORY, otherwise just set the name of conf and prng
         if KeyInArray $BETA CONTINUE_RESUMETRAJ_ARRAY; then
+            #If the user wishes to resume from the last avialable trajectory, then find here which number is "last"
+            if [ ${CONTINUE_RESUMETRAJ_ARRAY[$BETA]} = "last" ]; then
+                CONTINUE_RESUMETRAJ_ARRAY[$BETA]=$(ls $WORK_BETADIRECTORY/conf.* | grep -o "/conf.[[:digit:]]\+$" | grep -o "[[:digit:]]\+" | sort -n | tail -n1 | sed 's/^0*//')
+                if [[ ! ${CONTINUE_RESUMETRAJ_ARRAY[$BETA]} =~ ^[[:digit:]]+$ ]]; then
+                    printf "\e[0;31m Unable to find last configuration for resumefrom! Leaving out beta = $BETA .\n\n\e[0m"
+                    PROBLEM_BETA_ARRAY+=( $BETA )
+                    continue
+                fi
+            fi
             printf "\e[0;35m\e[1m\e[4mATTENTION\e[24m: The simulation for beta = ${BETA%_*} will be resumed from trajectory"
             printf " ${CONTINUE_RESUMETRAJ_ARRAY[$BETA]}. Is it what you would like to do (Y/N)? \e[0m"
             local CONFIRM="";
@@ -249,11 +261,11 @@ function ProcessBetaValuesForContinue_Loewe() {
             mkdir $TRASH_NAME || exit 2
             for FILE in $WORK_BETADIRECTORY/conf.* $WORK_BETADIRECTORY/prng.*; do
                 #Move to trash only conf.xxxxx prng.xxxxx files or conf.xxxxx_pbp.dat files where xxxxx are digits
-                local NUMBER_FROM_FILE=$(echo "$FILE" | grep -o "\(\(conf.\)\|\(prng.\)\)[[:digit:]]\{5\}\(_pbp.dat\)\?$" | sed 's/\(\(conf.\)\|\(prng.\)\)\([[:digit:]]\+\).*/\4/' | sed 's/^0*//')
+                local NUMBER_FROM_FILE=$(echo "$FILE" | grep -o "\(\(conf.\)\|\(prng.\)\)[[:digit:]]\+\(_pbp.dat\)\?$" | sed 's/\(\(conf.\)\|\(prng.\)\)\([[:digit:]]\+\).*/\4/' | sed 's/^0*//')
                 if [ "$NUMBER_FROM_FILE" != "" ]; then
                     if [ $NUMBER_FROM_FILE -gt ${CONTINUE_RESUMETRAJ_ARRAY[$BETA]} ]; then
                         mv $FILE $TRASH_NAME
-                    elif [ $NUMBER_FROM_FILE -eq ${CONTINUE_RESUMETRAJ_ARRAY[$BETA]} ] && [ $(echo "$FILE" | grep -o "conf[.][[:digit:]]\{5\}_pbp[.]dat$" | wc -l) -eq 1 ]; then
+                    elif [ $NUMBER_FROM_FILE -eq ${CONTINUE_RESUMETRAJ_ARRAY[$BETA]} ] && [ $(echo "$FILE" | grep -o "conf[.][[:digit:]]\+_pbp[.]dat$" | wc -l) -eq 1 ]; then
                         mv $FILE $TRASH_NAME
                     fi
                 fi
@@ -285,8 +297,8 @@ function ProcessBetaValuesForContinue_Loewe() {
                 local NAME_LAST_PRNG=""
             fi
         else
-            local NAME_LAST_CONFIGURATION=$(ls $WORK_BETADIRECTORY | grep -o "conf.[[:digit:]]\{5\}$" | tail -n1)
-            local NAME_LAST_PRNG=$(ls $WORK_BETADIRECTORY | grep -o "prng.[[:digit:]]\{5\}$" | tail -n1)
+            local NAME_LAST_CONFIGURATION=$(ls $WORK_BETADIRECTORY | grep -o "conf.[[:digit:]]\{5,6\}$" | sort -t '.' -k2n | tail -n1)
+            local NAME_LAST_PRNG=$(ls $WORK_BETADIRECTORY | grep -o "prng.[[:digit:]]\{5,6\}$" | sort -t '.' -k2n | tail -n1)
         fi
 
         #The variable NAME_LAST_CONFIGURATION should have been set above, if not it means no conf was available!
@@ -457,6 +469,10 @@ function ProcessBetaValuesForContinue_Loewe() {
         #            could happen that the simulation is interrupted after having updated the output file but before having stored the
         #            actual configuration. In this case setting the number of measurements to be done using the output file would mean
         #            to do one trajectory less since the configuration from which the run would be resumed would be the last but one!!
+        #            Nevertheless, doing so could lead to wrong number of measurements as well in the case in which the last standard
+        #            output is wrong (for example: a simulation runs for 20k trajectories, it is stopped and by accident it is restarted
+        #            from the beginning for 5k trajectorie; then the last standard output will give a wrong number of measurements).
+        #            This case is left out here and it should be the user to avoid it.
         # 
         # NOTE: If the configuration from which we are starting, i.e. NAME_LAST_CONFIGURATION, contains digits then it is
         #       better to deduce the number of measurements to be done from there.
@@ -596,6 +612,32 @@ function ProcessBetaValuesForContinue_Loewe() {
 
 #=======================================================================================================================#
 
+function ProcessBetaValuesForInversion_Loewe(){
+
+    local LOCAL_SUBMIT_BETA_ARRAY=()
+
+    for BETA in ${BETAVALUES[@]}; do
+        #-------------------------------------------------------------------------#
+        local WORK_BETADIRECTORY="$WORK_DIR_WITH_BETAFOLDERS/$BETA_PREFIX$BETA"
+        #-------------------------------------------------------------------------#
+        echo ${BETAVALUES[@]}
+
+        ProduceSrunCommandsFileForInversionsPerBeta
+
+        #HERE: check if the file produced by awk is empty or not.
+        #Think about which information to provide to the user.
+
+        #only put into this array the beta with no empty awk output files
+        LOCAL_SUBMIT_BETA_ARRAY+=( $BETA )
+    done
+
+    #Partition of the LOCAL_SUBMIT_BETA_ARRAY into group of GPU_PER_NODE and create the JobScript files inside the JOBSCRIPT_FOLDER
+    mkdir -p ${HOME_DIR_WITH_BETAFOLDERS}/$JOBSCRIPT_LOCALFOLDER || exit -2
+    __static__PackBetaValuesPerGpuAndCreateJobScriptFiles "${LOCAL_SUBMIT_BETA_ARRAY[@]}"
+}
+
+#=======================================================================================================================#
+
 function SubmitJobsForValidBetaValues_Loewe() {
     if [ ${#SUBMIT_BETA_ARRAY[@]} -gt "0" ]; then
 	printf "\n\e[0;36m===================================================================================\n\e[0m"
@@ -654,7 +696,6 @@ function SubmitJobsForValidBetaValues_Loewe() {
 
 
 
-
 #=======================================================================================================================#
 #============================ STATIC FUNCTIONS USED MORE THAN IN ONE OTHER FUNCTION ====================================#
 #=======================================================================================================================#
@@ -663,39 +704,44 @@ function __static__PackBetaValuesPerGpuAndCreateJobScriptFiles(){
     local BETAVALUES_ARRAY_TO_BE_SPLIT=( $@ )
     printf "\n\e[0;36m=================================================================================\n\e[0m"
     printf "\e[0;36m  The following beta values have been grouped (together with the seed if used):\e[0m\n"
-    while [[ "${!BETAVALUES_ARRAY_TO_BE_SPLIT[@]}" != "" ]]; do # ${!array[@]} gives the list of the valid indeces in the array
-	local BETA_FOR_JOBSCRIPT=(${BETAVALUES_ARRAY_TO_BE_SPLIT[@]:0:$GPU_PER_NODE})
-	BETAVALUES_ARRAY_TO_BE_SPLIT=(${BETAVALUES_ARRAY_TO_BE_SPLIT[@]:$GPU_PER_NODE})
-	printf "   ->"
-	for BETA in "${BETA_FOR_JOBSCRIPT[@]}"; do
-	    printf "    ${BETA_PREFIX}${BETA%_*}"
-	done
-	echo ""
-	local BETAS_STRING="$(__static__GetJobBetasStringUsing ${BETA_FOR_JOBSCRIPT[@]})"
-	local JOBSCRIPT_NAME="$(__static__GetJobScriptName ${BETAS_STRING})"
-	local JOBSCRIPT_GLOBALPATH="${HOME_DIR_WITH_BETAFOLDERS}/$JOBSCRIPT_LOCALFOLDER/$JOBSCRIPT_NAME"
-	if [ $SUBMITONLY = "FALSE" ]; then
-	    if [ -e $JOBSCRIPT_GLOBALPATH ]; then
-		mv $JOBSCRIPT_GLOBALPATH ${JOBSCRIPT_GLOBALPATH}_$(date +'%F_%H%M') || exit -2
-	    fi
-	    #Call the file to produce the jobscript file
-	    ProduceJobscript_Loewe
-	    if [ -e $JOBSCRIPT_GLOBALPATH ]; then
-		SUBMIT_BETA_ARRAY+=( "${BETAS_STRING}" )
-	    else
-		printf "\n\e[0;31m Jobscript \"$JOBSCRIPT_NAME\" failed to be created!\n\n\e[0m"
-		PROBLEM_BETA_ARRAY+=( "${BETAS_STRING}" )
-		continue
-	    fi
-	else
-	    if [ -e $JOBSCRIPT_GLOBALPATH ]; then
-		SUBMIT_BETA_ARRAY+=( "${BETAS_STRING}" )
-	    else
-		printf "\n\e[0;31m Jobscript \"$JOBSCRIPT_NAME\" not existing with --submitonly option given!! Situation to be checked...\n\n\e[0m"
-		PROBLEM_BETA_ARRAY+=( "${BETAS_STRING}" )
-		continue
-	    fi
-	fi
+    while [[ "${!BETAVALUES_ARRAY_TO_BE_SPLIT[@]}" != "" ]]; do # ${!array[@]} gives the list of the valid indices in the array
+        local BETA_FOR_JOBSCRIPT=(${BETAVALUES_ARRAY_TO_BE_SPLIT[@]:0:$GPU_PER_NODE})
+        BETAVALUES_ARRAY_TO_BE_SPLIT=(${BETAVALUES_ARRAY_TO_BE_SPLIT[@]:$GPU_PER_NODE})
+        printf "   ->"
+        for BETA in "${BETA_FOR_JOBSCRIPT[@]}"; do
+            printf "    ${BETA_PREFIX}${BETA%_*}"
+        done
+        echo ""
+        local BETAS_STRING="$(__static__GetJobBetasStringUsing ${BETA_FOR_JOBSCRIPT[@]})"
+        local JOBSCRIPT_NAME="$(__static__GetJobScriptName ${BETAS_STRING})"
+        local JOBSCRIPT_GLOBALPATH="${HOME_DIR_WITH_BETAFOLDERS}/$JOBSCRIPT_LOCALFOLDER/$JOBSCRIPT_NAME"
+        if [ $SUBMITONLY = "FALSE" ]; then
+            if [ -e $JOBSCRIPT_GLOBALPATH ]; then
+                mv $JOBSCRIPT_GLOBALPATH ${JOBSCRIPT_GLOBALPATH}_$(date +'%F_%H%M') || exit -2
+            fi
+            #Call the file to produce the jobscript file
+            if [ $INVERT_CONFIGURATIONS = "TRUE" ]; then
+                echo "Arrived here..."
+                ProduceInverterJobscript_Loewe
+            else
+                ProduceJobscript_Loewe 
+            fi
+            if [ -e $JOBSCRIPT_GLOBALPATH ]; then
+                SUBMIT_BETA_ARRAY+=( "${BETAS_STRING}" )
+            else
+                printf "\n\e[0;31m Jobscript \"$JOBSCRIPT_NAME\" failed to be created!\n\n\e[0m"
+                PROBLEM_BETA_ARRAY+=( "${BETAS_STRING}" )
+                continue
+            fi
+        else
+            if [ -e $JOBSCRIPT_GLOBALPATH ]; then
+                SUBMIT_BETA_ARRAY+=( "${BETAS_STRING}" )
+            else
+                printf "\n\e[0;31m Jobscript \"$JOBSCRIPT_NAME\" not existing with --submitonly option given!! Situation to be checked...\n\n\e[0m"
+                PROBLEM_BETA_ARRAY+=( "${BETAS_STRING}" )
+                continue
+            fi
+        fi
     done
     printf "\e[0;36m=================================================================================\n\e[0m"
 }
@@ -728,11 +774,16 @@ function __static__GetJobBetasStringUsing(){
 
 function __static__GetJobScriptName(){
     local STRING_WITH_BETAVALUES="$1"
-    if [ "$BETA_POSTFIX" == "_thermalizeFromConf" ]; then
-	echo "${JOBSCRIPT_PREFIX}_${PARAMETERS_STRING}__${STRING_WITH_BETAVALUES}_TC"
-    elif [ "$BETA_POSTFIX" == "_thermalizeFromHot" ]; then
-	echo "${JOBSCRIPT_PREFIX}_${PARAMETERS_STRING}__${STRING_WITH_BETAVALUES}_TH"
+
+    if [ $INVERT_CONFIGURATIONS = "TRUE" ]; then
+        echo "${JOBSCRIPT_PREFIX}_${PARAMETERS_STRING}__${STRING_WITH_BETAVALUES}_INV"
     else
-	echo "${JOBSCRIPT_PREFIX}_${PARAMETERS_STRING}__${STRING_WITH_BETAVALUES}"
+        if [ "$BETA_POSTFIX" == "_thermalizeFromConf" ]; then
+            echo "${JOBSCRIPT_PREFIX}_${PARAMETERS_STRING}__${STRING_WITH_BETAVALUES}_TC"
+        elif [ "$BETA_POSTFIX" == "_thermalizeFromHot" ]; then
+            echo "${JOBSCRIPT_PREFIX}_${PARAMETERS_STRING}__${STRING_WITH_BETAVALUES}_TH"
+        else
+            echo "${JOBSCRIPT_PREFIX}_${PARAMETERS_STRING}__${STRING_WITH_BETAVALUES}"
+        fi
     fi
 }

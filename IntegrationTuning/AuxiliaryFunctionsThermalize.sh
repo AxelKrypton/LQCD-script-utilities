@@ -48,7 +48,6 @@ function ParseCommandLineOption(){
     done
 }
 
-
 function ReadBetaValuesFromFile(){
 
     if [ ! -e $BETASFILE ]; then
@@ -89,11 +88,18 @@ function ProduceJobScriptFile(){
     echo "#SBATCH --time=$WALLTIME" >> $JOBSCRIPT_GLOBALPATH
     echo "#SBATCH --output=${HMC_FILENAME}.%j.out" >> $JOBSCRIPT_GLOBALPATH
     echo "#SBATCH --error=${HMC_FILENAME}.%j.err" >> $JOBSCRIPT_GLOBALPATH
-    echo "#SBATCH --partition=$LOEWE_PARTITION" >> $JOBSCRIPT_GLOBALPATH
+    echo "#SBATCH --partition=$LOEWE_PARTITION" >> $JOBSCRIPT_GLOBALPATH  #In case of the cluster being LCSC the variable LOEWE_PARTITION is set to "lcsc"
     if [[ "$LOEWE_PARTITION" == "parallel" ]]; then
-	echo "#SBATCH --constraint=$LOEWE_CONSTRAINT" >> $JOBSCRIPT_GLOBALPATH
+		echo "#SBATCH --constraint=$LOEWE_CONSTRAINT" >> $JOBSCRIPT_GLOBALPATH
     fi
-    echo "#SBATCH --tasks=$GPU_PER_NODE" >> $JOBSCRIPT_GLOBALPATH
+	if [ $CLUSTER_NAME = "LCSC" ]
+	then
+    	echo "#SBATCH --ntasks=$GPU_PER_NODE" >> $JOBSCRIPT_GLOBALPATH
+    	echo "#SBATCH --gres=gpu:$GPU_PER_NODE" >> $JOBSCRIPT_GLOBALPATH
+    	echo "#SBATCH --mem=64000" >> $JOBSCRIPT_GLOBALPATH
+	else
+    	echo "#SBATCH --tasks=$GPU_PER_NODE" >> $JOBSCRIPT_GLOBALPATH
+	fi
     if [[ "$LOEWE_NODE" != "unset" ]]; then
 	echo "#SBATCH -w $LOEWE_NODE" >> $JOBSCRIPT_GLOBALPATH
     fi

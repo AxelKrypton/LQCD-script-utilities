@@ -44,6 +44,15 @@ source $HOME/Script/IntegrationTuning/AuxiliaryFunctionsThermalize.sh || exit -2
 #-----------------------------------------------------------------------------------------------------------------#
 # Set default values for the command line parameters
 
+if [[ $(whoami) =~ ^hkf[[:digit:]]{3} ]]; then
+    CLUSTER_NAME="JUQUEEN"
+    WALLTIME="00:30:00"
+elif [ "$(hostname)" = "lxlcsc0001" ]; then
+    CLUSTER_NAME="LCSC"
+elif [ "$(hostname)" = "lqcd-login" ]; then
+    CLUSTER_NAME="LCSC_OLD" #Temporary, until all nodes will be moved to gsi
+fi
+
 BETA_PREFIX="b"
 BETASFILE="betas"
 WALLTIME="06:00:00"
@@ -53,7 +62,12 @@ STARTCONDITION="hot"
 NUMTIMESCALES=2
 INTSTEPS0=7
 INTSTEPS1=5
-LOEWE_PARTITION="parallel"
+if [ $CLUSTER_NAME = "LCSC" ]
+then
+	LOEWE_PARTITION="lcsc"
+else
+	LOEWE_PARTITION="parallel"
+fi
 LOEWE_CONSTRAINT="gpu"
 LOEWE_NODE="unset"
 
@@ -85,7 +99,7 @@ ParseCommandLineOption $@
 
 #-----------------------------------------------------------------------------------------------------------------#
 # Perform all the checks on the path, reading out some variables 
-CheckSingleOccurrenceInPath "scratch" "hfftheo" "$(whoami)" "mui" "k[[:digit:]]\+" "nt[[:digit:]]\+" "ns[[:digit:]]\+"
+CheckSingleOccurrenceInPath "lustre" "nyx" "lcsc" "$(whoami)" "mui" "k[[:digit:]]\+" "nt[[:digit:]]\+" "ns[[:digit:]]\+"
 
 ReadParametersFromPath $(pwd)
 

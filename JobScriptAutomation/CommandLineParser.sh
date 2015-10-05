@@ -4,9 +4,22 @@
 
 function ParseCommandLineOption(){
 
-MUTUALLYEXCLUSIVEOPTS=( "-s | --submit" "-c | --continue" "-t | --thermalize" "-l | --liststatus" "--liststatus_all" "--submitonly" "--showjobs" "--showjobs_all" "--accRateReport" "--accRateReport_all" "--emptyBetaDirectories" "--cleanOutputFiles" "--completeBetasFile")
-MUTUALLYEXCLUSIVEOPTS_PASSED=( )
-
+    MUTUALLYEXCLUSIVEOPTS=( "-s | --submit"
+                            "-c | --continue"
+                            "-C | --continueThermalization"
+                            "-t | --thermalize"
+                            "-l | --liststatus"
+                            "--liststatus_all"
+                            "--submitonly"
+                            "--showjobs"
+                            "--showjobs_all"
+                            "--accRateReport"
+                            "--accRateReport_all"
+                            "--emptyBetaDirectories"
+                            "--cleanOutputFiles"
+                            "--completeBetasFile")
+    MUTUALLYEXCLUSIVEOPTS_PASSED=( )
+    
     while [ "$1" != "" ]; do
 	case $1 in
 	    -h | --help )
@@ -16,8 +29,8 @@ MUTUALLYEXCLUSIVEOPTS_PASSED=( )
 		echo "  -h | --help"
 		echo "  --jobscript_prefix                 ->    default value = $JOBSCRIPT_PREFIX"
 		echo "  --chempot_prefix                   ->    default value = $CHEMPOT_PREFIX"
-        echo -e "  --kappa_prefix                     ->    default value = k \e[1;32m(Wilson Case ONLY)\e[0;32m"
-        echo -e "  --mass_prefix                      ->    default value = mass \e[1;32m(Staggered Case ONLY)\e[0;32m"
+		echo -e "  --kappa_prefix                     ->    default value = k \e[1;32m(Wilson Case ONLY)\e[0;32m"
+		echo -e "  --mass_prefix                      ->    default value = mass \e[1;32m(Staggered Case ONLY)\e[0;32m"
 		echo "  --ntime_prefix                     ->    default value = $NTIME_PREFIX"
 		echo "  --nspace_prefix                    ->    default value = $NSPACE_PREFIX"
 		echo "  --beta_prefix                      ->    default value = $BETA_PREFIX"
@@ -47,13 +60,20 @@ MUTUALLYEXCLUSIVEOPTS_PASSED=( )
 		echo -e "  \e[0;34m-s | --submit\e[0;32m                      ->    jobs will be submitted"
 		echo -e "  \e[0;34m--submitonly\e[0;32m                       ->    jobs will be submitted (no files are created)"
 		echo -e "  \e[0;34m-t | --thermalize\e[0;32m                  ->    The thermalization is done." #TODO: Explain how
-		echo -e "  \e[0;34m-c | --continue\e[0;32m                    ->    Unfinished jobs will be continued up to the nr. of measurements specified in the input file."
-		echo -e "  \e[0;34m-c=[number] | --continue=[number]\e[0;32m        If a number is specified, finished jobs will be continued up to the specified number."
-		if [ "$CLUSTER_NAME" = "LOEWE" ]; then
+		echo -e "  \e[0;34m-c | --continue\e[0;32m                    ->    Unfinished jobs will be continued doing the nr. of measurements specified in the input file."
+		echo -e "  \e[0;34m-c=[#] | --continue=[#]\e[0;32m                  If a number is specified, jobs will be continued up to the specified number."
+		if [ "$CLUSTER_NAME" = "LOEWE" ] || [ "$CLUSTER_NAME" = "LCSC" ]; then
 		    echo -e "                                           To resume a simulation from a given trajectory, add \e[0;34mresumefrom=[number]\e[0;32m in the betasfile."
+		    echo -e "                                           Use \e[0;34mresumefrom=last\e[0;32m in the betasfile to resume a simulation from the last saved conf.[[:digit:]]+ file."
+		fi
+		echo -e "  \e[0;34m-C | --continueThermalization\e[0;32m      ->    Unfinished thermalizations will be continued doing the nr. of measurements specified in the input file."
+		echo -e "  \e[0;34m-C=[#] | --continueThermalization=[#]\e[0;32m    If a number is specified, thermalizations will be continued up to the specified number."        
+		if [ "$CLUSTER_NAME" = "LOEWE" ] || [ "$CLUSTER_NAME" = "LCSC" ]; then
+		    echo -e "                                           To resume a thermalization from a given trajectory, add \e[0;34mresumefrom=[number]\e[0;32m in the betasfile."
+		    echo -e "                                           Use \e[0;34mresumefrom=last\e[0;32m in the betasfile to resume a thermalization from the last saved conf.[[:digit:]]+ file."
 		fi
 		echo -e "  \e[0;34m-l | --liststatus\e[0;32m                  ->    The local measurement status for all beta will be displayed"
-		if [ "$CLUSTER_NAME" = "LOEWE" ]; then
+		if [ "$CLUSTER_NAME" = "LOEWE" ] || [ "$CLUSTER_NAME" = "LCSC" ]; then
 		    echo -e "                                           Secondary options: \e[0;34m--measureTime\e[0;32m to get information about the trajectory time"
 		    echo -e "                                                              \e[0;34m--showOnlyQueued\e[0;32m not to show status about not queued jobs"
 		fi
@@ -69,17 +89,23 @@ MUTUALLYEXCLUSIVEOPTS_PASSED=( )
 		echo -e "  \e[0;34m--completeBetasFile[=number]\e[0;32m       ->    The beta file is completed adding for each beta new chains in order to have as many chain as specified. "
 		echo -e "                                           If no number is specified, 4 is used. This option, if \"-u\" has been given, uses the seed in the second field to generate new chains." 
 		echo -e "                                           Otherwise one new field containing the seed is inserted in second position." 
+		echo -e "  \e[0;34m-U | --uncommentBetas\e[0;32m              ->    This option uncomments the specified betas (All remaining entries will be commented)." 
+		echo -e "                                           The betas can be specified either with a seed or without."
+		echo -e "                                           The format of the specified string can either contain the output of the --liststatus option, e.g. 5.4380_s5491_NC" 
+		echo -e "                                           or simply beta values like 5.4380 or a mix of both. If pure beta values are given then all seeds of the given beta value will be uncommented."
+		echo -e "  \e[0;34m--commentBetas\e[0;32m                     ->    Is the reverse option of the \"--uncommentBetas\" option"
+		echo -e "  \e[0;34m-i | --invertConfigurations\e[0;32m        ->    Invert configurations and produce correlator files for betas and seed specified in the betas file."
 		echo ""
 		echo -e "\e[0;93mNOTE: The blue options are mutually exclusive and they are all FALSE by default! In other words, if none of them"
 		echo -e "\e[0;93m      is given, the script will create beta-folders with the right files inside, but no job will be submitted."
 		printf "\n\e[0m"
 		exit
 		shift;;
-        --jobscript_prefix=* )          JOBSCRIPT_PREFIX=${1#*=}; shift ;;
-        --chempot_prefix=* )            CHEMPOT_PREFIX=${1#*=}; shift ;;
-	    --kappa_prefix=* )
-            [ $STAGGERED = "TRUE" ] && printf "\n\e[0;31m The option --kappa_prefix can be used only in WILSON simulations! Aborting...\n\n\e[0m" && exit -1
-            KAPPA_PREFIX=${1#*=}; shift ;;
+            --jobscript_prefix=* ) JOBSCRIPT_PREFIX=${1#*=}; shift ;;
+            --chempot_prefix=* )            CHEMPOT_PREFIX=${1#*=}; shift ;;
+            --kappa_prefix=* )
+                [ $STAGGERED = "TRUE" ] && printf "\n\e[0;31m The option --kappa_prefix can be used only in WILSON simulations! Aborting...\n\n\e[0m" && exit -1
+		KAPPA_PREFIX=${1#*=}; shift ;;
 	    --mass_prefix=* )
             [ $WILSON = "TRUE" ] && printf "\n\e[0;31m The option --kappa_prefix can be used only in STAGGERED simulations! Aborting...\n\n\e[0m" && exit -1
             KAPPA_PREFIX=${1#*=}; shift ;;
@@ -107,80 +133,96 @@ MUTUALLYEXCLUSIVEOPTS_PASSED=( )
             USE_RATIONAL_APPROXIMATION_FILE="FALSE"; shift ;;
 	    -u | --useMultipleChains )
 	        if [[ $CLUSTER_NAME != "LOEWE" ]] && [[ $CLUSTER_NAME != "LCSC" ]] && [[ $CLUSTER_NAME != "LCSC_OLD" ]]; then
-                    printf "\n\e[0;31m The options -u | --useMultipleChains can be used only on CSC clusters yet!! Aborting...\n\n\e[0m"
-                    exit -1
-		else
-		    USE_MULTIPLE_CHAINS="TRUE"
-		    if [ $THERMALIZE = "FALSE" ]; then
-		    	BETA_POSTFIX="_continueWithNewChain"
+                printf "\n\e[0;31m The options -u | --useMultipleChains can be used only on CSC clusters yet!! Aborting...\n\n\e[0m"
+                exit -1
+		    else
+		        USE_MULTIPLE_CHAINS="TRUE"
+		        if [ $THERMALIZE = "FALSE" ]; then #Here we set the BETA_POSTFIX supposing it is not a thermalization. If indeed it is, the postfix will be overwritten in the thermalize case in the main!
+		    	    BETA_POSTFIX="_continueWithNewChain"
+		        fi
+            fi
+            shift ;;
+	    --partition=* )
+		    LOEWE_PARTITION=${1#*=}; 
+	        if [[ $CLUSTER_NAME != "LOEWE" ]]; then
+		        printf "\n\e[0;31m The options --partition can be used only on the LOEWE! Aborting...\n\n\e[0m"
+                exit -1
 		    fi
-                fi
-                shift ;;
-	    --partition=* )		 LOEWE_PARTITION=${1#*=}; 
+		    shift ;;
+	    --constraint=* )
+		    LOEWE_CONSTRAINT=${1#*=}; 
 	        if [[ $CLUSTER_NAME != "LOEWE" ]]; then
-		    printf "\n\e[0;31m The options --partition can be used only on the LOEWE! Aborting...\n\n\e[0m"
-                    exit -1
-		fi
-		shift ;;
-	    --constraint=* )		 LOEWE_CONSTRAINT=${1#*=}; 
+		        printf "\n\e[0;31m The options --constraint can be used only on the LOEWE! Aborting...\n\n\e[0m"
+                exit -1
+		    fi
+		    shift ;;
+	    --node=* )
+            LOEWE_NODE=${1#*=}; 
 	        if [[ $CLUSTER_NAME != "LOEWE" ]]; then
-		    printf "\n\e[0;31m The options --constraint can be used only on the LOEWE! Aborting...\n\n\e[0m"
-                    exit -1
-		fi
-		shift ;;
-	    --node=* )	                 LOEWE_NODE=${1#*=}; 
-	        if [[ $CLUSTER_NAME != "LOEWE" ]]; then
-		    printf "\n\e[0;31m The options --node can be used only on the LOEWE! Aborting...\n\n\e[0m"
-                    exit -1
-		fi
-		shift ;;
+		        printf "\n\e[0;31m The options --node can be used only on the LOEWE! Aborting...\n\n\e[0m"
+                exit -1
+		    fi
+		    shift ;;
 	    -s | --submit )
-		MUTUALLYEXCLUSIVEOPTS_PASSED+=( "$1" )
+		    MUTUALLYEXCLUSIVEOPTS_PASSED+=( "$1" )
 		    SUBMIT="TRUE"
-		shift;; 
+		    shift;; 
 	    --submitonly )	 			
-		MUTUALLYEXCLUSIVEOPTS_PASSED+=( "--submitonly" )
+		    MUTUALLYEXCLUSIVEOPTS_PASSED+=( "--submitonly" )
 		    SUBMITONLY="TRUE"
-		shift;; 
+		    shift;; 
 	    -t | --thermalize )			 
-		MUTUALLYEXCLUSIVEOPTS_PASSED+=( "$1" )
+		    MUTUALLYEXCLUSIVEOPTS_PASSED+=( "$1" )
 		    THERMALIZE="TRUE"
-		shift;; 
+		    shift;; 
 	    -c | --continue )			 
-		MUTUALLYEXCLUSIVEOPTS_PASSED+=( "$1" )
+		    MUTUALLYEXCLUSIVEOPTS_PASSED+=( "$1" )
 		    CONTINUE="TRUE"		
-		shift;; 
+		    shift;; 
 	    -c=* | --continue=* )		
-		MUTUALLYEXCLUSIVEOPTS_PASSED+=( "$1" )
+		    MUTUALLYEXCLUSIVEOPTS_PASSED+=( "$1" )
 		    CONTINUE="TRUE"
 		    CONTINUE_NUMBER=${1#*=}; 
 		    if [[ ! $CONTINUE_NUMBER =~ ^[[:digit:]]+$ ]];then
 		    	printf "\n\e[0;31m The specified number for --continue=[number] must be an integer containing at least one or more digits! Aborting...\n\n\e[0m" 
-			exit -1
+			    exit -1
 		    fi
-		shift;; 
+		    shift;; 
+	    -C | --continueThermalization )			 
+		    MUTUALLYEXCLUSIVEOPTS_PASSED+=( "$1" )
+		    CONTINUE_THERMALIZATION="TRUE"		
+		    shift;; 
+	    -C=* | --continueThermalization=* )		
+		    MUTUALLYEXCLUSIVEOPTS_PASSED+=( "$1" )
+		    CONTINUE_THERMALIZATION="TRUE"
+		    CONTINUE_NUMBER=${1#*=}; 
+		    if [[ ! $CONTINUE_NUMBER =~ ^[[:digit:]]+$ ]];then
+		    	printf "\n\e[0;31m The specified number for --continueThermalization=[number] must be an integer containing at least one or more digits! Aborting...\n\n\e[0m" 
+			    exit -1
+		    fi
+		    shift;; 
 	    -l | --liststatus )
-		MUTUALLYEXCLUSIVEOPTS_PASSED+=( "--liststatus" )
+		    MUTUALLYEXCLUSIVEOPTS_PASSED+=( "--liststatus" )
 		    LISTSTATUS="TRUE"
 		    LISTSTATUSALL="FALSE"
-		shift;;
+		    shift;;
 	    --measureTime )
-	            [ $LISTSTATUS = "FALSE" ] && printf "\n\e[0;31mSecondary option --measureTime must be given after the primary one \"-l | --liststatus\"! Aborting...\n\n\e[0m" && exit -1
+	        [ $LISTSTATUS = "FALSE" ] && printf "\n\e[0;31mSecondary option --measureTime must be given after the primary one \"-l | --liststatus\"! Aborting...\n\n\e[0m" && exit -1
 		    LISTSTATUS_MEASURE_TIME="TRUE"
-		shift;;
+		    shift;;
 	    --showOnlyQueued )
-	            [ $LISTSTATUS = "FALSE" ] && printf "\n\e[0;31mSecondary option --showOnlyQueued must be given after the primary one \"-l | --liststatus\"! Aborting...\n\n\e[0m" && exit -1
+	        [ $LISTSTATUS = "FALSE" ] && printf "\n\e[0;31mSecondary option --showOnlyQueued must be given after the primary one \"-l | --liststatus\"! Aborting...\n\n\e[0m" && exit -1
 		    LISTSTATUS_SHOW_ONLY_QUEUED="TRUE"
-		shift;;
+		    shift;;
 	    --liststatus_all )
-		MUTUALLYEXCLUSIVEOPTS_PASSED+=( "--liststatus_all" )
+		    MUTUALLYEXCLUSIVEOPTS_PASSED+=( "--liststatus_all" )
 		    LISTSTATUS="FALSE"
 		    LISTSTATUSALL="TRUE"
-		shift;; 
+		    shift;; 
 	    --showjobs )
-		MUTUALLYEXCLUSIVEOPTS_PASSED+=( "--showjobs" )
+		    MUTUALLYEXCLUSIVEOPTS_PASSED+=( "--showjobs" )
 		    SHOWJOBS="TRUE"
-		shift;; 
+		    shift;; 
 	    --accRateReport=* )
             INTERVAL=${1#*=} 
 		    MUTUALLYEXCLUSIVEOPTS_PASSED+=( "--accRateReport" )
@@ -216,6 +258,45 @@ MUTUALLYEXCLUSIVEOPTS_PASSED=( )
                 fi
             fi
 	        shift ;;
+		-U | --uncommentBetas)   	
+				MUTUALLYEXCLUSIVEOPTS_PASSED+=( "--uncommentBetas" )
+				COMMENT_BETAS="FALSE"
+				UNCOMMENT_BETAS="TRUE"
+				while [[ "$2" =~ ^[[:digit:]]\.[[:digit:]]{4}_s[[:digit:]]{4}_(NC|fC|fH)$ ]] || [[ "$2" =~ ^[[:digit:]]\.[[:digit:]]{4}$ ]]
+				do
+					if [[ "$2" =~ ^[[:digit:]]\.[[:digit:]]{4}_s[[:digit:]]{4}_(NC|fC|fH)$ ]]
+					then
+						UNCOMMENT_BETAS_SEED_ARRAY+=( $2 )
+					elif [[ "$2" =~ ^[[:digit:]]\.[[:digit:]]{4}$ ]]
+					then 
+						UNCOMMENT_BETAS_ARRAY+=( $2 )
+					fi
+				    shift
+				done
+                shift
+				;;
+        --commentBetas)
+				MUTUALLYEXCLUSIVEOPTS_PASSED+=( "--commentBetas" )
+				UNCOMMENT_BETAS="FALSE"
+				COMMENT_BETAS="TRUE"
+				while [[ "$2" =~ ^[[:digit:]]\.[[:digit:]]{4}_s[[:digit:]]{4}_(NC|fC|fH)$ ]] || [[ "$2" =~ ^[[:digit:]]\.[[:digit:]]{4}$ ]]
+				do
+					if [[ "$2" =~ ^[[:digit:]]\.[[:digit:]]{4}_s[[:digit:]]{4}_(NC|fC|fH)$ ]]
+					then
+						UNCOMMENT_BETAS_SEED_ARRAY+=( $2 )
+					elif [[ "$2" =~ ^[[:digit:]]\.[[:digit:]]{4}$ ]]
+					then 
+						UNCOMMENT_BETAS_ARRAY+=( $2 )
+					fi
+				    shift
+				done
+                shift
+				;;
+        -i | --invertConfigurations)
+				MUTUALLYEXCLUSIVEOPTS_PASSED+=( "--invertConfigurations" )
+                INVERT_CONFIGURATIONS="TRUE"
+                shift
+                ;;
 	    * ) printf "\n\e[0;31m Invalid option \e[1m$1\e[0;31m (see help for further information)! Aborting...\n\n\e[0m" ; exit -1 ;;
 	esac
     done
