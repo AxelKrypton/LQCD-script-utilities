@@ -189,11 +189,11 @@ fi
 #Aliases to go to the kappa folders
 if [ $LOAD_KAPPA_ALIASES = "TRUE" ]; then
     for KAPPA in ${!IDENTITY_KAPPA_LIST}; do
-        NUM_FOLDER=( $(ls /lustre/nyx/lcsc/asciarra/WilsonProject/muiPiT/k$KAPPA/nt6 | grep "^ns[[:digit:]]\+") )
+        NUM_FOLDER=( $(ls ${!IDENTITY_WORK}${!IDENTITY_WILSON}/muiPiT/k$KAPPA/nt6 | grep "^ns[[:digit:]]\+") )
         if [ ${#NUM_FOLDER[@]} -eq 1 ]; then
-    	    alias k${KAPPA}="cd /lustre/nyx/lcsc/asciarra/WilsonProject/muiPiT/k$KAPPA/nt6/${NUM_FOLDER[0]}"
+    	    alias k${KAPPA}="cd ${!IDENTITY_WORK}${!IDENTITY_WILSON}/muiPiT/k$KAPPA/nt6/${NUM_FOLDER[0]}"
         else
-    	    alias k${KAPPA}="cd /lustre/nyx/lcsc/asciarra/WilsonProject/muiPiT/k$KAPPA/nt6; PickUpFolder"
+    	    alias k${KAPPA}="cd ${!IDENTITY_WORK}${!IDENTITY_WILSON}/muiPiT/k$KAPPA/nt6; PickUpFolder"
         fi
     done && unset -v 'NUM_FOLDER' 'KAPPA'
 fi
@@ -202,11 +202,11 @@ fi
 #Aliases to go to the mass folders
 if [ $LOAD_MASS_ALIASES = "TRUE" ]; then
     for MASS in ${!IDENTITY_MASS_LIST}; do
-	    NUM_FOLDER=( $(ls /lustre/nyx/lcsc/asciarra/StaggeredNf2Project/muiPiT/mass$MASS/nt6 | grep "^ns[[:digit:]]\+") )
+	    NUM_FOLDER=( $(ls ${!IDENTITY_WORK}${!IDENTITY_STAGGERED}/muiPiT/mass$MASS/nt6 | grep "^ns[[:digit:]]\+") )
 	    if [ ${#NUM_FOLDER[@]} -eq 1 ]; then
-	        alias mass${MASS}="cd /lustre/nyx/lcsc/asciarra/StaggeredNf2Project/muiPiT/mass$MASS/nt6/${NUM_FOLDER[0]}"
+	        alias mass${MASS}="cd ${!IDENTITY_WORK}${!IDENTITY_STAGGERED}/muiPiT/mass$MASS/nt6/${NUM_FOLDER[0]}"
 	    else
-	        alias mass${MASS}="cd /lustre/nyx/lcsc/asciarra/StaggeredNf2Project/muiPiT/mass$MASS/nt6; PickUpFolder"
+	        alias mass${MASS}="cd ${!IDENTITY_WORK}${!IDENTITY_STAGGERED}/muiPiT/mass$MASS/nt6; PickUpFolder"
 	    fi
     done && unset -v 'NUM_FOLDER' 'MASS'
 fi
