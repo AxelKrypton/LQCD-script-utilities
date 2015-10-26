@@ -5,7 +5,7 @@ function ProduceJobscript_Loewe(){
     # created in the function from which it is called.
     #-----------------------------------------------------------------#
     #This jobscript is for CL2QCD only!
-    echo "#!/bin/sh" > $JOBSCRIPT_GLOBALPATH
+    echo "#!/bin/bash" > $JOBSCRIPT_GLOBALPATH
     echo "" >> $JOBSCRIPT_GLOBALPATH
     echo "#SBATCH --job-name=${JOBSCRIPT_NAME#${JOBSCRIPT_PREFIX}_*}" >> $JOBSCRIPT_GLOBALPATH
     echo "#SBATCH --mail-type=FAIL" >> $JOBSCRIPT_GLOBALPATH
