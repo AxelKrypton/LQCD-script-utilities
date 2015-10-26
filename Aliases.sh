@@ -31,7 +31,6 @@
 #   [...]_kappaList=""  -> Needed for LOAD_KAPPA_ALIASES
 #   [...]_massList=""   -> Needed for LOAD_MASS_ALIASES
 #   [...]_Python=""     -> Needed for LOAD_PYTHON_ALIASES
-#   [...]_Fits=""       -> Needed for LOAD_FIT_ALIASES
 #
 # where [...] is the whoami concatenated with hostname.
 
@@ -79,7 +78,6 @@ IDENTITY_STAGGERED="${IDENTITY}_Staggered"
 IDENTITY_KAPPA_LIST="${IDENTITY}_kappaList"
 IDENTITY_MASS_LIST="${IDENTITY}_massList"
 IDENTITY_PYTHON="${IDENTITY}_Python"
-IDENTITY_FITS="${IDENTITY}_Fits"
 IDENTITY_JOBS="${IDENTITY}_Jobs"
 
 #Checks on variables and directives
@@ -96,9 +94,6 @@ fi
 if [ $LOAD_PYTHON_ALIASES = "TRUE" ] &&
        [ ! ${!IDENTITY_PYTHON:+x} ]; then printf "\n\e[0;31m Python aliases desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1
 fi
-if [ $LOAD_FIT_ALIASES = "TRUE" ] &&
-       [ ! ${!IDENTITY_FITS:+x} ]; then printf "\n\e[0;31m Fit aliases desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1
-fi
 if [ $LOAD_JOB_ALIASES = "TRUE" ] &&
        [ ! ${!IDENTITY_WORK:+x} ]; then printf "\n\e[0;31m Job aliases desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1
 fi
@@ -107,12 +102,13 @@ fi
 
 #Aliases to run fit programs
 if [ $LOAD_FIT_ALIASES = "TRUE" ]; then
-    alias BinderFit='bash ${!IDENTITY_FITS}/muiPiT/fitScripts/BinderFit.sh'
-    alias BruteForceFit='bash ${!IDENTITY_FITS}/muiPiT/fitScripts/BruteForceFit.sh'
-    alias FilterFitResults='bash ${!IDENTITY_FITS}/muiPiT/fitScripts/FilterFitResults.sh'
+    alias BinderFit='bash ${HOME}/Script/BinderFit/BinderFit.sh'
+    alias BruteForceFit='bash ${HOME}/Script/BinderFit/BruteForceFit.sh'
+    alias FilterFitResults='bash ${HOME}/Script/BinderFit/FilterFitResults.sh'
+    alias SetUpForBruteForceFit='bash ${HOME}/Script/BinderFit/SetUpForBruteForceFit.sh'
     
     function PlotBestFits(){
-        gnuplot -e "filenames='$*'" ${!IDENTITY_FITS}/muiPiT/fitScripts/PlotBestFits.plt
+        gnuplot -e "filenames='$*'" ${HOME}/Script/BinderFit/PlotBestFits.plt
     }
 fi
 
@@ -350,7 +346,6 @@ if [ $UNSET_USER_VARIABLES = "TRUE" ]; then
     [ ${!IDENTITY_KAPPA_LIST+x} ] && unset -v $IDENTITY_KAPPA_LIST
     [ ${!IDENTITY_MASS_LIST+x} ] && unset -v $IDENTITY_MASS_LIST
     [ ${!IDENTITY_PYTHON+x} ] && unset -v $IDENTITY_PYTHON
-    [ ${!IDENTITY_FITS+x} ] && unset -v $IDENTITY_FITS
     [ ${!IDENTITY_JOBS+x} ] && unset -v $IDENTITY_JOBS
 fi
 
@@ -367,7 +362,6 @@ unset -v IDENTITY_STAGGERED
 unset -v IDENTITY_KAPPA_LIST
 unset -v IDENTITY_MASS_LIST
 unset -v IDENTITY_PYTHON
-unset -v IDENTITY_FITS
 unset -v IDENTITY_JOBS
 
 
