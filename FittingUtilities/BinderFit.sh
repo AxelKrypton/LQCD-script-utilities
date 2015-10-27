@@ -198,7 +198,7 @@ else
     OUTPUT_FILENAME=$OUTPUT_FILENAME'.tex'
 fi
 if [ $COMMIT_MESSAGE = 'TRUE' ]; then
-    COMMIT_ID="commit $(git log --pretty=format:"%H" -n 1 -- $0)"
+    COMMIT_ID="commit $(git --git-dir=${HOME}/Script/.git log --pretty=format:"%H" -n 1 -- ${0##*Script/})"
 fi
 CreateGnuplotFitWithHardCodedParameters
 gnuplot $TMP_FILE_FOR_GNUPLOT_SCRIPT

@@ -55,7 +55,7 @@ function CreateGnuplotFitWithHardCodedParameters(){
     # Prepare the plot surrounding information and save it as pdf
     # Just uncomment the desired of the following two lines
     if [ $COMMIT_MESSAGE = 'TRUE' ]; then
-        echo 'commit=sprintf("\n\n")."'$COMMIT_ID'"' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+        echo 'commit=sprintf("\n\n")."\\footnotesize{'$COMMIT_ID'}"' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     else
         echo 'commit=sprintf("\n")' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     fi
@@ -73,7 +73,7 @@ function CreateGnuplotFitWithHardCodedParameters(){
         echo 'set xlabel "$\\beta$"   '                                  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
         echo 'set ylabel "$B_4$"'                                        >> $TMP_FILE_FOR_GNUPLOT_SCRIPT  
         echo 'set key at graph 0.96, graph 0.95 spacing 2'             >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
-        echo 'set label "\\textcolor{blue}{\\footnotesize{$'$MASS_PREFIX'=0.'$MASS'$}}" at screen 0.1,0.95 center' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+        echo 'set label "\\textcolor{blue}{\\fbox{\\footnotesize{$'$MASS_PREFIX'=0.'$MASS'$}}}" at screen 0.1,0.95 center' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     fi
     echo 'set xrange[fitrange_low*0.9999 : fitrange_high*1.0001]'    >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     echo 'set yrange[1 : 4.5]'                                       >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
