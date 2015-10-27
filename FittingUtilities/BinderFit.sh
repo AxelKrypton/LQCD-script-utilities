@@ -16,13 +16,23 @@
 #######################################################################################
 
 #Source auxiliary files
-source "${HOME}/Script/BinderFit/CreateGnuplotFitScript.sh" || exit -2
+source "${HOME}/Script/FittingUtilities/CreateGnuplotBinderFitScript.sh" || exit -2
 
 #Setting of the correct case based on the path.                                                                                                                                                                                                                                
 STAGGERED="FALSE"
 WILSON="FALSE"
 [ $(grep "[sS]taggered" <<< "$PWD" | wc -l) -gt 0 ] && STAGGERED="TRUE"
 [ $(grep "[wW]ilson" <<< "$PWD" | wc -l) -gt 0 ] && WILSON="TRUE"
+
+#Check on path
+if [ $STAGGERED = 'FALSE' ] && [ $WILSON = 'FALSE' ]; then
+    printf "\n\e[0;31m Unable to choose between Wilson and Staggered from path! Aborting...\n\n\e[0m"
+    exit -1
+fi
+if [ $STAGGERED = 'TRUE' ] && [ $WILSON = 'TRUE' ]; then
+    printf "\n\e[0;31m Unable to choose between Wilson and Staggered from path! Aborting...\n\n\e[0m"
+    exit -1
+fi
 
 #Variables connected to command line options
 FIT_TYPE='linear'
@@ -104,7 +114,7 @@ while [ "$1" != "" ]; do
             ;;
         --tex )
             TEX_PLOT='TRUE'
-            printf "\n\e[38;5;9m Option \e[1m$1\e[21m not implemented for the moment! Aborting...\n\n\e[0m"; exit -1
+#            printf "\n\e[38;5;9m Option \e[1m$1\e[21m not implemented for the moment! Aborting...\n\n\e[0m"; exit -1
             shift
             ;;
         --produceTemplate )
@@ -177,29 +187,31 @@ fi
 
 #==============================================================================================================
 #Create and run gnuplot script
+if [ $FIT_TYPE = 'linear' ]; then
+    OUTPUT_FILENAME='fit_linear_'$OBSERVABLE'_multiple_ranges'
+elif [ $FIT_TYPE = 'quadratic' ]; then
+    OUTPUT_FILENAME='fit_quadratic_'$OBSERVABLE'_multiple_ranges'
+fi
+if [ $TEX_PLOT = 'FALSE' ]; then
+    OUTPUT_FILENAME=$OUTPUT_FILENAME'.pdf'
+else
+    OUTPUT_FILENAME=$OUTPUT_FILENAME'.tex'
+fi
+if [ $COMMIT_MESSAGE = 'TRUE' ]; then
+    COMMIT_ID="commit $(git log --pretty=format:"%H" -n 1 -- $0)"
+fi
 CreateGnuplotFitWithHardCodedParameters
-RESULT_REPORT=$(gnuplot $TMP_FILE_FOR_GNUPLOT_SCRIPT)
+gnuplot $TMP_FILE_FOR_GNUPLOT_SCRIPT
 rm $TMP_FILE_FOR_GNUPLOT_SCRIPT
+rm $TMP_FILE_FOR_DATA_TO_BE_FITTED
 #==============================================================================================================
+#In case compile tex file
+if [ $TEX_PLOT = 'TRUE' ]; then
+    pdflatex $OUTPUT_FILENAME 1>> /dev/null
+    rm ${OUTPUT_FILENAME}
+    rm ${OUTPUT_FILENAME/.tex/.log}
+    rm ${OUTPUT_FILENAME/.tex/.aux}
+fi
 
-
-#
-#
-#function RunGnuplotScriptAndProducePdf(){
-#    gnuplot $TMP_FILE_FOR_GNUPLOT 1>> /dev/null
-#    pdflatex $TEX_FILE_NAME 1>> /dev/null
-#}
-#
-#
-#function CleanAuxiliaryFiles(){
-#    rm $TMP_FILE_FOR_GNUPLOT
-#    rm $TEX_FILE_NAME
-#    rm fit.log
-#    rm ${TEX_FILE_NAME/.tex/.log}
-#    rm ${TEX_FILE_NAME/.tex/.aux}    
-#}
-
-#CreateGnuplotFit
-#RunGnuplotScriptAndProducePdf
-#CleanAuxiliaryFiles
-#evince ${TEX_FILE_NAME/.tex/.pdf}
+evince ${OUTPUT_FILENAME/.*/.pdf} &
+exit 0

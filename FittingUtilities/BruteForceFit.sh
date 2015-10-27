@@ -511,7 +511,7 @@ fi
 #Build string for gnuplot parameters and then a file with the gnuplot commands to be later invoqued
 printf "\e[0;36m Creating gnuplot commands...\e[0m"
 if [ "$FIT_GLOBALPATH" == "" ]; then
-    source "${HOME}/Script/BinderFit/CreateGnuplotFitScript.sh" || exit -2
+    source "${HOME}/Script/FittingUtilities/CreateGnuplotBinderFitScript.sh" || exit -2
     GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH="GnuplotScriptUsedInBruteForceFit.plt"
     CreateGnuplotTemplateFitScriptWithoutPlotting
     FIT_GLOBALPATH="$(pwd)/${GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH}"

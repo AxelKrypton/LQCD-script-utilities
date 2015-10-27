@@ -12,10 +12,13 @@ function CreateGnuplotFitWithHardCodedParameters(){
     echo 'a1=-1'      >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     [ $FIT_TYPE = 'quadratic' ] && echo 'a2=0.005'  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     # Terminal get the fit in pdf
-    #echo 'set terminal lua tikz standalone solid preamble '"'"'\usepackage{amsmath, mathabx}'"'" >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-    echo 'set term pdfcairo color enhanced' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+    if [ $TEX_PLOT = 'TRUE' ]; then
+        echo 'set terminal lua tikz standalone solid preamble '"'"'\usepackage{amsmath, mathabx}'"'" >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+    else
+        echo 'set term pdfcairo color enhanced' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+        echo 'set encoding iso_8859_1 # for the pm symbol' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+    fi
     echo 'set fit errorvariables  # to get the errors' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-    echo 'set encoding iso_8859_1 # for the pm symbol' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     # Fit function
     # linear model:    f(x) = B4 + a1*(x-bc)*Ns**1/nu                             with variables B4,a1,bc,nu independent of Ns
     # quadratic model: f(x) = B4 + a1*(x-bc)*Ns**1/nu + a2*((x-bc)*Ns**1/nu)**2   with variables B4,a1,a2,bc,nu independent of Ns
@@ -52,52 +55,66 @@ function CreateGnuplotFitWithHardCodedParameters(){
     # Prepare the plot surrounding information and save it as pdf
     # Just uncomment the desired of the following two lines
     if [ $COMMIT_MESSAGE = 'TRUE' ]; then
-        echo 'commit=system('"'"'printf "\n\ncommit $(git log --pretty=format:"%H" -n 1 -- ${PWD%%StaggeredNf2Project/*}/fitPbpBinder.plt)"'"'"')' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+        echo 'commit=sprintf("\n\n")."'$COMMIT_ID'"' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     else
-        echo "commit=''" >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+        echo 'commit=sprintf("\n")' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     fi
     # Evaluate the goodness of the fit: probability that, given the fit, the data could have occurred with a chisquare greater than or equal to the value found
     echo 'ndf = FIT_NDF'                          >> $TMP_FILE_FOR_GNUPLOT_SCRIPT  # Number of degrees of freedom
     echo 'chisq = FIT_STDFIT**2 * ndf'            >> $TMP_FILE_FOR_GNUPLOT_SCRIPT  # chi-squared
     echo 'Q = 1 - igamma(0.5 * ndf, 0.5 * chisq)' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT  # the quality of fit parameter Q -> NOTE: From version 5.0 this is in the variable FIT_P (activated by "set fit errorscaling")
     # Plot information
-    echo 'set xlabel "{/Symbol b}"'                                  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
-    echo 'set ylabel "B_4"'                                          >> $TMP_FILE_FOR_GNUPLOT_SCRIPT  
-    echo 'set key at graph 0.9, graph 0.95 spacing 1.25'             >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
+    if [ $TEX_PLOT = 'FALSE' ]; then
+        echo 'set xlabel "{/Symbol b}"'                                  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
+        echo 'set ylabel "B_4"'                                          >> $TMP_FILE_FOR_GNUPLOT_SCRIPT  
+        echo 'set key at graph 0.9, graph 0.95 spacing 1.25'             >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
+        echo 'set label "'$MASS_PREFIX'=0.'$MASS'" at screen 0.92,0.96 center textcolor lt 3 font "Times, 12"' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+    else
+        echo 'set xlabel "$\\beta$"   '                                  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
+        echo 'set ylabel "$B_4$"'                                        >> $TMP_FILE_FOR_GNUPLOT_SCRIPT  
+        echo 'set key at graph 0.96, graph 0.95 spacing 2'             >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
+        echo 'set label "\\textcolor{blue}{\\footnotesize{$'$MASS_PREFIX'=0.'$MASS'$}}" at screen 0.1,0.95 center' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+    fi
     echo 'set xrange[fitrange_low*0.9999 : fitrange_high*1.0001]'    >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     echo 'set yrange[1 : 4.5]'                                       >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     echo 'set mxtics'                                                >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-    echo 'set label "'$MASS_PREFIX'=0.'$MASS'" at screen 0.92,0.96 center textcolor lt 3 font "Times, 12"' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     #Set plot title in latex or not linear/quadratic
-    if [ $FIT_TYPE = 'linear' ]; then
-        echo 'fit_title = "Fit to B_4(L.Im) of form {/Symbol \256} B_4({/Symbol \245}) + a_1({/Symbol b} - {/Symbol b}_c){\267}N_{s}^{(1/{/Symbol n})}\n\n with "\'                 >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-        echo '.sprintf("B_4({/Symbol \245})=%.4f\261%.4f, a_1=%.4f\261%.4f, {/Symbol n}=%.4f\261%.4f\n{/Symbol b}_c=%.5f\261%.5f, {/Symbol c}^2_{/=7 /ndf=%d} = %f, Q=%5.2f%% %s"\' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-		echo ',B4, B4_err, a1, a1_err, nu, nu_err, bc,bc_err, FIT_NDF, FIT_STDFIT**2., Q*100, commit)'                                                                              >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-    elif [ $FIT_TYPE = 'quadratic' ]; then
-        echo 'fit_title = "Fit to B_4(L.im) of form {/Symbol \256} B_4({/Symbol \245}) + a_1({/Symbol b} - {/Symbol b}_c){\267}N_{s}^{(1/{/Symbol n})} + a_2({/Symbol b} - {/Symbol b}_c)^{(2/{/Symbol n})}\n\n with "\'   >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-		echo '.sprintf("B_4({/Symbol \245})=%.4f\261%.4f, a_1=%.4f\261%.4f, a_2=%.4f\261%.4f \n {/Symbol n}=%.4f\261%.4f, {/Symbol b}_c=%.5f\261%.5f, {/Symbol c}^2_{/=7 /ndf=%d} = %f, Q=%5.2f%% %s"\'                    >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-		echo ',B4, B4_err, a1, a1_err, a2, a2_err, nu, nu_err, bc, bc_err, FIT_NDF, FIT_STDFIT**2., Q*100, commit)'                                                                                                        >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+    if [ $TEX_PLOT = 'FALSE' ]; then
+        if [ $FIT_TYPE = 'linear' ]; then
+            echo 'fit_title = "Fit to B_4(L.Im) of form {/Symbol \256} B_4({/Symbol \245}) + a_1({/Symbol b} - {/Symbol b}_c){\267}N_{s}^{(1/{/Symbol n})}\n\n with "\'                 >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+            echo '.sprintf("B_4({/Symbol \245})=%.4f\261%.4f, a_1=%.4f\261%.4f, {/Symbol n}=%.4f\261%.4f\n{/Symbol b}_c=%.5f\261%.5f, {/Symbol c}^2_{/=7 /ndf=%d} = %f, Q=%5.2f%% %s"\' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+		    echo ',B4, B4_err/FIT_STDFIT, a1, a1_err/FIT_STDFIT, nu, nu_err/FIT_STDFIT, bc, bc_err/FIT_STDFIT, FIT_NDF, FIT_STDFIT**2., Q*100, commit)'                                 >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+        elif [ $FIT_TYPE = 'quadratic' ]; then
+            echo 'fit_title = "Fit to B_4(L.im) of form {/Symbol \256} B_4({/Symbol \245}) + a_1({/Symbol b} - {/Symbol b}_c){\267}N_{s}^{(1/{/Symbol n})} + a_2({/Symbol b} - {/Symbol b}_c)^{(2/{/Symbol n})}\n\n with "\'   >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+		    echo '.sprintf("B_4({/Symbol \245})=%.4f\261%.4f, a_1=%.4f\261%.4f, a_2=%.4f\261%.4f \n {/Symbol n}=%.4f\261%.4f, {/Symbol b}_c=%.5f\261%.5f, {/Symbol c}^2_{/=7 /ndf=%d} = %f, Q=%5.2f%% %s"\'                    >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+		    echo ',B4, B4_err/FIT_STDFIT, a1, a1_err/FIT_STDFIT, a2, a2_err/FIT_STDFIT, nu, nu_err/FIT_STDFIT, bc, bc_err/FIT_STDFIT, FIT_NDF, FIT_STDFIT**2., Q*100, commit)'                                                 >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+        fi
+    else
+        if [ $FIT_TYPE = 'linear' ]; then
+            echo 'fit_title = "Fit to $B_4(L_{\\text{Im}})$ of form $\\to B_4(\\infty) + a\\:(\\beta - \\beta_c)\\cdot N_{s}^{(1/\\nu)}$\n\n with "\'                                       >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+            echo '            .sprintf("$B_4(\\infty)=%.4f\\pm%.4f\\quad a=%.4f\\pm%.4f\\quad \\nu=%.4f\\pm%.4f$\n\n$\\beta_c=%.4f\\pm%.4f\\quad \\chi^2_{ndf=%d} = %f\\quad Q=%5.2f\\%$"\' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+            echo '            , B4, B4_err/FIT_STDFIT, a1, a1_err/FIT_STDFIT, nu, nu_err/FIT_STDFIT, bc, bc_err/FIT_STDFIT, FIT_NDF, FIT_STDFIT**2., Q*100)\'                               >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+            echo '            .sprintf("%s", commit)'                                                                                                                                       >> $TMP_FILE_FOR_GNUPLOT_SCRIPT            
+        elif [ $FIT_TYPE = 'quadratic' ]; then
+            echo 'fit_title = "Fit to $B_4(L_{\\text{Im}})$ of form $\\to B_4(\\infty) + a(\\beta - \\beta_c)\\cdot N_{s}^{(1/\\nu)}$\n\n with "\'                                                                >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+            echo '            .sprintf("$B_4(\\infty)=%.4f\\pm%.4f\\quad a_1=%.4f\\pm%.4f\\quad a_2=%.4f\\pm%.4f \n \\nu=%.4f\\pm%.4f$\n\n$\\beta_c=%.4f\\pm%.4f\\quad \\chi^2_{ndf=%d} = %f\\quad Q=%5.2f\\%$"\' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+            echo '            , B4, B4_err/FIT_STDFIT, a1, a1_err/FIT_STDFIT, a2, a2_err/FIT_STDFIT, nu, nu_err/FIT_STDFIT, bc, bc_err/FIT_STDFIT, FIT_NDF, FIT_STDFIT**2., Q*100)\'                              >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+            echo '            .sprintf("%s", commit)'                                                                                                                                                             >> $TMP_FILE_FOR_GNUPLOT_SCRIPT            
+        fi
     fi
-    #echo 'fit_title = "Fit to $B_4(L_{\\text{Im}})$ of form $\\to B_4(\\infty) + a(m - m_c)\\cdot N_{s}^{(1/\\nu)}$\n\n with "\'                                          >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-    #echo '            .sprintf("$B_4(\\infty)=%.3f\\; fixed\\quad a=%.4f\\pm%.4f\\quad \\nu=%.4f\\pm%.4f$\n\n$m_c=%.4f\\pm%.4f\\quad \\chi^2_{ndf=%d} = %f\\quad Q=%5.2f\\%$"\' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-    #echo '            .sprintf("$B_4(\\infty)=%.4f\\pm%.4f\\quad a=%.4f\\pm%.4f\\quad \\nu=%.4f\\pm%.4f$\n\n$m_c=%.4f\\pm%.4f\\quad \\chi^2_{ndf=%d} = %f\\quad Q=%5.2f\\%$"\' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-    #echo '            , a, a_err/FIT_STDFIT, b, b_err/FIT_STDFIT, nu, nu_err/FIT_STDFIT, mc, mc_err/FIT_STDFIT, FIT_NDF, FIT_STDFIT**2., Q*100)\'                              >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-    #echo '            , a, b, b_err/FIT_STDFIT, nu, nu_err/FIT_STDFIT, mc, mc_err/FIT_STDFIT, FIT_NDF, FIT_STDFIT**2., Q*100)\'                              >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-    #echo '            .sprintf("%s", commit)'                                                                                                                                  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-    echo 'set title fit_title'                                        >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+    echo 'set title fit_title'                                          >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     #Set output name
-    if [ $FIT_TYPE = 'linear' ]; then
-        echo 'set output  "fit_linear_'$OBSERVABLE'_multiple_ranges.pdf"'      >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
-    elif [ $FIT_TYPE = 'quadratic' ]; then
-        echo 'set output  "fit_quadratic_'$OBSERVABLE'_multiple_ranges.pdf"'   >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
-    fi
-    #echo 'set output "'$TEX_FILE_NAME'"'                              >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
+    echo 'set output  "'$OUTPUT_FILENAME'"'                             >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
     #Draw other stuff
     echo 'set style arrow 1 nohead lt 0 lc -1 lw .5'                    >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     echo 'set arrow from bc,graph(0,0) to bc,graph(1,1) arrowstyle 1'   >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     #Key titles
     for INDEX in ${!VOLUMES[@]}; do
-        echo 'title'$INDEX' = sprintf("{/=9 ns".ns'$INDEX'.", {/Symbol b} {/Symbol \316} ['${BETA_RANGES[$(($INDEX*2))]}','${BETA_RANGES[$(($INDEX*2+1))]}']}")' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+        if [ $TEX_PLOT = 'FALSE' ]; then
+            echo 'title'$INDEX' = sprintf("{/=9 Ns=".ns'$INDEX'.", {/Symbol b} {/Symbol \316} ['${BETA_RANGES[$(($INDEX*2))]}','${BETA_RANGES[$(($INDEX*2+1))]}']}")' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+        else
+            echo 'title'$INDEX' = sprintf("\\small{$N_s=".ns'$INDEX'.", \\beta\\in ['${BETA_RANGES[$(($INDEX*2))]}','${BETA_RANGES[$(($INDEX*2+1))]}']$}")' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+        fi
     done
     #Actual plot
     echo -n 'plot ' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
@@ -121,15 +138,7 @@ function CreateGnuplotFitWithHardCodedParameters(){
     fi
     echo 'replot'                                                                >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     echo 'unset arrow'                                                           >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-    #Print to standard output some parameters from within gnuplot to make later a report
-    echo 'set print "-"' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-    if [ $FIT_TYPE = 'linear' ]; then
-        echo 'print sprintf("%2d %f %5.2f\t\t%.4f %.4f\t\t%.4f %.4f\t\t%.4f %.4f\t\t%.4f %.4f", FIT_NDF, FIT_STDFIT**2, Q*100, nu, nu_err, bc, bc_err, B4, B4_err, a1, a1_err)'                          >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-    elif [ $FIT_TYPE = 'quadratic' ]; then
-        echo 'print sprintf("%2d %f %5.2f\t\t%.4f %.4f\t\t%.4f %.4f\t\t%.4f %.4f\t\t%.4f %.4f\t\t%.4f %.4f", FIT_NDF, FIT_STDFIT**2, Q*100, nu, nu_err, bc, bc_err, B4, B4_err, a1, a1_err, a2, a2_err)' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-    fi
-    echo 'set print' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-    
+  
     unset -v 'INDEX'
 }
 
