@@ -1,38 +1,43 @@
 #!/bin/bash
 
-# Script to collect useful commands for working
-# Since each user could have different preferences, use the LOAD*
-# variables to decide which aliases to load.
-#
-# ATTENTION: Each user should add the following variables (NOT here but where it is sourced in case of future pull)
-#               XXX_work       -> global path to work directory (scratch on clusters, philconfigs locally)
-#               XXX_Wilson     -> local path from work to Wilson simulation folder , i.e. to where the mu folder is
-#               XXX_Staggered  -> local path from work to Staggered simulation folder, i.e. to where the mu folder is
-#               XXX_kappaList  -> list of kappa values between "" separated by a space, e.g. "1575 1600 1625"
-#               XXX_massList   -> list of  mass values between "" separated by a space, e.g. "0080 0090 1500"
-#               XXX_Python     -> global path to Python git, i.e. to ImagMu folder included: "/.../ImagMu"
-#               XXX_Fits       -> global path to fit git, i.e. git name folder included: "/.../gitNameFolder"
-#            where XXX is the whoami concatenated with the hostname via underscore, e.g. smith_cluster1234
-# ATTENTION: The user should unset at the end of this file all the variable introduced!
-#
-# Explanation of LOAD* variables:
-#    LOAD_KAPPA_ALIASES  ->  Creates aliases to go to volumes folder in kappa folders
-#    LOAD_MASS_ALIASES   ->  Creates aliases to go to volumes folder in kappa folders
-#    LOAD_PYTHON_ALIASES ->  Creates aliases to call python functionalities
-#    LOAD_FIT_ALIASES    ->  Creates aliases to call fits functionalities
-#    LOAD_JOB_ALIASES    ->  Creates aliases to work with jobs
-
-
-# Variable that the user should provide
-#
-#   [...]_work=""       -> Needed for LOAD_JOB_ALIASES - LOAD_KAPPA_ALIASES - LOAD_MASS_ALIASES
-#   [...]_Wilson=""     -> Needed for LOAD_KAPPA_ALIASES
-#   [...]_Staggered=""  -> Needed for LOAD_MASS_ALIASES
-#   [...]_kappaList=""  -> Needed for LOAD_KAPPA_ALIASES
-#   [...]_massList=""   -> Needed for LOAD_MASS_ALIASES
-#   [...]_Python=""     -> Needed for LOAD_PYTHON_ALIASES
-#
-# where [...] is the whoami concatenated with hostname.
+function PrintHelp(){
+	echo ''
+	echo '# Script to collect useful commands for working'
+	echo '# Since each user could have different preferences, use the LOAD*'
+	echo '# variables to decide which aliases to load.'
+	echo '#'
+	echo '# ATTENTION: Each user should define the following variables (NOT here but where it is sourced)'
+	echo '#               XXX_work       -> global path to work directory (scratch on clusters, philconfigs locally)'
+	echo '#               XXX_Wilson     -> local path from work to Wilson simulation folder , i.e. to where the mu folder is'
+	echo '#               XXX_Staggered  -> local path from work to Staggered simulation folder, i.e. to where the mu folder is'
+	echo '#               XXX_kappaList  -> list of kappa values between "" separated by a space, e.g. "1575 1600 1625"'
+	echo '#               XXX_massList   -> list of  mass values between "" separated by a space, e.g. "0080 0090 1500"'
+	echo '#               XXX_Python     -> global path to Python git, i.e. to ImagMu folder included: "/.../ImagMu"'
+	echo '#               XXX_Fits       -> global path to fit git, i.e. git name folder included: "/.../gitNameFolder"'
+	echo '#            where XXX is the whoami concatenated with the hostname via underscore, e.g. smith_cluster1234'
+	echo '#            Once (some of) the variables above are defined, then source this script with any desired option.'
+	echo '#'
+	echo '# Explanation of LOAD* variables:'
+	echo '#    LOAD_KAPPA_ALIASES  ->  Creates aliases to go to volumes folder in kappa folders'
+	echo '#    LOAD_MASS_ALIASES   ->  Creates aliases to go to volumes folder in mass folders'
+	echo '#    LOAD_PYTHON_ALIASES ->  Creates aliases to call python functionalities'
+	echo '#    LOAD_FIT_ALIASES    ->  Creates aliases to call fits functionalities'
+	echo '#    LOAD_JOB_ALIASES    ->  Creates aliases to work with jobs'
+	echo '#'
+	echo '#'
+	echo '# Variable that the user should provide'
+	echo '#'
+	echo '#   [...]_work=""       -> Needed for LOAD_JOB_ALIASES - LOAD_KAPPA_ALIASES - LOAD_MASS_ALIASES'
+	echo '#   [...]_Wilson=""     -> Needed for LOAD_KAPPA_ALIASES'
+	echo '#   [...]_Staggered=""  -> Needed for LOAD_MASS_ALIASES'
+	echo '#   [...]_kappaList=""  -> Needed for LOAD_KAPPA_ALIASES'
+	echo '#   [...]_massList=""   -> Needed for LOAD_MASS_ALIASES'
+	echo '#   [...]_Python=""     -> Needed for LOAD_PYTHON_ALIASES'
+	echo '#'
+	echo '# where [...] is the whoami concatenated with hostname.'
+	echo ''
+	echo ''
+}
 
 #============================================================================================================================#
 #============================================================================================================================#
@@ -49,7 +54,9 @@ UNSET_USER_VARIABLES="FALSE"
 while [ "$1" != "" ]; do
     case $1 in
       -h | --help )
-          printf "\n\e[0;32m"
+          printf "\n\e[38;5;32m"
+          PrintHelp
+          printf "\e[0;32m"
           echo "Options to load bunches of aliases:"
           echo "  --loadKappa           ->    Creates aliases to go to volumes folder in kappa folders"
           echo "  --loadMass            ->    Creates aliases to go to volumes folder in kappa folders"
@@ -69,6 +76,9 @@ while [ "$1" != "" ]; do
       * ) printf "\n\e[0;31mError parsing the options! Aborting...\n\n\e[0m" ; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1 ;;
     esac
 done
+
+#If the script is executed, exit
+[[ "${BASH_SOURCE[0]}" == "${0}" ]] && exit
 
 #Variables for later indirect reference 
 IDENTITY="$(whoami)_$(hostname)"
@@ -108,7 +118,7 @@ if [ $LOAD_FIT_ALIASES = "TRUE" ]; then
     alias SetUpForBruteForceFit='bash ${HOME}/Script/FittingUtilities/SetUpForBruteForceFit.sh'
     
     function PlotBestFits(){
-        gnuplot -e "filenames='$*'" ${HOME}/Script/FittingUtilities/PlotBestFits.plt
+        gnuplot -e "filenames='$*'" ${HOME}/Script/PlottingUtilities/PlotBestFits.plt
     }
 fi
 
