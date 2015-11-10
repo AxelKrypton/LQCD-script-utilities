@@ -147,10 +147,10 @@ NR==1{
     printf "    %.2f", minimumOverlapPercentage
     printf "   %.2f  ", minimumSymmetryPercentage
     for(i=0; i<numberOfVolumes; i++){
-        printf "   %.4f %.4f", $(columnBetaRanges+2*i), $(columnBetaRanges+1+2*i)
+        printf "   %.6f %.6f", $(columnBetaRanges+2*i), $(columnBetaRanges+1+2*i)
     }
     for(i=1; i<=numberOfVolumes; i++){
-        printf "   %.4f %.4f", xMins[i], xMaxs[i]
+        printf "   %.5f %.5f", xMins[i], xMaxs[i]
     }
     printf "   "
     for(i=1; i<=numberOfVolumesCombinations; i++){

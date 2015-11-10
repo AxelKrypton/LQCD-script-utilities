@@ -249,9 +249,9 @@ function CreateGnuplotTemplateFitScriptWithoutPlotting(){
     echo 'fitrange_high = (b1r>b0r) ? b1r : b0r' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     INDEX=2
     while [ $INDEX -lt ${#VOLUMES[@]} ]; do
-        (( ++INDEX ))
         echo 'fitrange_low = (b'$INDEX'l<fitrange_low) ? b'$INDEX'l : fitrange_low' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
         echo 'fitrange_high = (b'$INDEX'r>fitrange_high) ? b'$INDEX'r : fitrange_high' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
+        (( ++INDEX ))
     done
     echo 'set fit quiet' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     # Actual fit
@@ -277,9 +277,9 @@ function CreateGnuplotTemplateFitScriptWithoutPlotting(){
     done
     echo 'set print "-"' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     if [ $FIT_TYPE = 'linear' ]; then
-        echo 'print sprintf("'${STRING_FOR_VOLUMES_FORMAT:1}'\t\t%2d %f %5.2f\t\t%.4f %.4f\t\t%.4f %.4f\t\t%.4f %.4f\t\t%.4f %.4f\t\t"'"${STRING_FOR_RANGES}"${STRING_FOR_VOLUMES}', FIT_NDF, FIT_STDFIT**2, Q*100, nu, nu_err, bc, bc_err, B4, B4_err, a1, a1_err)'                          >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
+        echo 'print sprintf("'${STRING_FOR_VOLUMES_FORMAT:1}'\t\t%2d %f %5.2f\t\t%.5f %.5f\t\t%.5f %.5f\t\t%.5f %.5f\t\t%.6f %.6f\t\t"'"${STRING_FOR_RANGES}"${STRING_FOR_VOLUMES}', FIT_NDF, FIT_STDFIT**2, Q*100, nu, nu_err, bc, bc_err, B4, B4_err, a1, a1_err)'                          >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     elif [ $FIT_TYPE = 'quadratic' ]; then
-        echo 'print sprintf("'${STRING_FOR_VOLUMES_FORMAT:1}'\t\t%2d %f %5.2f\t\t%.4f %.4f\t\t%.4f %.4f\t\t%.4f %.4f\t\t%.4f %.4f\t\t%.4f %.4f\t\t"'"${STRING_FOR_RANGES}"${STRING_FOR_VOLUMES}', FIT_NDF, FIT_STDFIT**2, Q*100, nu, nu_err, bc, bc_err, B4, B4_err, a1, a1_err, a2, a2_err)' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
+        echo 'print sprintf("'${STRING_FOR_VOLUMES_FORMAT:1}'\t\t%2d %f %5.2f\t\t%.5f %.5f\t\t%.5f %.5f\t\t%.5f %.5f\t\t%.6f %.6f\t\t%.6f %.6f\t\t"'"${STRING_FOR_RANGES}"${STRING_FOR_VOLUMES}', FIT_NDF, FIT_STDFIT**2, Q*100, nu, nu_err, bc, bc_err, B4, B4_err, a1, a1_err, a2, a2_err)' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     fi
     echo 'set print' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     # Removing auxiliary files

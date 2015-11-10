@@ -30,7 +30,7 @@ function ElementInArray() {
 if ElementInArray "--help" $@ || ElementInArray "-h" $@; then
     printf "\n\t\e[38;5;13m\e[1m"
     printf "\e[4mPossible options to the script\e[24m:\e[21m\n\n\t\e[38;5;10m"
-    printf "   -f | --filename          ->   The data file to be used (globalpath or path from present folder)\n\t"
+    printf "   -f | --filename          ->   The data file, default \"$DATA_FILENAME\" (globalpath or path from present folder)\n\t"
     printf "   -v | --verbose           ->   Print additional output during fit procedure\n\t"
     printf "   -d | --degree            ->   Degree of the polynomial, default = $POLYNOMIAL_DEGREE\n\t"
 	printf "   -o | --outputFilename    ->   default value = $OUTPUT_FILENAME (provide it without extension!)\n\t"
@@ -48,7 +48,7 @@ fi
 while [ "$1" != "" ]; do
     case $1 in
         -f | --filename )
-            DATA_FILENAME="2"
+            DATA_FILENAME="$2"
             shift 2
             ;;
         -v | --verbose )
@@ -203,3 +203,6 @@ function CleanAuxiliaryFiles(){
 
 RunGnuplotScriptAndProducePdf
 CleanAuxiliaryFiles
+evince ${OUTPUT_FILENAME}.pdf &
+
+exit 0
