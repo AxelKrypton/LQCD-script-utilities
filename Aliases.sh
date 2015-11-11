@@ -173,34 +173,35 @@ fi
 if [ $LOAD_MASS_ALIASES = "TRUE" ] || [ $LOAD_KAPPA_ALIASES = "TRUE" ]; then
     function PickUpFolder(){
         local FOLDERS_ARRAY=( $(ls -d */) )
-        local NS_FOLDERS_ARRAY=()
+        local ORDERED_FOLDERS_ARRAY=()
         for INDEX in "${!FOLDERS_ARRAY[@]}"; do
-            if [[ ${FOLDERS_ARRAY[$INDEX]} =~ ^ns[[:digit:]]+/$ ]]; then
-                NS_FOLDERS_ARRAY+=( ${FOLDERS_ARRAY[$INDEX]} )
+            if [[ ${FOLDERS_ARRAY[$INDEX]} =~ ^n[ts][[:digit:]]+/$ ]]; then
+                ORDERED_FOLDERS_ARRAY+=( ${FOLDERS_ARRAY[$INDEX]} )
                 unset -v 'FOLDERS_ARRAY[$INDEX]'
             fi
         done
-        NS_FOLDERS_ARRAY=( $(echo ${NS_FOLDERS_ARRAY[@]} | grep -o "[[:digit:]]\+" | sort -n | awk '{print "ns"$1}') )
-        NS_FOLDERS_ARRAY+=( ${FOLDERS_ARRAY[@]} )
-        select FOLDER in ${NS_FOLDERS_ARRAY[@]}; do
-            if [ ${FOLDER:+x} ] && [ -d $FOLDER ]; then
-                cd $FOLDER
-                break
-            fi
-        done
+        local OLD_IFS=$IFS      # save the field separator           
+        IFS=$'\n'         # new field separator, the end of line           
+        ORDERED_FOLDERS_ARRAY=( $(sort -V <<< "${ORDERED_FOLDERS_ARRAY[*]}") )
+        IFS=$OLD_IFS     # restore default field separator 
+        ORDERED_FOLDERS_ARRAY+=( ${FOLDERS_ARRAY[@]} )
+        if [ ${#ORDERED_FOLDERS_ARRAY[@]} -eq 1 ]; then
+            cd ${ORDERED_FOLDERS_ARRAY[0]}
+        else
+            select FOLDER in ${ORDERED_FOLDERS_ARRAY[@]}; do
+                if [ ${FOLDER:+x} ] && [ -d $FOLDER ]; then
+                    cd $FOLDER
+                    break
+                fi
+            done
+        fi
     }
 fi
-
 
 #Aliases to go to the kappa folders
 if [ $LOAD_KAPPA_ALIASES = "TRUE" ]; then
     for KAPPA in ${!IDENTITY_KAPPA_LIST}; do
-        NUM_FOLDER=( $(ls ${!IDENTITY_WORK}${!IDENTITY_WILSON}/muiPiT/k$KAPPA/nt6 | grep "^ns[[:digit:]]\+") )
-        if [ ${#NUM_FOLDER[@]} -eq 1 ]; then
-    	    alias k${KAPPA}="cd ${!IDENTITY_WORK}${!IDENTITY_WILSON}/muiPiT/k$KAPPA/nt6/${NUM_FOLDER[0]}"
-        else
-    	    alias k${KAPPA}="cd ${!IDENTITY_WORK}${!IDENTITY_WILSON}/muiPiT/k$KAPPA/nt6; PickUpFolder"
-        fi
+    	alias k${KAPPA}="cd ${!IDENTITY_WORK}${!IDENTITY_WILSON}/muiPiT/k$KAPPA; PickUpFolder; PickUpFolder"
     done && unset -v 'NUM_FOLDER' 'KAPPA'
 fi
 
@@ -208,12 +209,7 @@ fi
 #Aliases to go to the mass folders
 if [ $LOAD_MASS_ALIASES = "TRUE" ]; then
     for MASS in ${!IDENTITY_MASS_LIST}; do
-	    NUM_FOLDER=( $(ls ${!IDENTITY_WORK}${!IDENTITY_STAGGERED}/muiPiT/mass$MASS/nt6 | grep "^ns[[:digit:]]\+") )
-	    if [ ${#NUM_FOLDER[@]} -eq 1 ]; then
-	        alias mass${MASS}="cd ${!IDENTITY_WORK}${!IDENTITY_STAGGERED}/muiPiT/mass$MASS/nt6/${NUM_FOLDER[0]}"
-	    else
-	        alias mass${MASS}="cd ${!IDENTITY_WORK}${!IDENTITY_STAGGERED}/muiPiT/mass$MASS/nt6; PickUpFolder"
-	    fi
+	    alias mass${MASS}="cd ${!IDENTITY_WORK}${!IDENTITY_STAGGERED}/muiPiT/mass$MASS; PickUpFolder; PickUpFolder"
     done && unset -v 'NUM_FOLDER' 'MASS'
 fi
 
