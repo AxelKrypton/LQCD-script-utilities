@@ -91,15 +91,15 @@ IDENTITY_PYTHON="${IDENTITY}_Python"
 IDENTITY_JOBS="${IDENTITY}_Jobs"
 
 #Checks on variables and directives
-if [ $LOAD_KAPPA_ALIASES = "TRUE" ] &&
+if [ $LOAD_KAPPA_ALIASES = "TRUE" ] && {
        [ ! ${!IDENTITY_WORK:+x} ] ||
        [ ! ${!IDENTITY_WILSON:+x} ] ||
-       [ ! ${!IDENTITY_KAPPA_LIST:+x} ]; then printf "\n\e[0;31m Kappa aliases desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1
+       [ ! ${!IDENTITY_KAPPA_LIST:+x} ]; }; then printf "\n\e[0;31m Kappa aliases desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1
 fi
-if [ $LOAD_MASS_ALIASES = "TRUE" ] &&
+if [ $LOAD_MASS_ALIASES = "TRUE" ] && {
        [ ! ${!IDENTITY_WORK:+x} ] ||
        [ ! ${!IDENTITY_STAGGERED:+x} ] ||
-       [ ! ${!IDENTITY_MASS_LIST:+x} ]; then printf "\n\e[0;31m Mass aliases desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1
+       [ ! ${!IDENTITY_MASS_LIST:+x} ]; }; then printf "\n\e[0;31m Mass aliases desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1
 fi
 if [ $LOAD_PYTHON_ALIASES = "TRUE" ] &&
        [ ! ${!IDENTITY_PYTHON:+x} ]; then printf "\n\e[0;31m Python aliases desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1
@@ -307,7 +307,13 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         if [[ $1 =~ ^b?[[:digit:]][.] ]]; then
             local FILE_NAME=$(FindLastStandardOutput $1)
         elif [[ $1 =~ ^[[:digit:]]+$ ]]; then
-            local FILE_NAME="JobScripts/rhmc_ref.$1.out"
+            if [ $(grep "[sS]taggered" <<< "$PWD" | wc -l) -gt 0 ]; then
+                local FILE_NAME="JobScripts/rhmc_ref.$1.out"
+            elif [ $(grep "[wW]ilson" <<< "$PWD" | wc -l) -gt 0 ]; then
+                local FILE_NAME="JobScripts/hmc_ref.$1.out"
+            else
+                echo "Neither in Staggered nor in Wilson path!"
+            fi
         else
             printf "\n\e[0;31m Unknown first parameter!\n\n\e[0m"
         fi
