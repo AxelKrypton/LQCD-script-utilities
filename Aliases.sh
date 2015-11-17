@@ -1,39 +1,43 @@
 #!/bin/bash
 
-# Script to collect useful commands for working
-# Since each user could have different preferences, use the LOAD*
-# variables to decide which aliases to load.
-#
-# ATTENTION: Each user should add the following variables (NOT here but where it is sourced in case of future pull)
-#               XXX_work       -> global path to work directory (scratch on clusters, philconfigs locally)
-#               XXX_Wilson     -> local path from work to Wilson simulation folder , i.e. to where the mu folder is
-#               XXX_Staggered  -> local path from work to Staggered simulation folder, i.e. to where the mu folder is
-#               XXX_kappaList  -> list of kappa values between "" separated by a space, e.g. "1575 1600 1625"
-#               XXX_massList   -> list of  mass values between "" separated by a space, e.g. "0080 0090 1500"
-#               XXX_Python     -> global path to Python git, i.e. to ImagMu folder included: "/.../ImagMu"
-#               XXX_Fits       -> global path to fit git, i.e. git name folder included: "/.../gitNameFolder"
-#            where XXX is the whoami concatenated with the hostname via underscore, e.g. smith_cluster1234
-# ATTENTION: The user should unset at the end of this file all the variable introduced!
-#
-# Explanation of LOAD* variables:
-#    LOAD_KAPPA_ALIASES  ->  Creates aliases to go to volumes folder in kappa folders
-#    LOAD_MASS_ALIASES   ->  Creates aliases to go to volumes folder in kappa folders
-#    LOAD_PYTHON_ALIASES ->  Creates aliases to call python functionalities
-#    LOAD_FIT_ALIASES    ->  Creates aliases to call fits functionalities
-#    LOAD_JOB_ALIASES    ->  Creates aliases to work with jobs
-
-
-# Variable that the user should provide
-#
-#   [...]_work=""       -> Needed for LOAD_JOB_ALIASES - LOAD_KAPPA_ALIASES - LOAD_MASS_ALIASES
-#   [...]_Wilson=""     -> Needed for LOAD_KAPPA_ALIASES
-#   [...]_Staggered=""  -> Needed for LOAD_MASS_ALIASES
-#   [...]_kappaList=""  -> Needed for LOAD_KAPPA_ALIASES
-#   [...]_massList=""   -> Needed for LOAD_MASS_ALIASES
-#   [...]_Python=""     -> Needed for LOAD_PYTHON_ALIASES
-#   [...]_Fits=""       -> Needed for LOAD_FIT_ALIASES
-#
-# where [...] is the whoami concatenated with hostname.
+function PrintHelp(){
+	echo ''
+	echo '# Script to collect useful commands for working'
+	echo '# Since each user could have different preferences, use the LOAD*'
+	echo '# variables to decide which aliases to load.'
+	echo '#'
+	echo '# ATTENTION: Each user should define the following variables (NOT here but where it is sourced)'
+	echo '#               XXX_work       -> global path to work directory (scratch on clusters, philconfigs locally)'
+	echo '#               XXX_Wilson     -> local path from work to Wilson simulation folder , i.e. to where the mu folder is'
+	echo '#               XXX_Staggered  -> local path from work to Staggered simulation folder, i.e. to where the mu folder is'
+	echo '#               XXX_kappaList  -> list of kappa values between "" separated by a space, e.g. "1575 1600 1625"'
+	echo '#               XXX_massList   -> list of  mass values between "" separated by a space, e.g. "0080 0090 1500"'
+	echo '#               XXX_Python     -> global path to Python git, i.e. to ImagMu folder included: "/.../ImagMu"'
+	echo '#               XXX_Fits       -> global path to fit git, i.e. git name folder included: "/.../gitNameFolder"'
+	echo '#            where XXX is the whoami concatenated with the hostname via underscore, e.g. smith_cluster1234'
+	echo '#            Once (some of) the variables above are defined, then source this script with any desired option.'
+	echo '#'
+	echo '# Explanation of LOAD* variables:'
+	echo '#    LOAD_KAPPA_ALIASES  ->  Creates aliases to go to volumes folder in kappa folders'
+	echo '#    LOAD_MASS_ALIASES   ->  Creates aliases to go to volumes folder in mass folders'
+	echo '#    LOAD_PYTHON_ALIASES ->  Creates aliases to call python functionalities'
+	echo '#    LOAD_FIT_ALIASES    ->  Creates aliases to call fits functionalities'
+	echo '#    LOAD_JOB_ALIASES    ->  Creates aliases to work with jobs'
+	echo '#'
+	echo '#'
+	echo '# Variable that the user should provide'
+	echo '#'
+	echo '#   [...]_work=""       -> Needed for LOAD_JOB_ALIASES - LOAD_KAPPA_ALIASES - LOAD_MASS_ALIASES'
+	echo '#   [...]_Wilson=""     -> Needed for LOAD_KAPPA_ALIASES'
+	echo '#   [...]_Staggered=""  -> Needed for LOAD_MASS_ALIASES'
+	echo '#   [...]_kappaList=""  -> Needed for LOAD_KAPPA_ALIASES'
+	echo '#   [...]_massList=""   -> Needed for LOAD_MASS_ALIASES'
+	echo '#   [...]_Python=""     -> Needed for LOAD_PYTHON_ALIASES'
+	echo '#'
+	echo '# where [...] is the whoami concatenated with hostname.'
+	echo ''
+	echo ''
+}
 
 #============================================================================================================================#
 #============================================================================================================================#
@@ -50,7 +54,9 @@ UNSET_USER_VARIABLES="FALSE"
 while [ "$1" != "" ]; do
     case $1 in
       -h | --help )
-          printf "\n\e[0;32m"
+          printf "\n\e[38;5;32m"
+          PrintHelp
+          printf "\e[0;32m"
           echo "Options to load bunches of aliases:"
           echo "  --loadKappa           ->    Creates aliases to go to volumes folder in kappa folders"
           echo "  --loadMass            ->    Creates aliases to go to volumes folder in kappa folders"
@@ -71,6 +77,9 @@ while [ "$1" != "" ]; do
     esac
 done
 
+#If the script is executed, exit
+[[ "${BASH_SOURCE[0]}" == "${0}" ]] && exit
+
 #Variables for later indirect reference 
 IDENTITY="$(whoami)_$(hostname)"
 IDENTITY_WORK="${IDENTITY}_work"
@@ -79,25 +88,21 @@ IDENTITY_STAGGERED="${IDENTITY}_Staggered"
 IDENTITY_KAPPA_LIST="${IDENTITY}_kappaList"
 IDENTITY_MASS_LIST="${IDENTITY}_massList"
 IDENTITY_PYTHON="${IDENTITY}_Python"
-IDENTITY_FITS="${IDENTITY}_Fits"
 IDENTITY_JOBS="${IDENTITY}_Jobs"
 
 #Checks on variables and directives
-if [ $LOAD_KAPPA_ALIASES = "TRUE" ] &&
+if [ $LOAD_KAPPA_ALIASES = "TRUE" ] && {
        [ ! ${!IDENTITY_WORK:+x} ] ||
        [ ! ${!IDENTITY_WILSON:+x} ] ||
-       [ ! ${!IDENTITY_KAPPA_LIST:+x} ]; then printf "\n\e[0;31m Kappa aliases desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1
+       [ ! ${!IDENTITY_KAPPA_LIST:+x} ]; }; then printf "\n\e[0;31m Kappa aliases desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1
 fi
-if [ $LOAD_MASS_ALIASES = "TRUE" ] &&
+if [ $LOAD_MASS_ALIASES = "TRUE" ] && {
        [ ! ${!IDENTITY_WORK:+x} ] ||
        [ ! ${!IDENTITY_STAGGERED:+x} ] ||
-       [ ! ${!IDENTITY_MASS_LIST:+x} ]; then printf "\n\e[0;31m Mass aliases desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1
+       [ ! ${!IDENTITY_MASS_LIST:+x} ]; }; then printf "\n\e[0;31m Mass aliases desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1
 fi
 if [ $LOAD_PYTHON_ALIASES = "TRUE" ] &&
        [ ! ${!IDENTITY_PYTHON:+x} ]; then printf "\n\e[0;31m Python aliases desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1
-fi
-if [ $LOAD_FIT_ALIASES = "TRUE" ] &&
-       [ ! ${!IDENTITY_FITS:+x} ]; then printf "\n\e[0;31m Fit aliases desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1
 fi
 if [ $LOAD_JOB_ALIASES = "TRUE" ] &&
        [ ! ${!IDENTITY_WORK:+x} ]; then printf "\n\e[0;31m Job aliases desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1
@@ -107,12 +112,13 @@ fi
 
 #Aliases to run fit programs
 if [ $LOAD_FIT_ALIASES = "TRUE" ]; then
-    alias BinderFit='bash ${!IDENTITY_FITS}/muiPiT/fitScripts/BinderFit.sh'
-    alias BruteForceFit='bash ${!IDENTITY_FITS}/muiPiT/fitScripts/BruteForceFit.sh'
-    alias FilterFitResults='bash ${!IDENTITY_FITS}/muiPiT/fitScripts/FilterFitResults.sh'
+    alias BinderFit='bash ${HOME}/Script/FittingUtilities/BinderFit.sh'
+    alias BruteForceFit='bash ${HOME}/Script/FittingUtilities/BruteForceFit.sh'
+    alias FilterFitResults='bash ${HOME}/Script/FittingUtilities/FilterFitResults.sh'
+    alias SetUpForBruteForceFit='bash ${HOME}/Script/FittingUtilities/SetUpForBruteForceFit.sh'
     
     function PlotBestFits(){
-        gnuplot -e "filenames='$*'" ${!IDENTITY_FITS}/muiPiT/fitScripts/PlotBestFits.plt
+        gnuplot -e "filenames='$*'" ${HOME}/Script/PlottingUtilities/PlotBestFits.plt
     }
 fi
 
@@ -167,34 +173,35 @@ fi
 if [ $LOAD_MASS_ALIASES = "TRUE" ] || [ $LOAD_KAPPA_ALIASES = "TRUE" ]; then
     function PickUpFolder(){
         local FOLDERS_ARRAY=( $(ls -d */) )
-        local NS_FOLDERS_ARRAY=()
+        local ORDERED_FOLDERS_ARRAY=()
         for INDEX in "${!FOLDERS_ARRAY[@]}"; do
-            if [[ ${FOLDERS_ARRAY[$INDEX]} =~ ^ns[[:digit:]]+/$ ]]; then
-                NS_FOLDERS_ARRAY+=( ${FOLDERS_ARRAY[$INDEX]} )
+            if [[ ${FOLDERS_ARRAY[$INDEX]} =~ ^n[ts][[:digit:]]+/$ ]]; then
+                ORDERED_FOLDERS_ARRAY+=( ${FOLDERS_ARRAY[$INDEX]} )
                 unset -v 'FOLDERS_ARRAY[$INDEX]'
             fi
         done
-        NS_FOLDERS_ARRAY=( $(echo ${NS_FOLDERS_ARRAY[@]} | grep -o "[[:digit:]]\+" | sort -n | awk '{print "ns"$1}') )
-        NS_FOLDERS_ARRAY+=( ${FOLDERS_ARRAY[@]} )
-        select FOLDER in ${NS_FOLDERS_ARRAY[@]}; do
-            if [ ${FOLDER:+x} ] && [ -d $FOLDER ]; then
-                cd $FOLDER
-                break
-            fi
-        done
+        local OLD_IFS=$IFS      # save the field separator           
+        IFS=$'\n'         # new field separator, the end of line           
+        ORDERED_FOLDERS_ARRAY=( $(sort -V <<< "${ORDERED_FOLDERS_ARRAY[*]}") )
+        IFS=$OLD_IFS     # restore default field separator 
+        ORDERED_FOLDERS_ARRAY+=( ${FOLDERS_ARRAY[@]} )
+        if [ ${#ORDERED_FOLDERS_ARRAY[@]} -eq 1 ]; then
+            cd ${ORDERED_FOLDERS_ARRAY[0]}
+        else
+            select FOLDER in ${ORDERED_FOLDERS_ARRAY[@]}; do
+                if [ ${FOLDER:+x} ] && [ -d $FOLDER ]; then
+                    cd $FOLDER
+                    break
+                fi
+            done
+        fi
     }
 fi
-
 
 #Aliases to go to the kappa folders
 if [ $LOAD_KAPPA_ALIASES = "TRUE" ]; then
     for KAPPA in ${!IDENTITY_KAPPA_LIST}; do
-        NUM_FOLDER=( $(ls /lustre/nyx/lcsc/asciarra/WilsonProject/muiPiT/k$KAPPA/nt6 | grep "^ns[[:digit:]]\+") )
-        if [ ${#NUM_FOLDER[@]} -eq 1 ]; then
-    	    alias k${KAPPA}="cd /lustre/nyx/lcsc/asciarra/WilsonProject/muiPiT/k$KAPPA/nt6/${NUM_FOLDER[0]}"
-        else
-    	    alias k${KAPPA}="cd /lustre/nyx/lcsc/asciarra/WilsonProject/muiPiT/k$KAPPA/nt6; PickUpFolder"
-        fi
+    	alias k${KAPPA}="cd ${!IDENTITY_WORK}${!IDENTITY_WILSON}/muiPiT/k$KAPPA; PickUpFolder; PickUpFolder"
     done && unset -v 'NUM_FOLDER' 'KAPPA'
 fi
 
@@ -202,12 +209,7 @@ fi
 #Aliases to go to the mass folders
 if [ $LOAD_MASS_ALIASES = "TRUE" ]; then
     for MASS in ${!IDENTITY_MASS_LIST}; do
-	    NUM_FOLDER=( $(ls /lustre/nyx/lcsc/asciarra/StaggeredNf2Project/muiPiT/mass$MASS/nt6 | grep "^ns[[:digit:]]\+") )
-	    if [ ${#NUM_FOLDER[@]} -eq 1 ]; then
-	        alias mass${MASS}="cd /lustre/nyx/lcsc/asciarra/StaggeredNf2Project/muiPiT/mass$MASS/nt6/${NUM_FOLDER[0]}"
-	    else
-	        alias mass${MASS}="cd /lustre/nyx/lcsc/asciarra/StaggeredNf2Project/muiPiT/mass$MASS/nt6; PickUpFolder"
-	    fi
+	    alias mass${MASS}="cd ${!IDENTITY_WORK}${!IDENTITY_STAGGERED}/muiPiT/mass$MASS; PickUpFolder; PickUpFolder"
     done && unset -v 'NUM_FOLDER' 'MASS'
 fi
 
@@ -301,7 +303,13 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         if [[ $1 =~ ^b?[[:digit:]][.] ]]; then
             local FILE_NAME=$(FindLastStandardOutput $1)
         elif [[ $1 =~ ^[[:digit:]]+$ ]]; then
-            local FILE_NAME="JobScripts/rhmc_ref.$1.out"
+            if [ $(grep "[sS]taggered" <<< "$PWD" | wc -l) -gt 0 ]; then
+                local FILE_NAME="JobScripts/rhmc_ref.$1.out"
+            elif [ $(grep "[wW]ilson" <<< "$PWD" | wc -l) -gt 0 ]; then
+                local FILE_NAME="JobScripts/hmc_ref.$1.out"
+            else
+                echo "Neither in Staggered nor in Wilson path!"
+            fi
         else
             printf "\n\e[0;31m Unknown first parameter!\n\n\e[0m"
         fi
@@ -350,7 +358,6 @@ if [ $UNSET_USER_VARIABLES = "TRUE" ]; then
     [ ${!IDENTITY_KAPPA_LIST+x} ] && unset -v $IDENTITY_KAPPA_LIST
     [ ${!IDENTITY_MASS_LIST+x} ] && unset -v $IDENTITY_MASS_LIST
     [ ${!IDENTITY_PYTHON+x} ] && unset -v $IDENTITY_PYTHON
-    [ ${!IDENTITY_FITS+x} ] && unset -v $IDENTITY_FITS
     [ ${!IDENTITY_JOBS+x} ] && unset -v $IDENTITY_JOBS
 fi
 
@@ -367,7 +374,6 @@ unset -v IDENTITY_STAGGERED
 unset -v IDENTITY_KAPPA_LIST
 unset -v IDENTITY_MASS_LIST
 unset -v IDENTITY_PYTHON
-unset -v IDENTITY_FITS
 unset -v IDENTITY_JOBS
 
 
