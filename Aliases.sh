@@ -252,7 +252,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         for BETA in b5.*; do
 	        echo $BETA
 	        cd $BETA
-	        for FILE in conf.?????; do
+	        for FILE in conf.????? conf.??????; do
 	            NUM=$(grep -o "[[:digit:]]*" <<< $FILE)
                 if [ ${NUM:+x} ]; then
                     [ $(awk -v freq="$1" '{print $1%freq}' <<< $NUM) -ne 0 ] && rm -f $FILE ${FILE/conf/prng}
