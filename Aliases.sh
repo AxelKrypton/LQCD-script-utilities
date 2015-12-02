@@ -264,7 +264,27 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         done
     }
 
-    #Static function useful later
+    #Functions useful later
+    function CompleteFolderName(){
+        local FOLDERS_ARRAY=()
+        for ARGUMENT in $@; do
+            if [[ ! $ARGUMENT =~ ^[[:digit:]][.][[:digit:]]{4}_s[[:digit:]]{4}_[[:alpha:]]{2}$ ]]; then
+                echo "False"
+                return
+            fi
+            local SUFFIX=${ARGUMENT##*_}
+            if [ $SUFFIX = "fH" ]; then
+                local FOLDER=b${ARGUMENT%_*}_thermalizeFromHot
+            elif [ $SUFFIX = "fC" ]; then
+                local FOLDER=b${ARGUMENT%_*}_thermalizeFromConf
+            else
+                local FOLDER=b${ARGUMENT%_*}_continueWithNewChain
+            fi
+            FOLDERS_ARRAY+=( $FOLDER )
+        done
+        echo ${FOLDERS_ARRAY[@]}
+    }
+    
     function FindLastStandardOutput(){
         if [ -d $1 ]; then
             local FOLDER="$1"
