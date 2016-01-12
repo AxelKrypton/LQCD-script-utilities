@@ -18,26 +18,29 @@ if [ $# -ne 2 ]; then
     exit -1
 else
     if [ ! -f $1 ]; then
-	printf "\n\e[0;31m  File \"$1\" not found! Aborting...\e[0m\n\n"
-	exit -1
+	    printf "\n\e[0;31m  File \"$1\" not found! Aborting...\e[0m\n\n"
+	    exit -1
     fi
-
+    
     TIMES=( "-" `grep -A1 "$2" $1 | awk '{print substr($1,2,8)}'` )
     
     #echo "${TIMES[@]}"
-
+    
     TOTAL_TIME_SEC=()
     for((INDEX=1; INDEX<${#TIMES[@]}; INDEX++)); do
-	if [ ${TIMES[$INDEX]} == "-" ]; then
-	    START_TIME_SEC=$(TimeToSeconds ${TIMES[$(($INDEX+1))]})
-	    END_TIME_SEC=$(TimeToSeconds ${TIMES[$(($INDEX+2))]})
-	    if [ $START_TIME_SEC -gt $END_TIME_SEC ]; then
-		END_TIME_SEC=$(( $END_TIME_SEC + 24*3600 ))
+	    if [ ${TIMES[$INDEX]} == "-" ]; then
+	        START_TIME_SEC=$(TimeToSeconds ${TIMES[$(($INDEX+1))]})
+	        END_TIME_SEC=$(TimeToSeconds ${TIMES[$(($INDEX+2))]})
+	        if [ $START_TIME_SEC -gt $END_TIME_SEC ]; then
+		        END_TIME_SEC=$(( $END_TIME_SEC + 24*3600 ))
+	        fi
+	        TOTAL_TIME_SEC+=( "$(( $TOTAL_TIME_SEC + ($END_TIME_SEC - $START_TIME_SEC) ))" )
 	    fi
-	    TOTAL_TIME_SEC+=( "$(( $TOTAL_TIME_SEC + ($END_TIME_SEC - $START_TIME_SEC) ))" )
-	fi
     done
-    
-    printf "\n\e[0;32m ${TOTAL_TIME_SEC[*]} \e[0m\n\n"
 
+    #printf "\n\e[0;32m ${TOTAL_TIME_SEC[*]} \e[0m\n\n"
+    AV_TIME=$(echo ${TOTAL_TIME_SEC[@]} | awk 'BEGIN{RS=" "}{sum+=$1}END{print sum/NR}')
+    
+    printf "\n\e[0;32m Operation executed ${#TOTAL_TIME_SEC[@]} times with an average time of $AV_TIME seconds. \e[0m\n\n"
+    
 fi
