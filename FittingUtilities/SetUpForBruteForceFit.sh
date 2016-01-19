@@ -56,6 +56,46 @@ function MakeFolderNames(){
 }
 
 #====================================================================================================
+#Global variables
+SETUP_LINEAR='TRUE'
+SETUP_QUADRATIC='FALSE'
+
+#Parse command line parameters
+function ElementInArray() {
+    local ELEMENT
+    for ELEMENT in "${@:2}"; do [[ "$ELEMENT" == "$1" ]] && return 0; done
+    return 1
+}
+
+if ElementInArray "--help" $@ || ElementInArray "-h" $@; then
+    printf "\n\t\e[38;5;13m\e[1m"
+    printf "\e[4mPossible options to the script\e[24m:\e[21m\n\n\t\e[38;5;10m"
+    printf "   -q | --quadratic       ->   Enable  set up folders for quadratic fit\n\t"
+    printf "   --noLinear             ->   Disable set up folders for    linear fit\n\t"
+    printf "\n\e[0m"
+    exit 3
+fi
+
+while [ "$1" != "" ]; do
+    case $1 in
+        -q | --quadratic )
+            SETUP_QUADRATIC='TRUE'
+            shift 
+            ;;
+        --noLinear )
+            SETUP_LINEAR='FALSE'
+            shift
+            ;;
+        * ) printf "\n\e[38;5;9m Option \e[1m$1\e[21m invalid! Aborting...\n\n\e[0m"; exit -1
+    esac
+done
+
+#====================================================================================================
+#Start only is it makes sense
+if [ $SETUP_LINEAR = 'FALSE' ] && [ $SETUP_QUADRATIC = 'FALSE' ]; then
+    printf "\n\e[38;5;202m No setup has been asked! Nothing done!\n\n\e[0m"
+    exit 0
+fi
 
 #Warn if any folder is here
 if [ $(ls | wc -l) -ne 0 ]; then
@@ -64,8 +104,8 @@ if [ $(ls | wc -l) -ne 0 ]; then
 fi
 
 #Ask for number of volumes
-POSSIBLE_VOLS=( "12 18" "18 24" "16 20 24" "20 24 30" "16 20 24 30" "20 24 30 36" )
-printf "\nWhich volumes have been simulated for this kappa?\n"
+POSSIBLE_VOLS=( "12 18" "18 24" "12 18 24" "16 20 24" "20 24 30" "16 20 24 30" "20 24 30 36" "others" )
+printf "\n\e[38;5;118mWhich volumes have been simulated for this kappa?\n\e[0m"
 select VOLUMES in "${POSSIBLE_VOLS[@]}"; do
 	if ! ElementInArray "$VOLUMES" "${POSSIBLE_VOLS[@]}"; then
 		continue
@@ -74,12 +114,28 @@ select VOLUMES in "${POSSIBLE_VOLS[@]}"; do
 	fi
 done
 
+#In case, read new volumes from user cnd check them
+if [ "$VOLUMES" = 'others' ]; then
+    printf "\n\e[38;5;118mPlease, insert the volumes separated by a space: \e[0m"
+    read -a VOLUMES
+fi
+if [ ${#VOLUMES[@]} -gt 4 ]; then
+    printf "\n\e[38;5;9m At the moment, impossible to deal with more than 5 volumes! Aborting...\n\n\e[0m"
+    exit -1
+fi
+for VOL in ${VOLUMES[@]}; do
+    if [[ ! $VOL =~ ^[[:digit:]]+$ ]]; then
+        printf "\n\e[38;5;9m Inserted invalid volume \"$VOL\"! Aborting...\n\n\e[0m"
+        exit -1
+    fi
+done
+
 #Create folders
 VOLUMES=( $VOLUMES )
 FOLDER_NAMES=( $(MakeFolderNames | sort | uniq | awk 'BEGIN{OFS="_";}{for(i=1; i<=NF; i++){$i="ns"$i}; print $0}') )
 for FOLD in ${FOLDER_NAMES[@]}; do
-	[ ! -d "gnuplot_fit_${FOLD}_linear" ] && mkdir "gnuplot_fit_${FOLD}_linear"
-	[ ! -d "gnuplot_fit_${FOLD}_quadratic" ] && mkdir "gnuplot_fit_${FOLD}_quadratic"
+	[ $SETUP_LINEAR = 'TRUE' ] && [ ! -d "gnuplot_fit_${FOLD}_linear" ] && mkdir "gnuplot_fit_${FOLD}_linear"
+	[ $SETUP_QUADRATIC = 'TRUE' ] && [ ! -d "gnuplot_fit_${FOLD}_quadratic" ] && mkdir "gnuplot_fit_${FOLD}_quadratic"
 done
 
 #Ask for number of volumes
@@ -88,7 +144,7 @@ declare -A BETA_MIN_ARRAY
 declare -A BETA_MAX_ARRAY
 while [ ${#BETA_MIN_ARRAY[@]} -ne ${#VOLUMES[@]} ]; do
 	while [[ ! $TMP =~ ^[[:digit:]]([.][[:digit:]]+)?$ ]]; do
-		printf "Please enter beta_min for ns${VOLUMES[${#BETA_MIN_ARRAY[@]}]}: "
+		printf "\e[38;5;118mPlease enter beta_min for ns${VOLUMES[${#BETA_MIN_ARRAY[@]}]}: \e[0m"
 		read TMP
 	done
 	BETA_MIN_ARRAY[${VOLUMES[${#BETA_MIN_ARRAY[@]}]}]="$TMP"
@@ -97,7 +153,7 @@ done
 echo ""
 while [ ${#BETA_MAX_ARRAY[@]} -ne ${#VOLUMES[@]} ]; do
 	while [[ ! $TMP =~ ^[[:digit:]]([.][[:digit:]]+)?$ ]]; do
-		printf "Please enter beta_max for ns${VOLUMES[${#BETA_MAX_ARRAY[@]}]}: "
+		printf "\e[38;5;128mPlease enter beta_max for ns${VOLUMES[${#BETA_MAX_ARRAY[@]}]}: \e[0m"
 		read TMP
 	done
 	BETA_MAX_ARRAY[${VOLUMES[${#BETA_MAX_ARRAY[@]}]}]="$TMP"
@@ -107,42 +163,46 @@ echo ''
 SCRIPT_PATH="`readlink -e $0`"
 ABSOLUTE_FOLDER_PATH="${SCRIPT_PATH%%$(basename $SCRIPT_PATH)}"
 
-for FOLDER in *_linear; do
-	#Continue on not empty folder
-	if [ $(ls $FOLDER | wc -l) -ne 0 ]; then
-        printf "\e[38;5;9m Folder \e[1m$FOLDER\e[21m existing and not empty! No command is prepared for it!\e[0m\n"
-        continue
-    fi
-	#If empty build command
-	VOLS_FROM_DIR=( $(echo $FOLDER | grep -o "ns[[:digit:]]*" | grep -o "[[:digit:]]*") )
-	printf "${ABSOLUTE_FOLDER_PATH}BruteForceFit.sh --minNumDataPerVolume=2 --betaMin " > $FOLDER/BruteForceFitCommand
-	for VOL in ${VOLS_FROM_DIR[@]}; do
-		printf "${BETA_MIN_ARRAY[$VOL]} " >> $FOLDER/BruteForceFitCommand
-	done
-	echo -n '--betaMax ' >> $FOLDER/BruteForceFitCommand
-	for VOL in ${VOLS_FROM_DIR[@]}; do
-		printf "${BETA_MAX_ARRAY[$VOL]} " >> $FOLDER/BruteForceFitCommand
-	done
-	echo '' >> $FOLDER/BruteForceFitCommand
-done
+if [ $SETUP_LINEAR = 'TRUE' ]; then
+    for FOLDER in *_linear; do
+	    #Continue on not empty folder
+	    if [ $(ls $FOLDER | wc -l) -ne 0 ]; then
+            printf "\e[38;5;9m Folder \e[1m$FOLDER\e[21m existing and not empty! No command is prepared for it!\e[0m\n"
+            continue
+        fi
+	    #If empty build command
+	    VOLS_FROM_DIR=( $(echo $FOLDER | grep -o "ns[[:digit:]]*" | grep -o "[[:digit:]]*") )
+	    printf "${ABSOLUTE_FOLDER_PATH}BruteForceFit.sh --minNumDataPerVolume=2 --betaMin " > $FOLDER/BruteForceFitCommand
+	    for VOL in ${VOLS_FROM_DIR[@]}; do
+		    printf "${BETA_MIN_ARRAY[$VOL]} " >> $FOLDER/BruteForceFitCommand
+	    done
+	    echo -n '--betaMax ' >> $FOLDER/BruteForceFitCommand
+	    for VOL in ${VOLS_FROM_DIR[@]}; do
+		    printf "${BETA_MAX_ARRAY[$VOL]} " >> $FOLDER/BruteForceFitCommand
+	    done
+	    echo '' >> $FOLDER/BruteForceFitCommand
+    done
+fi
 
-for FOLDER in *_quadratic; do
-	#Continue on not empty folder
-	if [ $(ls $FOLDER | wc -l) -ne 0 ]; then
-        printf "\e[38;5;9m Folder \e[1m$FOLDER\e[21m existing and not empty! No command is prepared for it!\e[0m\n"
-        continue
-    fi
-	#If empty build command
-	VOLS_FROM_DIR=( $(echo $FOLDER | grep -o "ns[[:digit:]]*" | grep -o "[[:digit:]]*") )
-	printf "${ABSOLUTE_FOLDER_PATH}BruteForceFit.sh --fitType=quadratic --fitParameters=5 --minNumDataPerVolume=2 --betaMin " > $FOLDER/BruteForceFitCommand
-	for VOL in ${VOLS_FROM_DIR[@]}; do
-		printf "${BETA_MIN_ARRAY[$VOL]} " >> $FOLDER/BruteForceFitCommand
-	done
-	echo -n '--betaMax ' >> $FOLDER/BruteForceFitCommand
-	for VOL in ${VOLS_FROM_DIR[@]}; do
-		printf "${BETA_MAX_ARRAY[$VOL]} " >> $FOLDER/BruteForceFitCommand
-	done
-	echo '' >> $FOLDER/BruteForceFitCommand
-done
+if [ $SETUP_QUADRATIC = 'TRUE' ]; then
+    for FOLDER in *_quadratic; do
+	    #Continue on not empty folder
+	    if [ $(ls $FOLDER | wc -l) -ne 0 ]; then
+            printf "\e[38;5;9m Folder \e[1m$FOLDER\e[21m existing and not empty! No command is prepared for it!\e[0m\n"
+            continue
+        fi
+	    #If empty build command
+	    VOLS_FROM_DIR=( $(echo $FOLDER | grep -o "ns[[:digit:]]*" | grep -o "[[:digit:]]*") )
+	    printf "${ABSOLUTE_FOLDER_PATH}BruteForceFit.sh --fitType=quadratic --fitParameters=5 --minNumDataPerVolume=2 --betaMin " > $FOLDER/BruteForceFitCommand
+	    for VOL in ${VOLS_FROM_DIR[@]}; do
+		    printf "${BETA_MIN_ARRAY[$VOL]} " >> $FOLDER/BruteForceFitCommand
+	    done
+	    echo -n '--betaMax ' >> $FOLDER/BruteForceFitCommand
+	    for VOL in ${VOLS_FROM_DIR[@]}; do
+		    printf "${BETA_MAX_ARRAY[$VOL]} " >> $FOLDER/BruteForceFitCommand
+	    done
+	    echo '' >> $FOLDER/BruteForceFitCommand
+    done
+fi
 
 echo ''
