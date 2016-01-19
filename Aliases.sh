@@ -112,10 +112,11 @@ fi
 
 #Aliases to run fit programs
 if [ $LOAD_FIT_ALIASES = "TRUE" ]; then
-    alias BinderFit='bash ${HOME}/Script/FittingUtilities/BinderFit.sh'
+    alias BinderFit='bash ${HOME}/Script/FittingUtilities/BinderFitVSbeta.sh'
     alias BruteForceFit='bash ${HOME}/Script/FittingUtilities/BruteForceFit.sh'
     alias FilterFitResults='bash ${HOME}/Script/FittingUtilities/FilterFitResults.sh'
     alias SetUpForBruteForceFit='bash ${HOME}/Script/FittingUtilities/SetUpForBruteForceFit.sh'
+    alias SelectBestFits='bash ${HOME}/Script/FittingUtilities/FindClosestValue.sh'
     
     function PlotBestFits(){
         gnuplot -e "filenames='$*'" ${HOME}/Script/PlottingUtilities/PlotBestFits.plt
