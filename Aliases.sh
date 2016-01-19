@@ -228,14 +228,14 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
     #Function to easy calculate the walltime
     function Walltime(){
         [ $# -ne 2 ] && printf "\n\e[0;31m Call:    \e[1m$FUNCNAME <number_of_trajectory_to_do> <seconds_per_trajectory>\n\n\e[0m" && return
-        local NUMBER_TR_TO_DO=$1
-        local TIME_TR=$2
-        local T=$(( ($NUMBER_TR_TO_DO) * $TIME_TR))
-        local days=$(( $T/86400))
-        local hours=$(( ($T - $days*86400)/3600 ))
-        local minutes=$(( ($T - $days*86400 - $hours*3600)/60 ))
-        local seconds=$( echo $T | awk 'END{print $1 % 60}')
-        printf "\e[0;32m \n walltime = %d-%02d:%02d:%02d\n\n\e[0m" "${days}" "${hours}" "${minutes}" "${seconds}"
+        local NUMBER_TR_TO_DO=$(bc -l <<< "$1")
+        local TIME_TR="$2"
+        local T=$(bc -l <<< "$NUMBER_TR_TO_DO * $TIME_TR" )
+        local days=$(bc -l <<< "$T/86400" | awk '{printf "%f", $0}')
+        local hours=$(bc -l <<< "($T - ${days%.*}*86400)/3600" | awk '{printf "%f", $0}' )
+        local minutes=$(bc -l <<< "($T - ${days%.*}*86400 - ${hours%.*}*3600)/60" | awk '{printf "%f", $0}')
+        local seconds=$( echo $T | awk 'END{print int($1) % 60}')
+        printf "\e[0;32m \n walltime = %d-%02d:%02d:%02d\n\n\e[0m" "${days%.*}" "${hours%.*}" "${minutes%.*}" "${seconds}"
     }
 
     #Function to delete conf and prng not multiple of X trajectories
@@ -255,7 +255,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         for BETA in b5.*; do
 	        echo $BETA
 	        cd $BETA
-	        for FILE in conf.?????; do
+	        for FILE in conf.????? conf.??????; do
 	            NUM=$(grep -o "[[:digit:]]*" <<< $FILE)
                 if [ ${NUM:+x} ]; then
                     [ $(awk -v freq="$1" '{print $1%freq}' <<< $NUM) -ne 0 ] && rm -f $FILE ${FILE/conf/prng}
@@ -265,7 +265,27 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         done
     }
 
-    #Static function useful later
+    #Functions useful later
+    function CompleteFolderName(){
+        local FOLDERS_ARRAY=()
+        for ARGUMENT in $@; do
+            if [[ ! $ARGUMENT =~ ^[[:digit:]][.][[:digit:]]{4}_s[[:digit:]]{4}_[[:alpha:]]{2}$ ]]; then
+                echo "False"
+                return
+            fi
+            local SUFFIX=${ARGUMENT##*_}
+            if [ $SUFFIX = "fH" ]; then
+                local FOLDER=b${ARGUMENT%_*}_thermalizeFromHot
+            elif [ $SUFFIX = "fC" ]; then
+                local FOLDER=b${ARGUMENT%_*}_thermalizeFromConf
+            else
+                local FOLDER=b${ARGUMENT%_*}_continueWithNewChain
+            fi
+            FOLDERS_ARRAY+=( $FOLDER )
+        done
+        echo ${FOLDERS_ARRAY[@]}
+    }
+    
     function FindLastStandardOutput(){
         if [ -d $1 ]; then
             local FOLDER="$1"

@@ -43,6 +43,7 @@ source $HOME/Script/JobScriptAutomation/EmptyBetaDirectories.sh || exit -2
 # Set default values for the command line parameters
 
 BETASFILE="betas"
+BETA_POSTFIX="_continueWithNewChain" #Here we set the BETA_POSTFIX supposing it is not a thermalization. If indeed it is, the postfix will be overwritten in the thermalize case in the main!
 WALLTIME="7-00:00:00"
 BGSIZE="32"
 MEASUREMENTS="20000"
@@ -57,7 +58,7 @@ INTSTEPS1="5"
 INTSTEPS2="5"
 MEASURE_PBP="TRUE"
 INTERVAL="1000"
-USE_MULTIPLE_CHAINS="FALSE"
+USE_MULTIPLE_CHAINS="TRUE"
 SUBMIT="FALSE"
 SUBMITONLY="FALSE"
 THERMALIZE="FALSE"
@@ -69,8 +70,7 @@ LISTSTATUS_MEASURE_TIME="FALSE"
 LISTSTATUS_SHOW_ONLY_QUEUED="FALSE"
 LISTSTATUSALL="FALSE"
 CLUSTER_NAME="LOEWE"
-LOEWE_PARTITION="parallel"
-LOEWE_CONSTRAINT="gpu"
+LOEWE_PARTITION="gpu"
 LOEWE_NODE="unset"
 JOBS_STATUS_PREFIX="jobs_status_"
 SHOWJOBS="FALSE"
@@ -159,7 +159,7 @@ HOME_DIR_WITH_BETAFOLDERS="$HOME_DIR/$SIMULATION_PATH$PARAMETERS_PATH"
 WORK_DIR_WITH_BETAFOLDERS="$WORK_DIR/$SIMULATION_PATH$PARAMETERS_PATH"
 
 if [ "$HOME_DIR_WITH_BETAFOLDERS" != "$(pwd)" ]; then
-        printf "\n\e[0;31m HOME_DIR_WITH_BETAFOLDERS=$HOME_DIR_WITH_BETAFOLDERS\n"
+    printf "\n\e[0;31m HOME_DIR_WITH_BETAFOLDERS=$HOME_DIR_WITH_BETAFOLDERS\n"
 	printf "\e[0;31m Constructed path to directory containing beta folders does not match the actual position! Aborting...\n\n\e[0m"
 	exit -1
 fi
@@ -202,13 +202,16 @@ elif [ $SUBMIT = "TRUE" ]; then
 elif [ $THERMALIZE = "TRUE" ] || [ $CONTINUE_THERMALIZATION = "TRUE" ]; then
 
     if [ $USE_MULTIPLE_CHAINS = "FALSE" ]; then
-        [ $THERMALIZE = "TRUE" ] && printf "\n\e[0;31m Option -t | --thermalize implemented ONLY combined with -u | --useMultipleChains option! Aborting...\n\n\e[0m"
-	    [ $CONTINUE_THERMALIZATION = "TRUE" ] && printf "\n\e[0;31m Option -C | --continueThermalization implemented ONLY combined with -u | --useMultipleChains option! Aborting...\n\n\e[0m"
+        [ $THERMALIZE = "TRUE" ] && printf "\n\e[0;31m Option -t | --thermalize implemented ONLY combined not with --doNotUseMultipleChains option! Aborting...\n\n\e[0m"
+	    [ $CONTINUE_THERMALIZATION = "TRUE" ] && printf "\n\e[0;31m Option -C | --continueThermalization implemented ONLY combined not with --doNotUseMultipleChains option! Aborting...\n\n\e[0m"
         exit -1
     fi
     #Here we fix the beta postfix just looking for thermalized conf from hot at the actual parameters (no matter at which beta);
     #if at least one configuration thermalized from hot is present, it means the thermalization has to be done from conf (the
     #correct beta to be used is selected then later in the script ---> see where the array STARTCONFIGURATION_GLOBALPATH is filled
+    #
+    # TODO: If a thermalization from hot is finished but one other crashed and one wishes to resume it, the postfix should be
+    #       from Hot but it is from conf since in $THERMALIZED_CONFIGURATIONS_PATH a conf from hot is found. Think about how to fix this.
     if [ $(ls $THERMALIZED_CONFIGURATIONS_PATH | grep "conf.${PARAMETERS_STRING}_${BETA_PREFIX}[[:digit:]][.][[:digit:]]\{4\}_fromHot[[:digit:]]\+.*" | wc -l) -eq 0 ]; then
 	    BETA_POSTFIX="_thermalizeFromHot"
     else
@@ -224,6 +227,7 @@ elif [ $THERMALIZE = "TRUE" ] || [ $CONTINUE_THERMALIZATION = "TRUE" ]; then
     elif [ $CONTINUE_THERMALIZATION = "TRUE" ]; then
         ProcessBetaValuesForContinue
     fi
+    
     SubmitJobsForValidBetaValues #TODO: Declare all possible local variable in this function as local!
     
 elif [ $CONTINUE = "TRUE" ]; then
