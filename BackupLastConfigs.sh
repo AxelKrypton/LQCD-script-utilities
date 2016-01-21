@@ -64,7 +64,11 @@ elif [ $WILSON = "TRUE" ]; then
 fi
 
 #Variables
-REMOTE_NAME="loewe"
+if [ $(grep -c "lcsc" <<< "${REMOTE_PREFIX[$(whoami)]}") -eq 0 ]; then
+    REMOTE_NAME="loewe"
+else
+    REMOTE_NAME="lcsc"
+fi
 RSYNC_OPTIONS="qluz"
 ParseCommandLineOptions $@
 CONF_LIST_FILE="ConfigurationListFrom_${REMOTE_NAME}_$(whoami)_on_$(date +'%F_%H%M')"
@@ -112,7 +116,7 @@ printf "\e[38;5;39m ...obtained $(wc -l < $CONF_LIST_FILE) files!\n\e[0m"
 sed -i 's@'${REMOTE_PREFIX[$(whoami)]}/'@@g' $CONF_LIST_FILE
 #Copy the files from remote
 printf "\n\e[38;5;39m Syncronizing with the remote... \n\e[0m"
-rsync -${RSYNC_OPTIONS} --files-from=$CONF_LIST_FILE --perms --chmod=Du=rwx,Dg=rwx,Do=r,Fu=rw,Fog=r $REMOTE_NAME:${REMOTE_PREFIX[$(whoami)]} .
+rsync -${RSYNC_OPTIONS} --perms --files-from=$CONF_LIST_FILE --chmod=Du=rwx,Dg=rwx,Do=r,Fu=rw,Fog=r $REMOTE_NAME:${REMOTE_PREFIX[$(whoami)]} .
 printf "\e[38;5;39m ...done!\n\n\e[0m"
 
 exit 0
