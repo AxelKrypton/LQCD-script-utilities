@@ -14,7 +14,7 @@ exit
 #      3) nt should be generic (maybe given from command line?!)
 #      4) the observable should be in a variable and should be a command line parameter
 #      5) write help in which maybe put comment as that at the beginning of this file
-
+#      6) test check on nan at the end
 
 declare -A PATH_TO_DATA
 PATH_TO_DATA["sciarra"]="/home/phil-configs/Staggered/Nf3/mui0"
@@ -84,4 +84,10 @@ printf "\n\e[38;5;10m Extraction of data successfully completed!\e[0m\n"
 sort -k2n $EXTRACTED_DATA_FILENAME | awk 'BEGIN{ns=1000}NR==1{print $0} NR>1{if($2>ns){printf "\n\n"}; ns=$2; print $0}' >> fileThatHopefullyDoesNotExist
 mv fileThatHopefullyDoesNotExist $EXTRACTED_DATA_FILENAME
 printf "\n\e[38;5;10m Data successfully sorted!\e[0m\n\n"
+
+#Check for nan in the data file produced and warn the user in case
+if [ $(grep -ci "nan" $EXTRACTED_DATA_FILENAME) -ne 0 ]; then
+    printf "\n\e[38;5;11m \e[1m\e[4mWARNING\e[24m:\e[21m The produced file \"$EXTRACTED_DATA_FILENAME\" seems to contain not a numbers! Please check it! \n"
+fi
+
 
