@@ -4,7 +4,7 @@
 # from a remote location to somewhere else. The last configuration
 # files are just copied (not renamed,...).
 #
-# NOTE: The name of a configuration is suppposed to be "conf.[[:digit:]]+".
+# NOTE: The name of a configuration is supposed to be "conf.[[:digit:]]+".
 #       This means that if there is something that is not a configuration
 #       (i.e. not a lime file), it is copied back as if it was.
 #       This should not be the case but however is up to the user to manage it.
@@ -23,7 +23,7 @@ function ParseCommandLineOptions(){
                 echo "   --remotePrefix     ->    remote prefix (default = ${REMOTE_PREFIX[$(whoami)]})"
                 echo "   --rsyncOptions     ->    options passed to rsync (default = $RSYNC_OPTIONS)"
                 echo " "
-                echo " NOTE: Change rsyng permissions could affect permissions on reciever that are"
+                echo " NOTE: Change rsync permissions could affect permissions on reciever that are"
                 echo "       by default set to \"--chmod=Du=rwx,Dg=rwx,Do=r,Fu=rw,Fog=r\" how it should be."
                 printf "\n\e[0m"
                 exit
@@ -50,8 +50,8 @@ declare -A REMOTE_PREFIX
 declare -A EXPECTED_POSITION
 
 if [ $STAGGERED = "TRUE" ]; then
-    EXPECTED_POSITION["sciarra"]="/home/phil-configs/Staggered/Nf2/mui0/LastConfigurations"
-    REMOTE_PREFIX["sciarra"]="/scratch/hfftheo/sciarra/StaggeredNf2Project/muiPiT"
+    EXPECTED_POSITION["sciarra"]="/home/phil-configs/Staggered/Nf2/muiPiT/LastConfigurations"
+    REMOTE_PREFIX["sciarra"]="/lustre/nyx/lcsc/asciarra/StaggeredNf2Project/muiPiT"
     MASS_PREFIX="mass"
 elif [ $WILSON = "TRUE" ]; then
     REMOTE_PREFIX["sciarra"]="/scratch/hfftheo/sciarra/WilsonProject/muiPiT"
@@ -64,7 +64,11 @@ elif [ $WILSON = "TRUE" ]; then
 fi
 
 #Variables
-REMOTE_NAME="loewe"
+if [ $(grep -c "lcsc" <<< "${REMOTE_PREFIX[$(whoami)]}") -eq 0 ]; then
+    REMOTE_NAME="loewe"
+else
+    REMOTE_NAME="lcsc"
+fi
 RSYNC_OPTIONS="qluz"
 ParseCommandLineOptions $@
 CONF_LIST_FILE="ConfigurationListFrom_${REMOTE_NAME}_$(whoami)_on_$(date +'%F_%H%M')"
@@ -112,7 +116,7 @@ printf "\e[38;5;39m ...obtained $(wc -l < $CONF_LIST_FILE) files!\n\e[0m"
 sed -i 's@'${REMOTE_PREFIX[$(whoami)]}/'@@g' $CONF_LIST_FILE
 #Copy the files from remote
 printf "\n\e[38;5;39m Syncronizing with the remote... \n\e[0m"
-rsync -${RSYNC_OPTIONS} --files-from=$CONF_LIST_FILE --perms --chmod=Du=rwx,Dg=rwx,Do=r,Fu=rw,Fog=r $REMOTE_NAME:${REMOTE_PREFIX[$(whoami)]} .
+rsync -${RSYNC_OPTIONS} --perms --files-from=$CONF_LIST_FILE --chmod=Du=rwx,Dg=rwx,Do=r,Fu=rw,Fog=r $REMOTE_NAME:${REMOTE_PREFIX[$(whoami)]} .
 printf "\e[38;5;39m ...done!\n\n\e[0m"
 
 exit 0
