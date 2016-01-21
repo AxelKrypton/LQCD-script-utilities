@@ -48,6 +48,7 @@ LOAD_MASS_ALIASES="FALSE"
 LOAD_PYTHON_ALIASES="FALSE"
 LOAD_FIT_ALIASES="FALSE"
 LOAD_JOB_ALIASES="FALSE"
+LOAD_ROOTHIST_ALIASES="FALSE"
 UNSET_USER_VARIABLES="FALSE"
 
 #Parsing the command line argument
@@ -63,6 +64,7 @@ while [ "$1" != "" ]; do
           echo "  --loadPython          ->    Creates aliases to call python functionalities"
           echo "  --loadFit             ->    Creates aliases to call fits functionalities"
           echo "  --loadJob             ->    Creates aliases to work with jobs"
+          echo "  --loadRootHist        ->    Creates alias to access the 3D Root histogram program"
           echo "  --unsetMyVariables    ->    Unset the variables the user has allocated him/herself"
           printf "\n\e[0m"
           [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit
@@ -72,6 +74,7 @@ while [ "$1" != "" ]; do
       --loadPython )          LOAD_PYTHON_ALIASES="TRUE"; shift ;;
       --loadFit )             LOAD_FIT_ALIASES="TRUE"; shift ;;
       --loadJob )             LOAD_JOB_ALIASES="TRUE"; shift ;;
+      --loadRootHist )        LOAD_ROOTHIST_ALIASES="TRUE"; shift ;;
       --unsetMyVariables )    UNSET_USER_VARIABLES="TRUE"; shift;;
       * ) printf "\n\e[0;31mError parsing the options! Aborting...\n\n\e[0m" ; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1 ;;
     esac
@@ -89,6 +92,7 @@ IDENTITY_KAPPA_LIST="${IDENTITY}_kappaList"
 IDENTITY_MASS_LIST="${IDENTITY}_massList"
 IDENTITY_PYTHON="${IDENTITY}_Python"
 IDENTITY_JOBS="${IDENTITY}_Jobs"
+IDENTITY_ROOTHIST="${IDENTITY}_RootHist"
 
 #Checks on variables and directives
 if [ $LOAD_KAPPA_ALIASES = "TRUE" ] && {
@@ -106,6 +110,9 @@ if [ $LOAD_PYTHON_ALIASES = "TRUE" ] &&
 fi
 if [ $LOAD_JOB_ALIASES = "TRUE" ] &&
        [ ! ${!IDENTITY_WORK:+x} ]; then printf "\n\e[0;31m Job aliases desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1
+fi
+if [ $LOAD_ROOTHIST_ALIASES = "TRUE" ] && 
+       [ ! ${!IDENTITY_ROOTHIST:+x} ]; then printf "\n\e[0;31m Root 3D histogram program alias desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1 
 fi
 
 #============================================================================================================================#
@@ -142,6 +149,9 @@ if [ $LOAD_PYTHON_ALIASES = "TRUE" ]; then
     }
     function GetAnalysisPolyImWithZeroMeanCommand(){
         echo "PyAnalysis --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_sq"
+    }
+    function GetAnalysisPolySqCommand(){
+        echo "PyAnalysis --deactivatePlaq --deactivatePoly_re --deactivatePoly_im_withZeroMean --deactivatePoly_im --deactivatePoly_im_abs --deactivateSusc"
     }
     function GetReweightingPbpCommand(){
         [ $# -eq 3 ] && local NUM_POINTS=$(bc <<< "($2-$1)/$3+1")
@@ -368,6 +378,61 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
 fi
 
 #============================================================================================================================#
+
+#Aliases to call the Root 3D histogram program
+
+    function CreateRootHistograms(){
+
+        local BETA_ARRAY=()
+        local ROOT_INPUT_FILE="hmc_output"
+        local TMP_ROOT_PATH_INPUT_FILE="tmpFileForRoot"
+        local PATH_PREFIX="/home/phil-configs/wilson_nf2_muipi4/ImagMu"
+        local ROOT_PRGOGRAM="/home/czaban/3DPolyLoopHist/3DPolyLoopHist"
+
+        while [ $# -gt 0 ];do
+            case $1 in
+                -b) 
+                    while [[ $2 =~ ^[[:digit:]]\.[[:digit:]]{4}$ ]];do
+                        BETA_ARRAY+=( $2 )
+                        shift
+                    done
+                    ;;
+                -h)
+                    echo "Invoke the function with -b option."
+                    echo "Following the -b option specify the desired beta values."
+                    return
+                    ;;
+                -*)
+                    echo "$0: $1: unrecognized option...exiting" >&2
+                    return 
+                    ;;
+                *)
+                    echo "$0: $1: unrecognized option...exiting" >&2
+                    return
+                    ;;
+            esac
+            shift
+        done
+
+        source $HOME/Script/PathManagement.sh || exit -2
+        ReadParametersFromPath $(pwd)
+        local CURRENT_PATH=$PATH_PREFIX/$CHEMPOT_PREFIX$CHEMPOT/$KAPPA_PREFIX$KAPPA/$NTIME_PREFIX$NTIME/$NSPACE_PREFIX$NSPACE
+
+        #Create tmpfile for Root
+        local BETA_PATH_ARRAY=()
+        for BETA in ${BETA_ARRAY[@]}; do
+            BETA_PATH_ARRAY+=( "$BETA	$CURRENT_PATH/b$BETA/$ROOT_INPUT_FILE" )  
+        done
+        for ((i = 0; i < ${#BETA_PATH_ARRAY[@]}; i++)); do
+            echo ${BETA_PATH_ARRAY[i]} >> $TMP_ROOT_PATH_INPUT_FILE
+        done
+
+        #Call Root program
+        $ROOT_PRGOGRAM --pathInputFile=tmpFileForRoot --addProj
+
+        rm $TMP_ROOT_PATH_INPUT_FILE
+    }
+
 #============================================================================================================================#
 
 #Unset user variables
@@ -379,6 +444,7 @@ if [ $UNSET_USER_VARIABLES = "TRUE" ]; then
     [ ${!IDENTITY_MASS_LIST+x} ] && unset -v $IDENTITY_MASS_LIST
     [ ${!IDENTITY_PYTHON+x} ] && unset -v $IDENTITY_PYTHON
     [ ${!IDENTITY_JOBS+x} ] && unset -v $IDENTITY_JOBS
+    [ ${!IDENTITY_ROOTHIST+x} ] && unset -v $IDENTITY_ROOTHIST
 fi
 
 #Unsetting remaining variables
@@ -395,6 +461,7 @@ unset -v IDENTITY_KAPPA_LIST
 unset -v IDENTITY_MASS_LIST
 unset -v IDENTITY_PYTHON
 unset -v IDENTITY_JOBS
+unset -v IDENTITY_ROOTHIST
 
 
 
