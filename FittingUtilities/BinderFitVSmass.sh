@@ -1,17 +1,31 @@
 #!/bin/bash
 
-#######################################################################################
+# This fit script is suited to perform a multi-branch LINEAR fit of some data contained in
+# the file FILE_WITH_DATA_TO_BE_FITTED. It is in particular fitting the Binder linearly
+# at different masses. The finite size scaling form used in the fit for the Binder Cumulant reads
+# 
+#          B4(m,ns) = B4(m,ns=inf) + a*(m-mc)*ns^(1/nu) + ...  :=  a0 + a1*x + ...
 #
-#   This fit script is suited to perform a multi-branch fit of some data contained in
-#   the file FILE_WITH_DATA_TO_BE_FITTED. It is in particular fitting the Binder linearly
-#   at different masses (staggered simulations at mu=0) in the chiral sector of the
-#   Columbia plot (nf=3 and pbp as observable). The finite size scaling form used in
-#   the fit for the Binder Cumulant reads
-#   
-#                B4(m,ns) = B4(m,ns=inf) + a*(m-mc)*ns^(1/nu) + ...
-#
-#######################################################################################
+# It is quite general, due to the command line parameters.
 
+echo "Script to be worked on, not ready to run now!"
+exit
+
+#TODO: 1) write command line parser
+#      2) command line options: --mc | --criticalMass      (starting value for fit)
+#                               --nu | --criticalExponent  (starting value for fit) 
+#                               --a0 | --B4infinity        (starting value for fit) 
+#                               --a1 | --linearCoefficient (starting value for fit) 
+#                               --dataFilename | -f
+#                               --doNotFixB4 (in this case also B4 should be fitted)
+#                               --outputFilename | -o
+#      3) adjust code accordingly (basically only CreateGnuplotFit function)
+#         NOTE: the fit with B4 not fixed is commented below, just add if cases also
+#               in the printing information in fit_title
+
+
+
+#Variables for the script
 TMP_FILE_FOR_GNUPLOT="FileThatHopefullyDoesNotExist.plt"
 FILE_WITH_DATA_TO_BE_FITTED="PbpBinderCumulantAtBetaC.dat"
 TEX_FILE_NAME="BinderCumulantPbpFit.tex"

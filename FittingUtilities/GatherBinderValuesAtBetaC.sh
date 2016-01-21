@@ -1,18 +1,46 @@
 #!/bin/bash
 
 # This script is intended to gather the binder data from phil-configs
-# and to put them in the relative folders here. The path to phil-configs
-# is hard coded just because it should not change.
+# and to put them in the folder from which it is invoqued. The path to
+# phil-configs is hard coded just because it should not change. In any
+# case each user should add its path in an associative array with the
+# index corresponding to its whoami.
 
-PATH_TO_DATA="/home/phil-configs/Staggered/Nf3/mui0"
+echo "Script to be worked on, not ready to run now!"
+exit
+
+#TODO: 1) Generalize script to staggered or wilson using variables STAGGERED WILSON
+#      2) write command line parser
+#      3) nt should be generic (maybe given from command line?!)
+#      4) the observable should be in a variable and should be a command line parameter
+#      5) write help in which maybe put comment as that at the beginning of this file
+
+
+declare -A PATH_TO_DATA
+PATH_TO_DATA["sciarra"]="/home/phil-configs/Staggered/Nf3/mui0"
+
+#Check on existence of PATH_TO_DATA
+if [ "${PATH_TO_DATA[$(whoami)]}" = "" ]; then
+    printf "\n\e[38;5;9m Variable PATH_TO_DATA not set for the actual user!\n\n\e[0m"
+    exit -1
+fi
+
+
+#Setting of the correct case based on the path.                                                                                                                                                                                                                                
+STAGGERED="FALSE"
+WILSON="FALSE"
+[ $(grep "[sS]taggered" <<< "$PWD" | wc -l) -gt 0 ] && STAGGERED="TRUE"
+[ $(grep "[wW]ilson" <<< "$PWD" | wc -l) -gt 0 ] && WILSON="TRUE"
+
+#Other variables for the script
 EXTRACTED_DATA_FILENAME="PbpBinderCumulantAtBetaC.dat"
+
 
 function ExtractAvailableMassValues(){
     MASS_VALUES=( $(ls $PATH_TO_DATA | grep -o "mass[[:digit:]]\{4\}") )
 }
 
 function ExtractAvailableVolumes(){
-    #ls $PATH_TO_DATA/$1
     VOLUMES_VALUES=( $(ls $PATH_TO_DATA/$1/nt4 | grep -o "ns[[:digit:]]\{1\}$") )
     VOLUMES_VALUES+=( $(ls $PATH_TO_DATA/$1/nt4 | grep -o "ns[[:digit:]]\{2\}$") )
 }
