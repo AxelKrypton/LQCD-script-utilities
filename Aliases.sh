@@ -289,14 +289,15 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         if [ -d $1 ]; then
             local FOLDER="$1"
         else
-            local SUFFIX=${1##*_}
-            if [ $SUFFIX = "fH" ]; then
-                local FOLDER=b${1%_*}_thermalizeFromHot
-            elif [ $SUFFIX = "fC" ]; then
-                local FOLDER=b${1%_*}_thermalizeFromConf
-            else
-                local FOLDER=b${1%_*}_continueWithNewChain
-            fi
+            local FOLDER=$(CompleteFolderName $1)
+            #local SUFFIX=${1##*_}
+            #if [ $SUFFIX = "fH" ]; then
+            #    local FOLDER=b${1%_*}_thermalizeFromHot
+            #elif [ $SUFFIX = "fC" ]; then
+            #    local FOLDER=b${1%_*}_thermalizeFromConf
+            #else
+            #    local FOLDER=b${1%_*}_continueWithNewChain
+            #fi
         fi
         if [ $(grep "[sS]taggered" <<< "$PWD" | wc -l) -gt 0 ]; then
             local FILE="$(ls $FOLDER/rhmc_ref.*.out | sort -V | tail -n1)"
@@ -310,12 +311,40 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         echo "$FOLDER/$FILE"
     }
 
+    function FindMissingTrajectories(){
+        if [ -d $1 ]; then
+            local FOLDER="$1"
+        else
+            local FOLDER=$(CompleteFolderName $1)
+        fi
+        if [ $(grep "[sS]taggered" <<< "$PWD" | wc -l) -gt 0 ]; then
+            local FILE="${FOLDER}/rhmc_output"
+        elif [ $(grep "[wW]ilson" <<< "$PWD" | wc -l) -gt 0 ]; then
+            local FILE="${FOLDER}/hmc_output"
+        else
+            echo "Neither in Staggered nor in Wilson path!"
+        fi
+        printf "\n Checking file $FILE ...\n"
+        awk 'NR==1{last=$1; print ""}
+             NR>1{if($1>last+1){missTraj[arraylength++]=$1}; last=$1}
+             END{if(arraylength==0){print " No missing trajectory found"}
+                 else{print " Missing trajectories found:";
+                      for(i in missTraj) printf "   before %d\n", missTraj[i]}; printf "\n"}' $FILE
+    }
+
 
     #Function to estimate time per trajectory giving beta as input
     function TimeTr(){
         local PATH_TO_BE_USED=$(FindLastStandardOutput $1)
-        printf "\n Calling:\n   ${HOME}/Script/TimeTrajectoryCL2QCD.sh $PATH_TO_BE_USED\n"
-        ${HOME}/Script/TimeTrajectoryCL2QCD.sh $PATH_TO_BE_USED
+        printf "\e[38;5;129m\n Calling:\e[38;5;199m ${HOME}/Script/TimeTrajectoryCL2QCD.sh $PATH_TO_BE_USED\n\e[0m"
+        local OUTPUT_TIME_TR="$(${HOME}/Script/TimeTrajectoryCL2QCD.sh $PATH_TO_BE_USED)"
+        printf "$OUTPUT_TIME_TR \n\n"
+        local TIME_TR="$(grep -oE "[[:digit:]]+[.][[:digit:]]*" <<< "$OUTPUT_TIME_TR")"
+        for INDEX in 1000 5000 10000 25000 50000; do
+            local WALLTIME=$(Walltime $INDEX $TIME_TR | grep -oE "[[:digit:]]+-[[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}")
+            printf "\e[38;5;202m%8s\e[0m  --->  \e[38;5;39m%12s\e[0m\n" "$INDEX" "$WALLTIME"
+        done
+        echo ''
     }
 
     #Function to show std output/error 
@@ -365,6 +394,8 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         rm -i $FOLDER/conf.save* $FOLDER/prng.save*
         echo ""
     }
+
+    
 fi
 
 #============================================================================================================================#
