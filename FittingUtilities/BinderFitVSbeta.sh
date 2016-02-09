@@ -9,7 +9,7 @@
 #   the temporal and spatial extensions of the lattice (prefixes "nt" and "ns").
 #   The finite size scaling form used in the fit for the Binder Cumulant reads
 #   
-#                  B4(m,ns) = B4(m,ns=inf) + a*x + a^2*x^2 + ...
+#                  B4(beta,ns) = B4(beta,ns=inf) + a*x + a^2*x^2 + ...
 #
 #   where x=(beta-betaC)*ns^(1/nu).
 #
@@ -114,7 +114,6 @@ while [ "$1" != "" ]; do
             ;;
         --tex )
             TEX_PLOT='TRUE'
-#            printf "\n\e[38;5;9m Option \e[1m$1\e[21m not implemented for the moment! Aborting...\n\n\e[0m"; exit -1
             shift
             ;;
         --produceTemplate )
@@ -130,7 +129,7 @@ while [ "$1" != "" ]; do
 done
 
 #==============================================================================================================
-##Read out from the path the parameters (do not check for multiple occurence!)
+#Read out from the path the parameters (do not check for multiple occurence!)
 MASS=$(echo $PWD | grep -o "/$MASS_PREFIX[[:digit:]]*/" | grep -o "[[:digit:]]*")
 [ "$MASS" == "" ] && printf "\n\e[0;31m Unable to recover mass parameter from path! Aborting...\n\n\e[0m" && exit -1
 NTIME=$(echo $PWD | grep -o "/nt[[:digit:]]*/"); NTIME=${NTIME/\/nt/}; NTIME=${NTIME%?}
@@ -213,5 +212,6 @@ if [ $TEX_PLOT = 'TRUE' ]; then
     rm ${OUTPUT_FILENAME/.tex/.aux}
 fi
 
+OUTPUT_FILENAME=${OUTPUT_FILENAME/$OBSERVABLE/all_$OBSERVABLE}
 evince ${OUTPUT_FILENAME/.*/.pdf} &
 exit 0

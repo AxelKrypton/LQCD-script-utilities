@@ -257,7 +257,7 @@ else
     SPECIFIED_COMMAND_LINE_OPTIONS=( $@ )
 fi
 ParseCommandLineOptions ${SPECIFIED_COMMAND_LINE_OPTIONS[@]}
-BINDER_FIT_GLOBALPATH="${HOME}/Script/BinderFit/BinderFit.sh"
+BINDER_FIT_GLOBALPATH="${HOME}/Script/BinderFit/BinderFitVSbeta.sh"
 #================================================================================================================================
 #Read out from the path the parameters
 MASS=$(echo $PWD | grep -o "/$MASS_PREFIX[[:digit:]]*/" | grep -o "[[:digit:]]*")
