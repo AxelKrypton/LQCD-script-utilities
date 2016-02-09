@@ -117,9 +117,13 @@ if [ $LOAD_FIT_ALIASES = "TRUE" ]; then
     alias FilterFitResults='bash ${HOME}/Script/FittingUtilities/FilterFitResults.sh'
     alias SetUpForBruteForceFit='bash ${HOME}/Script/FittingUtilities/SetUpForBruteForceFit.sh'
     alias SelectBestFits='bash ${HOME}/Script/FittingUtilities/FindClosestValue.sh'
+    alias ChooseReweightingFolders='bash ${HOME}/Script/FittingUtilities/ChooseReweightingFoldersAndFindResolution.sh'
     
     function PlotBestFits(){
         gnuplot -e "filenames='$*'" ${HOME}/Script/PlottingUtilities/PlotBestFits.plt
+    }
+    function GetFilteringProcedure(){
+        echo "FilterFitResults -f FitByBruteForce.dat -o -p a1 100 | FilterFitResults -p chi2 1 | FilterFitResults -p MinOv% g80 > FilteredResults_a1_100_chi2_1_MinOv%_g80"
     }
 fi
 
@@ -150,7 +154,11 @@ if [ $LOAD_PYTHON_ALIASES = "TRUE" ]; then
     }
     function GetReweightingPolyImWithZeroMeanCommand(){
         [ $# -eq 3 ] && local NUM_POINTS=$(bc <<< "($2-$1)/$3+1")
-        echo "time PyReweighting --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_sq --deactivateMean --deactivateSusc --deactivateSkew -za --doNotUseSimulatedPointsAsNewPoints -r $1 $2 -p $NUM_POINTS"
+        echo -n "time PyReweighting --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_sq --deactivateMean --deactivateSusc --deactivateSkew -za --doNotUseSimulatedPointsAsNewPoints -r $1 $2 -p $NUM_POINTS"
+        echo -n ' && [ $(ls -d -1 mui*_nt?_ns??_reweighting/ | wc -l) -eq 1 ]'
+        echo -n ' && FOLDER="$(ls -d -1 mui*_nt?_ns??_reweighting/)"'
+        echo -n ' && mv ${FOLDER%?} ${FOLDER%?}_dBeta'$3
+        echo    ' && unset -v '"'FOLDER'"
     }
     function GetFindBetaCPbpCommand(){
         echo "PyFindBetaC --deactivatePlaq --deactivatePoly --activatePbp --deactivateMean --deactivateSusc --deactivateBinder"
