@@ -37,6 +37,7 @@ if ElementInArray "--help" $@ || ElementInArray "-h" $@; then
 	printf "   -y | --columnY           ->   default value = $COLUMN_Y\n\t"
 	printf "   --dy | --columnDY        ->   default value = $COLUMN_DY\n\t"
 	printf "   -c | --columnChi2        ->   default value = $COLUMN_CHI2\n\t"
+    printf "   --xrange                 ->   use given x-range (otherwise detect it automatically)\n\t"
     printf "   --doNotCorrectErrors     ->   do NOT correct y axis errors using the chi square\n\t"
     printf "\n\e[0m"
     exit 3
@@ -81,6 +82,13 @@ while [ "$1" != "" ]; do
             shift
             ;;
 
+        --xrange )
+            if [[ ! $2 =~ ^[[:digit:]]*[.]?[[:digit:]]*$ ]] || [[ ! $3 =~ ^[[:digit:]]*[.]?[[:digit:]]*$ ]]; then
+                printf "\n\e[38;5;9m Given range invalid! Aborting...\n\n\e[0m"; exit -1
+            fi
+            XRANGE=( $2 $3 )
+            shift 3
+            ;;
         --doNotCorrectErrors )
             DO_NOT_CORRECT_ERRORS='TRUE'
             shift
@@ -96,7 +104,7 @@ fi
 
 #==============================================================================================================
 #Find minimum and maximum x column to set xrange later
-XRANGE=( $(awk -v xCol="$COLUMN_X" 'BEGIN{min=1000; max=-1000}/^($|[#]+)/{next}$xCol<min{min=$xCol}$xCol>max{max=$xCol}END{print min, max}' $DATA_FILENAME) )
+[ ${#XRANGE[@]} -ne 2 ] && XRANGE=( $(awk -v xCol="$COLUMN_X" 'BEGIN{min=1000; max=-1000}/^($|[#]+)/{next}$xCol<min{min=$xCol}$xCol>max{max=$xCol}END{print min, max}' $DATA_FILENAME) )
 TMP_FILE_FOR_GNUPLOT_SCRIPT='TemporaryFileThatShouldNotExist.plt'
 rm -f $TMP_FILE_FOR_GNUPLOT_SCRIPT
 #Prepare the gnuplot temporary script
