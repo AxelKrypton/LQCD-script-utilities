@@ -220,7 +220,7 @@ fi
 #Aliases to go to the kappa folders
 if [ $LOAD_KAPPA_ALIASES = "TRUE" ]; then
     for KAPPA in ${!IDENTITY_KAPPA_LIST}; do
-    	alias k${KAPPA}="cd ${!IDENTITY_WORK}${!IDENTITY_WILSON}/muiPiT/k$KAPPA; PickUpFolder; PickUpFolder"
+    	alias k${KAPPA}="cd ${!IDENTITY_WORK}${!IDENTITY_WILSON}; PickUpFolder; cd muiPiT/k$KAPPA; PickUpFolder; PickUpFolder"
     done && unset -v 'NUM_FOLDER' 'KAPPA'
 fi
 
@@ -228,7 +228,7 @@ fi
 #Aliases to go to the mass folders
 if [ $LOAD_MASS_ALIASES = "TRUE" ]; then
     for MASS in ${!IDENTITY_MASS_LIST}; do
-	    alias mass${MASS}="cd ${!IDENTITY_WORK}${!IDENTITY_STAGGERED}/muiPiT/mass$MASS; PickUpFolder; PickUpFolder"
+	    alias mass${MASS}="cd ${!IDENTITY_WORK}${!IDENTITY_STAGGERED}; PickUpFolder; cd muiPiT/mass$MASS; PickUpFolder; PickUpFolder"
     done && unset -v 'NUM_FOLDER' 'MASS'
 fi
 
