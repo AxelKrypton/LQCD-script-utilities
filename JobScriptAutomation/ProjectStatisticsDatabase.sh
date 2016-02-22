@@ -664,26 +664,26 @@ if [ $UPDATE = "TRUE" ]; then
 	    do
 			#printf "%+15s: %s\n" "line" "$line"
 	        if [[ "$line" =~ ^[^#] ]]; then 
-		        PARAMS=( $(echo $line | awk 'BEGIN{FS="/"}{print $(NF-3) " " $(NF-2) " " $(NF-1) " " $(NF)}') )
+		    PARAMS=( $(echo $line | awk 'BEGIN{FS="/"}{print $(NF-3) " " $(NF-2) " " $(NF-1) " " $(NF)}') )
 	        else
-		        continue 
+		    continue 
 	        fi
 	        
 	        if [ -d $line ]; then
-		        printf "\t\e[38;5;208m\e[48;5;16mUpdating:\e[38;5;49m $line "
-		        cd $line
+		    printf "\t\e[38;5;208m\e[48;5;16mUpdating:\e[38;5;49m $line "
+		    cd $line
 	        else
-		        continue
+		    continue
 	        fi
 
 	        PARAMETER_DIRECTORY_STRUCTURE=${line##*$SIMULATION_PATH}
 
-	        ListJobStatus_Loewe $PARAMETER_DIRECTORY_STRUCTURE | \
-		        sed -r 's/[^(\x1b)]\[|\]|\(|\)|%//g' | \
-		        sed -r 's/(\x1B\[[[:digit:]]{1,2};[[:digit:]]{0,2};[[:digit:]]{0,3}m)(.)/\1 \2/g' | \
-		        sed -r 's/(.)(\x1B\[.{1,2};.{1,2}m)/\1 \2/g' | \
-		        sed -r 's/(\x1B\[.{1,2};.{1,2}m)(.)/\1 \2/g' |
-	            awk --posix -v mu=${PARAMS[0]#mui*} -v k=${PARAMS[1]#$KAPPA_PREFIX*} -v nt=${PARAMS[2]#nt*} -v ns=${PARAMS[3]#*ns} '
+		ListJobStatus_Loewe $PARAMETER_DIRECTORY_STRUCTURE | \
+		    sed -r 's/[^(\x1b)]\[|\]|\(|\)|%//g' | \
+		    sed -r 's/(\x1B\[[[:digit:]]{1,2};[[:digit:]]{0,2};[[:digit:]]{0,3}m)(.)/\1 \2/g' | \
+		    sed -r 's/(.)(\x1B\[.{1,2};.{1,2}m)/\1 \2/g' | \
+		    sed -r 's/(\x1B\[.{1,2};.{1,2}m)(.)/\1 \2/g' |
+		awk --posix -v mu=${PARAMS[0]#$CHEMPOT_PREFIX*} -v k=${PARAMS[1]#$KAPPA_PREFIX*} -v nt=${PARAMS[2]#$NTIME_PREFIX*} -v ns=${PARAMS[3]#*$NSPACE_PREFIX} '
 
 							$3 ~ /^[[:digit:]]\.[[:digit:]]{4}/{
 								print $(3-1) " " mu " " $(3-1) " " k " " $(3-1) " " nt " " $(3-1) " " ns " " $(3-1) " " $3 " " $(5-1) " " $5 " " $(8-1) " " $8 " " $(15-1) " " $15 " " $(19-1) " " $19 " " "\033[0m"
