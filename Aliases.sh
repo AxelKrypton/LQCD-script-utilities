@@ -220,7 +220,7 @@ fi
 #Aliases to go to the kappa folders
 if [ $LOAD_KAPPA_ALIASES = "TRUE" ]; then
     for KAPPA in ${!IDENTITY_KAPPA_LIST}; do
-    	alias k${KAPPA}="cd ${!IDENTITY_WORK}${!IDENTITY_WILSON}/muiPiT/k$KAPPA; PickUpFolder; PickUpFolder"
+    	alias k${KAPPA}="cd ${!IDENTITY_WORK}${!IDENTITY_WILSON}; PickUpFolder; cd muiPiT/k$KAPPA; PickUpFolder; PickUpFolder"
     done && unset -v 'NUM_FOLDER' 'KAPPA'
 fi
 
@@ -228,7 +228,7 @@ fi
 #Aliases to go to the mass folders
 if [ $LOAD_MASS_ALIASES = "TRUE" ]; then
     for MASS in ${!IDENTITY_MASS_LIST}; do
-	    alias mass${MASS}="cd ${!IDENTITY_WORK}${!IDENTITY_STAGGERED}/muiPiT/mass$MASS; PickUpFolder; PickUpFolder"
+	    alias mass${MASS}="cd ${!IDENTITY_WORK}${!IDENTITY_STAGGERED}; PickUpFolder; cd muiPiT/mass$MASS; PickUpFolder; PickUpFolder"
     done && unset -v 'NUM_FOLDER' 'MASS'
 fi
 
@@ -242,7 +242,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
     alias Acceptance="awk '{ sum+=\$11} END {printf \"Accepted %d over %d (%lf%%)\n\", sum, NR, 100*sum/(NR)}'"
     alias LastAcceptance='bash ${HOME}/Script/AcceptanceLastTrajectories.sh'
     alias HandlerJobs='bash ${HOME}/Script/JobScriptAutomation/JobHandler.sh'
-
+        
     #Function to easy calculate the walltime
     function Walltime(){
         [ $# -ne 2 ] && printf "\n\e[0;31m Call:    \e[1m$FUNCNAME <number_of_trajectory_to_do> <seconds_per_trajectory>\n\n\e[0m" && return
@@ -311,14 +311,6 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
             local FOLDER="$1"
         else
             local FOLDER=$(CompleteFolderName $1)
-            #local SUFFIX=${1##*_}
-            #if [ $SUFFIX = "fH" ]; then
-            #    local FOLDER=b${1%_*}_thermalizeFromHot
-            #elif [ $SUFFIX = "fC" ]; then
-            #    local FOLDER=b${1%_*}_thermalizeFromConf
-            #else
-            #    local FOLDER=b${1%_*}_continueWithNewChain
-            #fi
         fi
         if [ $(grep "[sS]taggered" <<< "$PWD" | wc -l) -gt 0 ]; then
             local FILE="$(ls $FOLDER/rhmc_ref.*.out | sort -V | tail -n1)"
@@ -397,14 +389,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         if [ -d $1 ]; then
             local FOLDER="$1"
         else
-            local SUFFIX=${1##*_}
-            if [ $SUFFIX = "fH" ]; then
-                local FOLDER=b${1%_*}_thermalizeFromHot
-            elif [ $SUFFIX = "fC" ]; then
-                local FOLDER=b${1%_*}_thermalizeFromConf
-            else
-                local FOLDER=b${1%_*}_continueWithNewChain
-            fi
+            local FOLDER=$(CompleteFolderName $1)
         fi
         echo ""
         for FILE_NAME in $FOLDER/conf.save* $FOLDER/prng.save*; do
@@ -416,13 +401,31 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         echo ""
     }
 
+    #Function to check correctness simulations output
+    function CheckCl2qcdOutput(){
+        if [ -d $1 ]; then
+            local FOLDER="$1"
+        else
+            local FOLDER=$(CompleteFolderName $1)
+        fi
+        if [ $(grep "[sS]taggered" <<< "$PWD" | wc -l) -gt 0 ]; then
+            local FILE="${FOLDER}/rhmc_output"
+        elif [ $(grep "[wW]ilson" <<< "$PWD" | wc -l) -gt 0 ]; then
+            local FILE="${FOLDER}/hmc_output"
+        else
+            echo "Neither in Staggered nor in Wilson path!"
+        fi
+
+        printf "\e[38;5;129m\n Calling:\e[38;5;199m ${HOME}/Script/CheckCorrectnessCl2qcdOutputFile.sh \e[38;5;117m$FILE\n\e[0m"
+        bash ${HOME}/Script/CheckCorrectnessCl2qcdOutputFile.sh $FILE
+    }
     
 fi
 
 #============================================================================================================================#
-
 #Aliases to call the Root 3D histogram program
-
+if [ $LOAD_ROOTHIST_ALIASES = "TRUE" ]; then
+    
     function CreateRootHistograms(){
 
         local BETA_ARRAY=()
@@ -441,7 +444,7 @@ fi
                     ;;
                 -h)
                     echo "Invoke the function with -b option."
-                    echo "Following the -b option specify the desired beta values."
+                    echo "Following the -b option, specify the desired beta values."
                     return
                     ;;
                 -*)
@@ -475,6 +478,7 @@ fi
         rm $TMP_ROOT_PATH_INPUT_FILE
     }
 
+fi
 #============================================================================================================================#
 
 #Unset user variables

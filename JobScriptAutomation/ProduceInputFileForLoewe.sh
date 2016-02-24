@@ -6,12 +6,12 @@ function ProduceInputFile_Loewe() {
         echo "fermact=wilson" >> $INPUTFILE_GLOBALPATH
     elif [ $STAGGERED = "TRUE" ]; then
         echo "fermact=rooted_stagg" >> $INPUTFILE_GLOBALPATH
-        echo "num_tastes=$NUM_TASTES" >> $INPUTFILE_GLOBALPATH
+        echo "num_tastes=$NFLAVOUR" >> $INPUTFILE_GLOBALPATH
         if [ $USE_RATIONAL_APPROXIMATION_FILE = "TRUE" ]; then
             echo "read_rational_approximations_from_file=1" >> $INPUTFILE_GLOBALPATH
-            echo "approx_heatbath_file=${RATIONAL_APPROXIMATIONS_PATH}/Nf${NUM_TASTES}_${APPROX_HEATBATH_NAME}" >> $INPUTFILE_GLOBALPATH
-            echo "approx_md_file=${RATIONAL_APPROXIMATIONS_PATH}/Nf${NUM_TASTES}_${APPROX_MD_NAME}" >> $INPUTFILE_GLOBALPATH
-            echo "approx_metropolis_file=${RATIONAL_APPROXIMATIONS_PATH}/Nf${NUM_TASTES}_${APPROX_METROPOLIS_NAME}" >> $INPUTFILE_GLOBALPATH
+            echo "approx_heatbath_file=${RATIONAL_APPROXIMATIONS_PATH}/Nf${NFLAVOUR}_${APPROX_HEATBATH_NAME}" >> $INPUTFILE_GLOBALPATH
+            echo "approx_md_file=${RATIONAL_APPROXIMATIONS_PATH}/Nf${NFLAVOUR}_${APPROX_MD_NAME}" >> $INPUTFILE_GLOBALPATH
+            echo "approx_metropolis_file=${RATIONAL_APPROXIMATIONS_PATH}/Nf${NFLAVOUR}_${APPROX_METROPOLIS_NAME}" >> $INPUTFILE_GLOBALPATH
         else
             echo "read_rational_approximations_from_file=0" >> $INPUTFILE_GLOBALPATH
         fi
@@ -66,7 +66,7 @@ function ProduceInputFile_Loewe() {
             echo "num_timescales=2" >> $INPUTFILE_GLOBALPATH
         fi
     elif [ $STAGGERED = "TRUE" ]; then
-        echo "cg_iteration_block_size=50" >> $INPUTFILE_GLOBALPATH
+        echo "cg_iteration_block_size=$CGBS" >> $INPUTFILE_GLOBALPATH
         echo "num_timescales=2" >> $INPUTFILE_GLOBALPATH
     fi
     echo "tau=1" >> $INPUTFILE_GLOBALPATH
