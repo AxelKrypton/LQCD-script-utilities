@@ -95,7 +95,7 @@ done
 
 #==============================================================================================================
 ##Read out from the path the parameters (do not check for multiple occurence!)
-MASS=$(echo $PWD | grep -o "/$MASS_PREFIX[[:digit:]]*/" | grep -o "[[:digit:]]*")
+MASS=$(echo $PWD | grep -o "/$MASS_PREFIX[[:digit:]]*" | grep -o "[[:digit:]]*")
 [ "$MASS" == "" ] && printf "\n\e[0;31m Unable to recover mass parameter from path! Aborting...\n\n\e[0m" && exit -1
 NTIME=$(echo $PWD | grep -o "/nt[[:digit:]]*"); NTIME=${NTIME/\/nt/}
 [ "$NTIME" == "" ] && printf "\n\e[0;31m Unable to recover nt from path! Aborting...\n\n\e[0m" && exit -1
