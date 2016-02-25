@@ -191,7 +191,7 @@ fi
 #Alias for choosing a folder where we are (displaying first ns[[:digit:]] folders sorted numerically)
 if [ $LOAD_MASS_ALIASES = "TRUE" ] || [ $LOAD_KAPPA_ALIASES = "TRUE" ]; then
     function PickUpFolder(){
-        local FOLDERS_ARRAY=( $(ls -d */) )
+        local FOLDERS_ARRAY=( $(ls -d ${1}*/) )
         local ORDERED_FOLDERS_ARRAY=()
         for INDEX in "${!FOLDERS_ARRAY[@]}"; do
             if [[ ${FOLDERS_ARRAY[$INDEX]} =~ ^n[ts][[:digit:]]+/$ ]]; then
@@ -220,7 +220,7 @@ fi
 #Aliases to go to the kappa folders
 if [ $LOAD_KAPPA_ALIASES = "TRUE" ]; then
     for KAPPA in ${!IDENTITY_KAPPA_LIST}; do
-    	alias k${KAPPA}="cd ${!IDENTITY_WORK}${!IDENTITY_WILSON}; PickUpFolder; cd muiPiT/k$KAPPA; PickUpFolder; PickUpFolder"
+    	alias k${KAPPA}="cd ${!IDENTITY_WORK}${!IDENTITY_WILSON}; PickUpFolder Nf; PickUpFolder mui; cd k$KAPPA; PickUpFolder nt; PickUpFolder ns"
     done && unset -v 'NUM_FOLDER' 'KAPPA'
 fi
 
@@ -228,7 +228,7 @@ fi
 #Aliases to go to the mass folders
 if [ $LOAD_MASS_ALIASES = "TRUE" ]; then
     for MASS in ${!IDENTITY_MASS_LIST}; do
-	    alias mass${MASS}="cd ${!IDENTITY_WORK}${!IDENTITY_STAGGERED}; PickUpFolder; cd muiPiT/mass$MASS; PickUpFolder; PickUpFolder"
+	    alias mass${MASS}="cd ${!IDENTITY_WORK}${!IDENTITY_STAGGERED}; PickUpFolder Nf; PickUpFolder mui; cd mass$MASS; PickUpFolder nt; PickUpFolder ns"
     done && unset -v 'NUM_FOLDER' 'MASS'
 fi
 
