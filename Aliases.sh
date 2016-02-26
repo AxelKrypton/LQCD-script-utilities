@@ -207,7 +207,7 @@ if [ $LOAD_MASS_ALIASES = "TRUE" ] || [ $LOAD_KAPPA_ALIASES = "TRUE" ]; then
         if [ ${#ORDERED_FOLDERS_ARRAY[@]} -eq 1 ]; then
             cd ${ORDERED_FOLDERS_ARRAY[0]}
         else
-            select FOLDER in ${ORDERED_FOLDERS_ARRAY[@]}; do
+            select FOLDER in ${ORDERED_FOLDERS_ARRAY[@]%?}; do
                 if [ ${FOLDER:+x} ] && [ -d $FOLDER ]; then
                     cd $FOLDER
                     break
