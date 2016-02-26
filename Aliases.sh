@@ -238,7 +238,7 @@ fi
 
 if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
     alias cdw="cd ${!IDENTITY_WORK}" 
-    alias JobInfo='${HOME}/Script/MonitorLoeweJobs.sh'
+    alias JobInfo='${HOME}/Script/MonitorSlurmJobs.sh'
     alias Acceptance="awk '{ sum+=\$11} END {printf \"Accepted %d over %d (%lf%%)\n\", sum, NR, 100*sum/(NR)}'"
     alias LastAcceptance='bash ${HOME}/Script/AcceptanceLastTrajectories.sh'
     alias HandlerJobs='bash ${HOME}/Script/JobScriptAutomation/JobHandler.sh'
