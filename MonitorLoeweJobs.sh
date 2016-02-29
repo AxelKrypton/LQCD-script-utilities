@@ -34,7 +34,7 @@ function ParseCommandLineOptions(){
         esac
     done
 
-    if { [ $LOCAL_JOBS = 'TRUE' ] || [ $GROUP_BETAS = 'TRUE' ]; } && [ $CLUSTER_NAME != "LCSC" ]; then
+    if { [ $NODE_USAGE = 'TRUE' ] || [ $GROUP_BETAS = 'TRUE' ]; } && [ $CLUSTER_NAME != "LCSC" ]; then
         printf "\n\e[0;31mError parsing the options (see --help)! Aborting...\n\n\e[0m"
         exit -1
     fi
