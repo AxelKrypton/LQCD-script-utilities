@@ -207,7 +207,7 @@ if [ $LOAD_MASS_ALIASES = "TRUE" ] || [ $LOAD_KAPPA_ALIASES = "TRUE" ]; then
         if [ ${#ORDERED_FOLDERS_ARRAY[@]} -eq 1 ]; then
             cd ${ORDERED_FOLDERS_ARRAY[0]}
         else
-            select FOLDER in ${ORDERED_FOLDERS_ARRAY[@]}; do
+            select FOLDER in ${ORDERED_FOLDERS_ARRAY[@]%?}; do
                 if [ ${FOLDER:+x} ] && [ -d $FOLDER ]; then
                     cd $FOLDER
                     break
@@ -238,7 +238,7 @@ fi
 
 if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
     alias cdw="cd ${!IDENTITY_WORK}" 
-    alias JobInfo='${HOME}/Script/MonitorLoeweJobs.sh'
+    alias JobInfo='${HOME}/Script/MonitorSlurmJobs.sh'
     alias Acceptance="awk '{ sum+=\$11} END {printf \"Accepted %d over %d (%lf%%)\n\", sum, NR, 100*sum/(NR)}'"
     alias LastAcceptance='bash ${HOME}/Script/AcceptanceLastTrajectories.sh'
     alias HandlerJobs='bash ${HOME}/Script/JobScriptAutomation/JobHandler.sh'
