@@ -271,14 +271,13 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         while read CONFIRM; do
 	        if [ "$CONFIRM" = "Y" ]; then break; elif [ "$CONFIRM" = "N" ]; then return; else  printf "\n\e[0;33m Please enter Y (yes) or N (no): \e[0m"; fi
         done
-        
-        for BETA in b{5,6}.*; do
+        BETA_ARRAY=( ${@:2} )
+        [ ${#BETA_ARRAY[@]} -eq 0 ] && BETA_ARRAY=( $(ls -d b{5,6}*/ 2>/dev/null) )
+        for BETA in ${BETA_ARRAY[@]}; do
 			if [ -d $BETA ]; then
 				echo $BETA
 				cd $BETA
                 local LAST_CONF_NOT_TO_DELETE=$(ls conf.* | grep -o "conf.[[:digit:]]\+$" | sort -V | tail -n1)
-                echo $LAST_CONF_NOT_TO_DELETE
-                continue
 				for FILE in conf.????? conf.??????; do
                     if [ "$FILE" != "$LAST_CONF_NOT_TO_DELETE" ]; then
 					    NUM=$(grep -o "[[:digit:]]*" <<< $FILE)
