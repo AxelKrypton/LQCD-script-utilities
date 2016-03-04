@@ -410,19 +410,23 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
 
     #Function to check correctness simulations output
     function CheckCl2qcdOutput(){
-        if [ -d $1 ]; then
-            local FOLDER="$1"
+        if [ -f $1 ]; then
+            local FILE=$1
         else
-            local FOLDER=$(CompleteFolderName $1)
+            if [ -d $1 ]; then
+                local FOLDER="$1"
+            else
+                local FOLDER=$(CompleteFolderName $1)
+            fi
+            if [ $(grep "[sS]taggered" <<< "$PWD" | wc -l) -gt 0 ]; then
+                local FILE="${FOLDER}/rhmc_output"
+            elif [ $(grep "[wW]ilson" <<< "$PWD" | wc -l) -gt 0 ]; then
+                local FILE="${FOLDER}/hmc_output"
+            else
+                echo "Neither in Staggered nor in Wilson path!"
+            fi
         fi
-        if [ $(grep "[sS]taggered" <<< "$PWD" | wc -l) -gt 0 ]; then
-            local FILE="${FOLDER}/rhmc_output"
-        elif [ $(grep "[wW]ilson" <<< "$PWD" | wc -l) -gt 0 ]; then
-            local FILE="${FOLDER}/hmc_output"
-        else
-            echo "Neither in Staggered nor in Wilson path!"
-        fi
-
+        
         printf "\e[38;5;129m\n Calling:\e[38;5;199m ${HOME}/Script/CheckCorrectnessCl2qcdOutputFile.sh \e[38;5;117m$FILE\n\e[0m"
         bash ${HOME}/Script/CheckCorrectnessCl2qcdOutputFile.sh $FILE
     }
