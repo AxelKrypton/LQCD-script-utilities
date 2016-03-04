@@ -164,7 +164,9 @@ if [ $LOAD_PYTHON_ALIASES = "TRUE" ]; then
     }
     function GetReweightingPolyImWithZeroMeanCommand(){
         [ $# -eq 3 ] && local NUM_POINTS=$(bc <<< "($2-$1)/$3+1")
-        echo -n "time PyReweighting --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_sq --deactivateMean --deactivateSusc --deactivateSkew -za --doNotUseSimulatedPointsAsNewPoints -r $1 $2 -p $NUM_POINTS"
+        [ $(ls -1 | grep -c "^Nf") -ne 0 ] && printf "\n\e[91m Names matching \"^Nf\" detected in present folder, check alias!" && return
+        echo -n '[ $(ls mui*_nt?_ns??_reweighting 2>/dev/null | wc -l) -eq 0 ]'
+        echo -n " && time PyReweighting --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_sq --deactivateMean --deactivateSusc --deactivateSkew -za --doNotUseSimulatedPointsAsNewPoints -r $1 $2 -p $NUM_POINTS"
         echo -n ' && [ $(ls -d -1 mui*_nt?_ns??_reweighting/ | wc -l) -eq 1 ]'
         echo -n ' && FOLDER="$(ls -d -1 mui*_nt?_ns??_reweighting/)"'
         echo -n ' && mv ${FOLDER%?} ${FOLDER%?}_dBeta'$3
@@ -274,11 +276,16 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
 			if [ -d $BETA ]; then
 				echo $BETA
 				cd $BETA
+                local LAST_CONF_NOT_TO_DELETE=$(ls conf.* | grep -o "conf.[[:digit:]]\+$" | sort -V | tail -n1)
+                echo $LAST_CONF_NOT_TO_DELETE
+                continue
 				for FILE in conf.????? conf.??????; do
-					NUM=$(grep -o "[[:digit:]]*" <<< $FILE)
-					if [ ${NUM:+x} ]; then
-						[ $(awk -v freq="$1" '{print $1%freq}' <<< $NUM) -ne 0 ] && rm -f $FILE ${FILE/conf/prng}
-					fi
+                    if [ "$FILE" != "$LAST_CONF_NOT_TO_DELETE" ]; then
+					    NUM=$(grep -o "[[:digit:]]*" <<< $FILE)
+					    if [ ${NUM:+x} ]; then
+						    [ $(awk -v freq="$1" '{print $1%freq}' <<< $NUM) -ne 0 ] && rm -f $FILE ${FILE/conf/prng}
+					    fi
+                    fi
 				done
 				cd ..
 			fi
