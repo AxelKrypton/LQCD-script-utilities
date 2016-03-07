@@ -343,12 +343,25 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         else
             echo "Neither in Staggered nor in Wilson path!"
         fi
-        printf "\n Checking file $FILE ...\n"
-        awk 'NR==1{last=$1; print ""}
+        printf "\n\e[38;5;32m Checking file \e[36m$FILE"
+        local TRAJ=( $(awk '
+             NR==1{last=$1}
              NR>1{if($1>last+1){missTraj[arraylength++]=$1}; last=$1}
-             END{if(arraylength==0){print " No missing trajectory found"}
-                 else{print " Missing trajectories found:";
-                      for(i in missTraj) printf "   before %d\n", missTraj[i]}; printf "\n"}' $FILE
+             END{if(arraylength==0){exit 0}
+                 else{for(i in missTraj){print missTraj[i]}; exit 1}}' $FILE) )
+        if [ "${#TRAJ[@]}" -eq 0 ]; then
+            printf "\e[32m ...no missing trajectory found!\e[0m\n\n"
+        else
+            for VALUE in ${TRAJ[@]}; do
+                local LINE_NUMBER=$(grep -n "^$VALUE[[:space:]]" $FILE | cut -f1 -d':')
+                if [ -z ${EDITOR:+x} ]; then
+                    vim +$LINE_NUMBER $FILE
+                else
+                    $EDITOR +$LINE_NUMBER $FILE
+                fi
+            done && unset -v 'VALUE'
+            printf "\n\n"
+        fi
     }
 
 
