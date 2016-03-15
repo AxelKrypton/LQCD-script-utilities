@@ -5,6 +5,11 @@
 # 
 ###################################################################################
 
+#--------------------------------------------------------------------------------#
+# Load auxiliary bash files that will be used.
+source "$HOME/Script/PathManagement.sh" || exit -2
+#--------------------------------------------------------------------------------#
+
 function ElementInArray() {
     local ELEMENT
     for ELEMENT in "${@:2}"; do [[ "$ELEMENT" == "$1" ]] && return 0; done
@@ -22,13 +27,13 @@ function PrintArray(){
 
 function PrintAllPossibleRangesCombinations() {
     if (( $1 < 1 )); then
-        for INDEX in $(eval echo "\${!RANGES${VOLUMES[$1]}[@]}"); do
-            ARRAY_TMP[$1]=$(eval echo "\${RANGES${VOLUMES[$1]}[$INDEX]}")
+        for INDEX in $(eval echo "\${!RANGES${NSPACE[$1]}[@]}"); do
+            ARRAY_TMP[$1]=$(eval echo "\${RANGES${NSPACE[$1]}[$INDEX]}")
             echo "${ARRAY_TMP[@]}"
         done
     else
-        for INDEX in $(eval echo "\${!RANGES${VOLUMES[$1]}[@]}"); do
-            ARRAY_TMP[$1]=$(eval echo "\${RANGES${VOLUMES[$1]}[$INDEX]}")
+        for INDEX in $(eval echo "\${!RANGES${NSPACE[$1]}[@]}"); do
+            ARRAY_TMP[$1]=$(eval echo "\${RANGES${NSPACE[$1]}[$INDEX]}")
             printf "$(PrintAllPossibleRangesCombinations $(( $1 - 1 )))\n" >> $ALL_BETA_RANGES_FILENAME
         done
     fi
@@ -213,17 +218,12 @@ function ParseCommandLineOptions() {
 }
 
 #================================================================================================================================
-#Setting of the correct case based on the path.                                                                                                                                                                                                                                
-STAGGERED="FALSE"
-WILSON="FALSE"
-[ $(grep "[sS]taggered" <<< "$PWD" | wc -l) -gt 0 ] && STAGGERED="TRUE"
-[ $(grep "[wW]ilson" <<< "$PWD" | wc -l) -gt 0 ] && WILSON="TRUE"
+#Having loaded PathManagement.sh we get for free all the parameters variables and functionalities
+CheckWilsonStaggeredVariables
 if [ $WILSON = 'TRUE' ]; then
     DATA_PATH_PREFIX='/home/phil-configs/wilson_nf2_muipi4/ImagMu'
-    MASS_PREFIX='k'
 elif [ $STAGGERED = 'TRUE' ]; then
     DATA_PATH_PREFIX='/home/phil-configs/Staggered/Nf2'
-    MASS_PREFIX='mass'
 fi
 #Declare constant variables and check on file existence
 MUTUALLYEXCLUSIVEOPTS=( "--produceOnlyBetaRanges" "--produceOnlyFilteredBetaRanges" "--useRangesToBeFittedFile")
@@ -259,13 +259,14 @@ fi
 ParseCommandLineOptions ${SPECIFIED_COMMAND_LINE_OPTIONS[@]}
 BINDER_FIT_GLOBALPATH="${HOME}/Script/BinderFit/BinderFitVSbeta.sh"
 #================================================================================================================================
-#Read out from the path the parameters
-MASS=$(echo $PWD | grep -o "/$MASS_PREFIX[[:digit:]]*/" | grep -o "[[:digit:]]*")
-[ "$MASS" == "" ] && printf "\n\e[0;31m Unable to recover mass parameter from path! Aborting...\n\n\e[0m" && exit -1
-NTIME=$(echo $PWD | grep -o "/nt[[:digit:]]*/"); NTIME=${NTIME/\/nt/}; NTIME=${NTIME%?}
-[ "$NTIME" == "" ] && printf "\n\e[0;31m Unable to recover nt from path! Aborting...\n\n\e[0m" && exit -1
-VOLUMES=( $(basename $PWD | grep -o "ns[[:digit:]]*" | grep -o "[[:digit:]]*") )
-[ ${#VOLUMES[@]} -eq 0 ] && printf "\n\e[0;31m Unable to recover volumes from directory name! Aborting...\n\n\e[0m" && exit -1
+#Read out from the path the parameters (do not check for multiple occurence!)
+ReadSingleParameterFromPath $PWD $NFLAVOUR_PREFIX
+ReadSingleParameterFromPath $PWD $CHEMPOT_PREFIX
+ReadSingleParameterFromPath $PWD $MASS_PREFIX
+ReadSingleParameterFromPath $PWD $NTIME_PREFIX
+ReadSingleParameterFromPathWithMultipleOccurence ${PWD##*/} $NSPACE_PREFIX #Here read out from basename!
+CheckParametersExtractedFromPath $NFLAVOUR_PREFIX $CHEMPOT_PREFIX $MASS_PREFIX $NTIME_PREFIX $NSPACE_PREFIX
+
 #=================================================================================================================================
 #Checks on variables
 if [ "$FIT_GLOBALPATH" != "" ] && [ ! -f $FIT_GLOBALPATH ]; then
@@ -277,16 +278,17 @@ if [ ! -d $DATA_PATH_PREFIX ]; then
     exit -1
 fi
 #This check could be avoided just sorting the volumes, in any case volumes MUST be sorted for pyramid check!
-if ! $(for VOL in "${VOLUMES[@]}"; do echo "$VOL"; done | sort -C); then
+if ! $(for VOL in "${NSPACE[@]}"; do echo "$VOL"; done | sort -C); then
     printf "\n\e[0;31m Volumes extracted from directory \"$(basename $PWD)\" not sorted, rename it! Aborting...\n\n\e[0m"
     exit -1
 fi
 #Set global data paths
-for VOL in ${VOLUMES[@]}; do
+for VOL in ${NSPACE[@]}; do
+    PARAMS_STRING="$(GetParametersString $CHEMPOT_PREFIX $MASS_PREFIX $NTIME_PREFIX)_${NSPACE_PREFIX}${VOL}"
     if [ "$USE_RAW_DATA" = "TRUE" ]; then
-        DATA_GLOBALPATH[$VOL]="${DATA_PATH_PREFIX}/muiPiT/${MASS_PREFIX}${MASS}/nt${NTIME}/ns${VOL}/muiPiT_${MASS_PREFIX}${MASS}_nt${NTIME}_ns${VOL}_analysis/muiPiT_${MASS_PREFIX}${MASS}_nt${NTIME}_ns${VOL}_observables_${OBSERVABLE_NAME}.dat"   
+        DATA_GLOBALPATH[$VOL]="${DATA_PATH_PREFIX}/${CHEMPOT_PREFIX}${CHEMPOT}/${MASS_PREFIX}${MASS}/${NTIME_PREFIX}${NTIME}/${NSPACE_PREFIX}${VOL}/${PARAMS_STRING}_analysis/${PARAMS_STRING}_observables_${OBSERVABLE_NAME}.dat"
     else
-        DATA_GLOBALPATH[$VOL]="${DATA_PATH_PREFIX}/muiPiT/${MASS_PREFIX}${MASS}/nt${NTIME}/ns${VOL}/muiPiT_${MASS_PREFIX}${MASS}_nt${NTIME}_ns${VOL}_reweighting/muiPiT_${MASS_PREFIX}${MASS}_nt${NTIME}_ns${VOL}_${OBSERVABLE_NAME}_reweighted.dat"
+        DATA_GLOBALPATH[$VOL]="${DATA_PATH_PREFIX}/${CHEMPOT_PREFIX}${CHEMPOT}/${MASS_PREFIX}${MASS}/${NTIME_PREFIX}${NTIME}/${NSPACE_PREFIX}${VOL}/${PARAMS_STRING}_reweighting/${PARAMS_STRING}_${OBSERVABLE_NAME}_reweighted.dat"
     fi
     if [ ! -f ${DATA_GLOBALPATH[$VOL]} ]; then
         printf "\n\e[0;31m File \"${DATA_GLOBALPATH[$VOL]}\" not found! Aborting...\n\n\e[0m"
@@ -302,11 +304,11 @@ if [[ ! $PROGRESS_BAR_UPDATE_FREQUENCY =~ ^[[:digit:]]+$ ]]; then
     exit -1
 fi
 #Checks on beta min and max
-if [ ${#BETA_MINIMUM_TO_BE_CONSIDERED[@]} -gt 1 ] && [ ${#BETA_MINIMUM_TO_BE_CONSIDERED[@]} -ne ${#VOLUMES[@]} ]; then 
+if [ ${#BETA_MINIMUM_TO_BE_CONSIDERED[@]} -gt 1 ] && [ ${#BETA_MINIMUM_TO_BE_CONSIDERED[@]} -ne ${#NSPACE[@]} ]; then 
     printf "\n\e[0;31m Option --betaMin requires either one beta value or as many as the number of volumes! Aborting...\n\n\e[0m"
     exit -1
 fi
-if [ ${#BETA_MAXIMUM_TO_BE_CONSIDERED[@]} -gt 1 ] && [ ${#BETA_MAXIMUM_TO_BE_CONSIDERED[@]} -ne ${#VOLUMES[@]} ]; then 
+if [ ${#BETA_MAXIMUM_TO_BE_CONSIDERED[@]} -gt 1 ] && [ ${#BETA_MAXIMUM_TO_BE_CONSIDERED[@]} -ne ${#NSPACE[@]} ]; then 
     printf "\n\e[0;31m Option --betaMax requires either one beta value or as many as the number of volumes! Aborting...\n\n\e[0m"
     exit -1
 fi
@@ -333,12 +335,12 @@ if [ ${#BETA_MINIMUM_TO_BE_CONSIDERED[@]} -eq 0 ]; then
     unset -v 'BETA_MINIMUM_TO_BE_CONSIDERED'
 else
     if [ ${#BETA_MINIMUM_TO_BE_CONSIDERED[@]} -eq 1 ]; then
-        for VOL in ${VOLUMES[@]}; do TMP_ARRAY[$VOL]=${BETA_MINIMUM_TO_BE_CONSIDERED[0]}; done
+        for VOL in ${NSPACE[@]}; do TMP_ARRAY[$VOL]=${BETA_MINIMUM_TO_BE_CONSIDERED[0]}; done
     else
-        for INDEX in ${!VOLUMES[@]}; do TMP_ARRAY[${VOLUMES[$INDEX]}]=${BETA_MINIMUM_TO_BE_CONSIDERED[$INDEX]}; done
+        for INDEX in ${!NSPACE[@]}; do TMP_ARRAY[${NSPACE[$INDEX]}]=${BETA_MINIMUM_TO_BE_CONSIDERED[$INDEX]}; done
     fi
     unset -v 'BETA_MINIMUM_TO_BE_CONSIDERED'    
-    for VOL in ${VOLUMES[@]}; do BETA_MINIMUM_TO_BE_CONSIDERED[$VOL]=${TMP_ARRAY[$VOL]}; done
+    for VOL in ${NSPACE[@]}; do BETA_MINIMUM_TO_BE_CONSIDERED[$VOL]=${TMP_ARRAY[$VOL]}; done
     unset -v 'TMP_ARRAY'
 fi
 
@@ -346,16 +348,16 @@ if [ ${#BETA_MAXIMUM_TO_BE_CONSIDERED[@]} -eq 0 ]; then
     unset -v 'BETA_MAXIMUM_TO_BE_CONSIDERED'
 else
     if [ ${#BETA_MAXIMUM_TO_BE_CONSIDERED[@]} -eq 1 ]; then
-        for VOL in ${VOLUMES[@]}; do TMP_ARRAY[$VOL]=${BETA_MAXIMUM_TO_BE_CONSIDERED[0]}; done
+        for VOL in ${NSPACE[@]}; do TMP_ARRAY[$VOL]=${BETA_MAXIMUM_TO_BE_CONSIDERED[0]}; done
     else
-        for INDEX in ${!VOLUMES[@]}; do TMP_ARRAY[${VOLUMES[$INDEX]}]=${BETA_MAXIMUM_TO_BE_CONSIDERED[$INDEX]}; done
+        for INDEX in ${!NSPACE[@]}; do TMP_ARRAY[${NSPACE[$INDEX]}]=${BETA_MAXIMUM_TO_BE_CONSIDERED[$INDEX]}; done
     fi
     unset -v 'BETA_MAXIMUM_TO_BE_CONSIDERED'    
-    for VOL in ${VOLUMES[@]}; do BETA_MAXIMUM_TO_BE_CONSIDERED[$VOL]=${TMP_ARRAY[$VOL]}; done
+    for VOL in ${NSPACE[@]}; do BETA_MAXIMUM_TO_BE_CONSIDERED[$VOL]=${TMP_ARRAY[$VOL]}; done
     unset -v 'TMP_ARRAY'
 fi
 
-for VOL in ${VOLUMES[@]}; do
+for VOL in ${NSPACE[@]}; do
     if [ ${#BETA_MINIMUM_TO_BE_CONSIDERED[@]} -ne 0 ] && [ ${#BETA_MAXIMUM_TO_BE_CONSIDERED[@]} -ne 0 ]; then
         if [ $(bc <<< "${BETA_MINIMUM_TO_BE_CONSIDERED[$VOL]} > ${BETA_MAXIMUM_TO_BE_CONSIDERED[$VOL]}") -eq 1 ]; then
             read BETA_MINIMUM_TO_BE_CONSIDERED[$VOL] BETA_MAXIMUM_TO_BE_CONSIDERED[$VOL] <<< "${BETA_MAXIMUM_TO_BE_CONSIDERED[$VOL]} ${BETA_MINIMUM_TO_BE_CONSIDERED[$VOL]}"
@@ -386,7 +388,7 @@ if [ $USE_RANGES_TO_BE_FITTED_FILE = "FALSE" ]; then
     NUMBER_ALL_POSSIBLE_BETA_RANGES=1
     TOTAL_NUMBER_OF_FITS_PER_VOLUME=()
     RANGES_DIM=""
-    for VOL in ${VOLUMES[@]}; do
+    for VOL in ${NSPACE[@]}; do
         SKIPPED_FITS_BETA_OUT[$VOL]=0
         SKIPPED_FITS_LACK_POINTS[$VOL]=0
         SKIPPED_FITS_ASYMMETRY[$VOL]=0
@@ -438,7 +440,7 @@ if [ $USE_RANGES_TO_BE_FITTED_FILE = "FALSE" ]; then
         [ -f $ALL_BETA_RANGES_FILENAME ] && mv $ALL_BETA_RANGES_FILENAME ${ALL_BETA_RANGES_FILENAME}_$(date +'%F_%H%M')
         printf "\e[0;36m Producing ${RANGES_DIM:1}=$NUMBER_ALL_POSSIBLE_BETA_RANGES combinations of ranges...\n\e[0m"
         START_TIME=`date +%s`
-        [ ! -f $ALL_BETA_RANGES_FILENAME ] && PrintAllPossibleRangesCombinations $(( ${#VOLUMES[@]} -1 ))
+        [ ! -f $ALL_BETA_RANGES_FILENAME ] && PrintAllPossibleRangesCombinations $(( ${#NSPACE[@]} -1 ))
         END_TIME=`date +%s`
         printf "\e[0;36m ...done in $(($END_TIME-$START_TIME)) seconds!\n\e[0m"
     else
@@ -446,7 +448,7 @@ if [ $USE_RANGES_TO_BE_FITTED_FILE = "FALSE" ]; then
             printf "\e[0;33m File \"$ALL_BETA_RANGES_FILENAME\" not found! It will be created.\n\e[0m"
             printf "\e[0;36m Producing ${RANGES_DIM:1}=$NUMBER_ALL_POSSIBLE_BETA_RANGES combinations of ranges...\n\e[0m"
             START_TIME=`date +%s`
-            [ ! -f $ALL_BETA_RANGES_FILENAME ] && PrintAllPossibleRangesCombinations $(( ${#VOLUMES[@]} -1 ))
+            [ ! -f $ALL_BETA_RANGES_FILENAME ] && PrintAllPossibleRangesCombinations $(( ${#NSPACE[@]} -1 ))
             END_TIME=`date +%s`
             printf "\e[0;36m ...done in $(($END_TIME-$START_TIME)) seconds!\n\e[0m"
         elif [ $(wc -l < $ALL_BETA_RANGES_FILENAME) -ne $NUMBER_ALL_POSSIBLE_BETA_RANGES ]; then
@@ -454,7 +456,7 @@ if [ $USE_RANGES_TO_BE_FITTED_FILE = "FALSE" ]; then
             mv $ALL_BETA_RANGES_FILENAME ${ALL_BETA_RANGES_FILENAME}_$(date +'%F_%H%M')
             printf "\e[0;36m Producing ${RANGES_DIM:1}=$NUMBER_ALL_POSSIBLE_BETA_RANGES combinations of ranges...\n\e[0m"
             START_TIME=`date +%s`
-            [ ! -f $ALL_BETA_RANGES_FILENAME ] && PrintAllPossibleRangesCombinations $(( ${#VOLUMES[@]} -1 ))
+            [ ! -f $ALL_BETA_RANGES_FILENAME ] && PrintAllPossibleRangesCombinations $(( ${#NSPACE[@]} -1 ))
             END_TIME=`date +%s`
             printf "\e[0;36m ...done in $(($END_TIME-$START_TIME)) seconds!\n\e[0m"
         else
@@ -521,10 +523,10 @@ if [ $WILSON = 'TRUE' ]; then
 elif [ $STAGGERED = 'TRUE' ]; then
     GNUPLOT_PARAMETERS="obs='${OBSERVABLE_NAME}'; mass='${MASS}'; nt=${NTIME};"
 fi
-for INDEX in "${!VOLUMES[@]}"; do
-    GNUPLOT_PARAMETERS="$GNUPLOT_PARAMETERS ns$INDEX=${VOLUMES[$INDEX]};"
+for INDEX in "${!NSPACE[@]}"; do
+    GNUPLOT_PARAMETERS="$GNUPLOT_PARAMETERS ns$INDEX=${NSPACE[$INDEX]};"
 done
-LINE_WITH_ERROR=$(awk -v number_of_volumes="${#VOLUMES[@]}" '{if(NF != 2*number_of_volumes){wrong=1; print NR}}END{if(wrong==1){exit}else{print 0}}' $BETA_RANGES_TO_BE_FITTED)
+LINE_WITH_ERROR=$(awk -v number_of_volumes="${#NSPACE[@]}" '{if(NF != 2*number_of_volumes){wrong=1; print NR}}END{if(wrong==1){exit}else{print 0}}' $BETA_RANGES_TO_BE_FITTED)
 if [ $LINE_WITH_ERROR -ne 0 ]; then
     printf "\n\e[0;31m Error reading the beta ranges for fit from file \"$BETA_RANGES_TO_BE_FITTED\" at line ${LINE_WITH_ERROR}. Aborting...\n\n\e[0m"
     exit -1
@@ -635,7 +637,7 @@ if [ $REJECTION_PERCENTAGE -eq 0 ]; then
 else
     if [ $USE_RANGES_TO_BE_FITTED_FILE = "FALSE" ]; then
         TOTAL_NUMBER_OF_POSSIBLE_FIT=1
-        for VOL in ${VOLUMES[@]}; do (( TOTAL_NUMBER_OF_POSSIBLE_FIT*=${TOTAL_NUMBER_OF_FITS_PER_VOLUME[$VOL]} )); done
+        for VOL in ${NSPACE[@]}; do (( TOTAL_NUMBER_OF_POSSIBLE_FIT*=${TOTAL_NUMBER_OF_FITS_PER_VOLUME[$VOL]} )); done
         TOTAL_NUMBER_OF_SKIPPED_FIT=$(( $TOTAL_NUMBER_OF_POSSIBLE_FIT - $TOTAL_NUMBER_OF_FITS ))
     fi
     [ ! ${TOTAL_NUMBER_OF_SKIPPED_FIT:+x} ] && TOTAL_NUMBER_OF_SKIPPED_FIT="---"
