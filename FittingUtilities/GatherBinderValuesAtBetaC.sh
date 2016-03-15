@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # This script is intended to gather the binder data from phil-configs
-# and to put them in the folder from which it is invoqued. The path to
+# and to put them in the folder from which it is invoked. The path to
 # phil-configs is hard coded just because it should not change. In any
 # case each user should add its path in an associative array with the
 # index corresponding to its whoami.

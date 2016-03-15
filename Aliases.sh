@@ -162,11 +162,18 @@ if [ $LOAD_PYTHON_ALIASES = "TRUE" ]; then
         [ $# -eq 3 ] && local NUM_POINTS=$(bc <<< "($2-$1)/$3+1")
         echo "time PyReweighting --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_sq --deactivateMean --deactivateSusc --deactivateSkew -za --doNotUseSimulatedPointsAsNewPoints -r $1 $2 -p $NUM_POINTS"
     }
+    function GetReweightingPolySqSkewCommand(){
+        [ $# -eq 3 ] && local NUM_POINTS=$(bc <<< "($2-$1)/$3+1")
+        echo "time PyReweighting --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_im_withZeroMean --deactivateMean --deactivateSusc -za --doNotUseSimulatedPointsAsNewPoints -r $1 $2 -p $NUM_POINTS"
+    }
     function GetFindBetaCPbpCommand(){
         echo "PyFindBetaC --deactivatePlaq --deactivatePoly --activatePbp --deactivateMean --deactivateSusc --deactivateBinder"
     }
     function GetFindBetaCPolySqCommand(){
         echo "PyFindBetaC --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivateMean --deactivateSkew"
+    }
+    function GetFindBetaCPolySqSkewCommand(){
+        echo "PyFindBetaC --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_withZeroMean --deactivatePoly_im_abs --deactivateMean --deactivateSusc"
     }
     function GetPlotScalingPolySqCommand(){
         echo "PyPlotScaling --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_im_withZeroMean --nsArray $@ --doNotPlotRawData --doNotMakeCombinedPlots --deactivateMean --deactivateSkew --deactivateBinder"
