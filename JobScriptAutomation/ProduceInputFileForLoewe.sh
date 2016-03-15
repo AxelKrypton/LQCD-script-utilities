@@ -6,12 +6,12 @@ function ProduceInputFile_Loewe() {
         echo "fermact=wilson" >> $INPUTFILE_GLOBALPATH
     elif [ $STAGGERED = "TRUE" ]; then
         echo "fermact=rooted_stagg" >> $INPUTFILE_GLOBALPATH
-        echo "num_tastes=$NUM_TASTES" >> $INPUTFILE_GLOBALPATH
+        echo "num_tastes=$NFLAVOUR" >> $INPUTFILE_GLOBALPATH
         if [ $USE_RATIONAL_APPROXIMATION_FILE = "TRUE" ]; then
             echo "read_rational_approximations_from_file=1" >> $INPUTFILE_GLOBALPATH
-            echo "approx_heatbath_file=${RATIONAL_APPROXIMATIONS_PATH}/Nf${NUM_TASTES}_${APPROX_HEATBATH_NAME}" >> $INPUTFILE_GLOBALPATH
-            echo "approx_md_file=${RATIONAL_APPROXIMATIONS_PATH}/Nf${NUM_TASTES}_${APPROX_MD_NAME}" >> $INPUTFILE_GLOBALPATH
-            echo "approx_metropolis_file=${RATIONAL_APPROXIMATIONS_PATH}/Nf${NUM_TASTES}_${APPROX_METROPOLIS_NAME}" >> $INPUTFILE_GLOBALPATH
+            echo "approx_heatbath_file=${RATIONAL_APPROXIMATIONS_PATH}/Nf${NFLAVOUR}_${APPROX_HEATBATH_NAME}" >> $INPUTFILE_GLOBALPATH
+            echo "approx_md_file=${RATIONAL_APPROXIMATIONS_PATH}/Nf${NFLAVOUR}_${APPROX_MD_NAME}" >> $INPUTFILE_GLOBALPATH
+            echo "approx_metropolis_file=${RATIONAL_APPROXIMATIONS_PATH}/Nf${NFLAVOUR}_${APPROX_METROPOLIS_NAME}" >> $INPUTFILE_GLOBALPATH
         else
             echo "read_rational_approximations_from_file=0" >> $INPUTFILE_GLOBALPATH
         fi
@@ -62,11 +62,11 @@ function ProduceInputFile_Loewe() {
             echo "integrator2=twomn" >> $INPUTFILE_GLOBALPATH
             echo "integrationsteps2=${MASS_PRECONDITIONING_ARRAY[${BETAVALUES_COPY[$INDEX]}]%,*}" >> $INPUTFILE_GLOBALPATH
         else
-            echo "cg_iteration_block_size=50" >> $INPUTFILE_GLOBALPATH
+            echo "cg_iteration_block_size=$CGBS" >> $INPUTFILE_GLOBALPATH
             echo "num_timescales=2" >> $INPUTFILE_GLOBALPATH
         fi
     elif [ $STAGGERED = "TRUE" ]; then
-        echo "cg_iteration_block_size=50" >> $INPUTFILE_GLOBALPATH
+        echo "cg_iteration_block_size=$CGBS" >> $INPUTFILE_GLOBALPATH
         echo "num_timescales=2" >> $INPUTFILE_GLOBALPATH
     fi
     echo "tau=1" >> $INPUTFILE_GLOBALPATH
@@ -78,10 +78,10 @@ function ProduceInputFile_Loewe() {
     echo "nspace=$NSPACE" >> $INPUTFILE_GLOBALPATH
     echo "ntime=$NTIME" >> $INPUTFILE_GLOBALPATH
     if [ $WILSON = "TRUE" ]; then
-        echo "kappa=0.$KAPPA" >> $INPUTFILE_GLOBALPATH
+        echo "kappa=0.$MASS" >> $INPUTFILE_GLOBALPATH
         echo "hmcsteps=$MEASUREMENTS" >> $INPUTFILE_GLOBALPATH
     elif [ $STAGGERED = "TRUE" ]; then
-        echo "mass=0.$KAPPA" >> $INPUTFILE_GLOBALPATH
+        echo "mass=0.$MASS" >> $INPUTFILE_GLOBALPATH
         echo "rhmcsteps=$MEASUREMENTS" >> $INPUTFILE_GLOBALPATH
     fi
     echo "savefrequency=$NSAVE" >> $INPUTFILE_GLOBALPATH

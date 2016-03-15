@@ -2,6 +2,29 @@
 #       --startcondition and/or --host_seed (CL2QCD) one should think whether
 #       the continue part should be modified or not. 
 
+function SplitCombinedShortOptionsInSingloOptions() {
+    local NEW_OPTIONS=()
+    for VALUE in "$@"; do
+        if [[ $VALUE =~ ^-[[:alpha:]]+(=.*)?$ ]]; then
+            if [ $(grep -c "=" <<< "$VALUE") -gt 0 ]; then
+                local OPTION_EQUAL_PART=${VALUE##*=}
+                VALUE=${VALUE%%=*}
+            else
+                local OPTION_EQUAL_PART=""
+            fi
+            local SPLITTED_OPTIONS=( $(grep -o "." <<< "${VALUE:1}") )
+            for OPTION in "${SPLITTED_OPTIONS[@]}"; do
+                NEW_OPTIONS+=( "-$OPTION" )
+            done && unset -v 'OPTION'
+            [ "$OPTION_EQUAL_PART" != "" ] && NEW_OPTIONS[${#NEW_OPTIONS[@]}-1]="${NEW_OPTIONS[${#NEW_OPTIONS[@]}-1]}=$OPTION_EQUAL_PART" #Add =.* to last option 
+        else
+            NEW_OPTIONS+=($VALUE)
+        fi
+    done && unset -v 'VALUE'
+    echo ${NEW_OPTIONS[@]}
+}
+
+
 function ParseCommandLineOption(){
 
     MUTUALLYEXCLUSIVEOPTS=( "-s | --submit"
@@ -12,6 +35,7 @@ function ParseCommandLineOption(){
                             "-U | --uncommentBetas"
                             "-u | --commentBetas"
                             "-i | --invertConfigurations"
+							"-D | --dataBase"
                             "--liststatus_all"
                             "--submitonly"
                             "--showjobs"
@@ -22,11 +46,12 @@ function ParseCommandLineOption(){
                             "--cleanOutputFiles"
                             "--completeBetasFile")
     MUTUALLYEXCLUSIVEOPTS_PASSED=( )
-
+    
     if ! ElementInArray "--doNotUseMultipleChains" $@ && [ "$CLUSTER_NAME" = "JUQUEEN" ]; then
         printf "\n\e[0;31m At the moment, the options --doNotUseMultipleChains must be specified on not CSC clusters!! Aborting...\n\n\e[0m"
         exit -1
 	fi
+
     
     while [ "$1" != "" ]; do
 	    case $1 in
@@ -48,6 +73,7 @@ function ParseCommandLineOption(){
 		        echo "  -F | --confSavePointFrequency      ->    default value = $NSAVEPOINT"
 		        echo "  --intsteps0                        ->    default value = $INTSTEPS0"
 		        echo "  --intsteps1                        ->    default value = $INTSTEPS1"
+				echo "  --cgbs                             ->    default value = $CGBS (cg_iteration_block_size)"
 		        echo -e "  --doNotUseMultipleChains           ->    if given, multiple chain usage and nomenclature are disabled \e[1;32m(this implies that in the betas file the seed column is NOT present)\e[0;32m"
 		        if [ "$CLUSTER_NAME" = "JUQUEEN" ]; then
 		            echo "  --intsteps2                        ->    default value = $INTSTEPS2"
@@ -101,11 +127,17 @@ function ParseCommandLineOption(){
 		        echo -e "                                           The betas can be specified either with a seed or without."
 		        echo -e "                                           The format of the specified string can either contain the output of the --liststatus option, e.g. 5.4380_s5491_NC" 
 		        echo -e "                                           or simply beta values like 5.4380 or a mix of both. If pure beta values are given then all seeds of the given beta value will be uncommented."
-		        echo -e "  \e[0;34m-u | --commentBetas\e[0;32m                ->    Is the reverse option of the \"--uncommentBetas\" option"
+		        echo -e "  \e[0;34m-u | --commentBetas\e[0;32m                ->    Is the reverse option of the --uncommentBetas option"
 		        echo -e "  \e[0;34m-i | --invertConfigurations\e[0;32m        ->    Invert configurations and produce correlator files for betas and seed specified in the betas file."
+				echo -e "  \e[0;34m-d | --dataBase\e[0;32m                    ->    Update, display and filter database. This is a subprogram plenty of functionalities. Run this script with"
+                echo -e "                                           the option \e[0;34m--helpDatabase\e[0;32m to get an explanation about the various possibilities. To work with the database, specify the \e[0;34m-d\e[0;32m"
+                echo -e "                                           option followed by all the database options. Differently said, all options given after \e[0;34m-d\e[0;32m are options for the database subprogram."
 		        echo ""
 		        echo -e "\e[0;93mNOTE: The blue options are mutually exclusive and they are all FALSE by default! In other words, if none of them"
 		        echo -e "\e[0;93m      is given, the script will create beta-folders with the right files inside, but no job will be submitted."
+		        echo ""
+		        echo -e "\e[38;5;202mNOTE: Short options can be combined, and one specification via = can be appended to the last short option specified."
+		        echo -e "\e[38;5;202m      For example \e[0;95m-dl\e[38;5;202m is equivalent to \e[0;95m-d -l\e[38;5;202m and \e[0;95m-pcm=10000\e[38;5;202m is equivalent to \e[0;95m-p -c -m=10000\e[38;5;202m."
 		        printf "\n\e[0m"
 		        exit
 		        shift;;
@@ -115,17 +147,26 @@ function ParseCommandLineOption(){
                 CHEMPOT_PREFIX=${1#*=}; shift ;;
             --kappa_prefix=* )
                 [ $STAGGERED = "TRUE" ] && printf "\n\e[0;31m The option --kappa_prefix can be used only in WILSON simulations! Aborting...\n\n\e[0m" && exit -1
-		        KAPPA_PREFIX=${1#*=}; shift ;;
+		        MASS_PREFIX=${1#*=}; shift ;;
 	        --mass_prefix=* )
-                [ $WILSON = "TRUE" ] && printf "\n\e[0;31m The option --kappa_prefix can be used only in STAGGERED simulations! Aborting...\n\n\e[0m" && exit -1
-                KAPPA_PREFIX=${1#*=}; shift ;;
+                [ $WILSON = "TRUE" ] && printf "\n\e[0;31m The option --mass_prefix can be used only in STAGGERED simulations! Aborting...\n\n\e[0m" && exit -1
+                MASS_PREFIX=${1#*=}; shift ;;
 	        --ntime_prefix=* )              NTIME_PREFIX=${1#*=}; shift ;;
 	        --nspace_prefix=* )             NSPACE_PREFIX=${1#*=}; shift ;;
 	        --beta_prefix=* )               BETA_PREFIX=${1#*=}; shift ;;
 	        --betasfile=* )                 BETASFILE=${1#*=}; shift ;;
 	        --chempot=* )                   CHEMPOT=${1#*=}; shift ;;
-	        --kappa=* )                     KAPPA=${1#*=}; shift ;;
-	        -w=* | --walltime=* )           WALLTIME=${1#*=}; shift ;;
+	        --kappa=* )                     MASS=${1#*=}; shift ;;
+	        -w=* | --walltime=* )
+		WALLTIME=${1#*=}
+		if [[ $WALLTIME =~ ^([[:digit:]]+[dhms])+$ ]]; then
+		    WALLTIME=$(TimeStringToSecond $WALLTIME)
+		    WALLTIME=$(SecondsToTimeStringWithDays $WALLTIME)
+		fi
+		if [[ ! $WALLTIME =~ ^([0-9]+-)?[0-9]{1,2}:[0-9]{2}:[0-9]{2}$ ]]; then
+		    printf "\n\e[0;31m Specified walltime format invalid! Aborting...\n\n\e[0m" && exit -1
+		fi
+		shift ;;
 	        --bgsize=* )                    BGSIZE=${1#*=}; shift ;;
 	        -m=* | --measurements=* )       MEASUREMENTS=${1#*=}; shift ;;
 	        --nrxprocs=* )                  NRXPROCS=${1#*=}; shift ;;
@@ -137,6 +178,7 @@ function ParseCommandLineOption(){
 	        --intsteps0=* )                 INTSTEPS0=${1#*=}; shift ;;
 	        --intsteps1=* )                 INTSTEPS1=${1#*=}; shift ;;
 	        --intsteps2=* )                 INTSTEPS2=${1#*=}; shift ;;
+			--cgbs=* )                      CGBS=${1#*=}; shift ;;
 	        -p | --doNotMeasurePbp )        MEASURE_PBP="FALSE"; shift ;;
 	        --doNotUseRAfiles )
                 [ $WILSON = "TRUE" ] && printf "\n\e[0;31m The option --doNotUseRAfiles can be used only in STAGGERED simulations! Aborting...\n\n\e[0m" && exit -1
@@ -291,6 +333,13 @@ function ParseCommandLineOption(){
                 INVERT_CONFIGURATIONS="TRUE"
                 shift
                 ;;
+			-d | --database)
+				CALL_DATABASE="TRUE"
+				MUTUALLYEXCLUSIVEOPTS_PASSED+=( "--database" )
+				shift
+				DATABASE_OPTIONS=( $@ )
+				shift $#
+				;;
 	        * ) printf "\n\e[0;31m Invalid option \e[1m$1\e[0;31m (see help for further information)! Aborting...\n\n\e[0m" ; exit -1 ;;
 	    esac
     done

@@ -19,25 +19,29 @@ source $HOME/Script/JobScriptAutomation/AuxiliaryFunctions.sh || exit -2
 source $HOME/Script/JobScriptAutomation/AcceptanceRateReport.sh || exit -2
 source $HOME/Script/JobScriptAutomation/BuildRegexPath.sh || exit -2
 source $HOME/Script/JobScriptAutomation/EmptyBetaDirectories.sh || exit -2
+source $HOME/Script/JobScriptAutomation/ProjectStatisticsDatabase.sh || exit -2
 #-----------------------------------------------------------------------------------------------------------------#
 
 #-----------------------------------------------------------------------------------------------------------------#
 # Global variables declared in other scripts
 #   STAGGERED="TRUE" or WILSON="TRUE"
+#   NFLAVOUR_PREFIX="Nf"
 #   CHEMPOT_PREFIX="mui"
 #   NTIME_PREFIX="nt"
 #   NSPACE_PREFIX="ns"
-#   KAPPA_PREFIX="k" or KAPPA_PREFIX="mass"
-#   CHEMPOT_POSITION=0
-#   KAPPA_POSITION=1
-#   NTIME_POSITION=2
-#   NSPACE_POSITION=3
+#   MASS_PREFIX="k" or MASS_PREFIX="mass"
+#   NFLAVOUR_POSITION=0
+#   CHEMPOT_POSITION=1
+#   MASS_POSITION=2
+#   NTIME_POSITION=3
+#   NSPACE_POSITION=4
+#   NFLAVOUR
 #   CHEMPOT
-#   KAPPA
+#   MASS
 #   NSPACE
 #   NTIME
-#   PARAMETERS_PATH    <---This is the string in the path with the 4 parameters with slash in front, e.g. /muiPiT/k1550/nt6/ns12   or   /mui0/mass0250/nt4/ns8
-#   PARAMETERS_STRING  <---This is the string in the path with the 4 parameters with underscores, e.g. muiPiT_k1550_nt6_ns12   or   mui0_mass0250_nt4_ns8
+#   PARAMETERS_PATH    <---This is the string in the path with the 4 parameters with slash in front, e.g. /Nf2/muiPiT/k1550/nt6/ns12   or   /Nf2/mui0/mass0250/nt4/ns8
+#   PARAMETERS_STRING  <---This is the string in the path with the 4 parameters with underscores, e.g. Nf2_muiPiT_k1550_nt6_ns12   or   Nf2_mui0_mass0250_nt4_ns8
 
 #-----------------------------------------------------------------------------------------------------------------#
 # Set default values for the command line parameters
@@ -56,6 +60,7 @@ NSAVEPOINT="20"
 INTSTEPS0="7"
 INTSTEPS1="5"
 INTSTEPS2="5"
+CGBS="50"
 MEASURE_PBP="TRUE"
 INTERVAL="1000"
 USE_MULTIPLE_CHAINS="TRUE"
@@ -83,11 +88,31 @@ COMPLETE_BETAS_FILE="FALSE"
 UNCOMMENT_BETAS="FALSE"
 COMMENT_BETAS="FALSE"
 INVERT_CONFIGURATIONS="FALSE"
+CALL_DATABASE="FALSE"
 NUMBER_OF_CHAINS_TO_BE_IN_THE_BETAS_FILE="4"
 if [ $STAGGERED = "TRUE" ]; then
-    NUM_TASTES="2"
     USE_RATIONAL_APPROXIMATION_FILE="TRUE"
 fi
+
+#Variables for Liststatus colors and acceptances thresholds (here since they are used also by the database)
+DEFAULT_LISTSTATUS_COLOR="\e[0;36m"
+SUSPICIOUS_BETA_LISTSTATUS_COLOR="\e[0;33m"
+WRONG_BETA_LISTSTATUS_COLOR="\e[0;91m"
+TOO_LOW_ACCEPTANCE_LISTSTATUS_COLOR="\e[38;5;9m"
+LOW_ACCEPTANCE_LISTSTATUS_COLOR="\e[38;5;208m"
+OPTIMAL_ACCEPTANCE_LISTSTATUS_COLOR="\e[38;5;10m"
+HIGH_ACCEPTANCE_LISTSTATUS_COLOR="\e[38;5;11m"
+TOO_HIGH_ACCEPTANCE_LISTSTATUS_COLOR="\e[38;5;202m"
+RUNNING_LISTSTATUS_COLOR="\e[0;32m"
+PENDING_LISTSTATUS_COLOR="\e[0;33m"
+CLEANING_LISTSTATUS_COLOR="\e[0;31m"
+STUCK_SIMULATION_LISTSTATUS_COLOR="\e[0;91m"
+FINE_SIMULATION_LISTSTATUS_COLOR="\e[0;32m"
+#-----------------
+TOO_LOW_ACCEPTANCE_THRESHOLD=68
+LOW_ACCEPTANCE_THRESHOLD=70
+HIGH_ACCEPTANCE_THRESHOLD=78
+TOO_HIGH_ACCEPTANCE_THRESHOLD=90
 
 #####################################CREATE OPTIONS FOR COMMAND-LINE-PARSER######################################
 #Inverter Options
@@ -99,6 +124,8 @@ NUMBER_SOURCES_FOR_CORRELATORS="8"
 UNCOMMENT_BETAS_SEED_ARRAY=()
 UNCOMMENT_BETAS_ARRAY=()
 
+#Array for the options string 
+DATABASE_OPTIONS=()
 
 #-----------------------------------------------------------------------------------------------------------------#
 # Set default values for the non-modifyable variables ---> Modify this file to change them!
@@ -121,14 +148,22 @@ elif [ "$(hostname)" = "lqcd-login" ]; then
     CLUSTER_NAME="LCSC_OLD" #Temporary, until all nodes will be moved to gsi
 fi
 
-SPECIFIED_COMMAND_LINE_OPTIONS=( $@ )
+SPECIFIED_COMMAND_LINE_OPTIONS=( $(SplitCombinedShortOptionsInSingloOptions $@) )
 #If the help is asked, it doesn't matter which other options are given to the script
 if ElementInArray "-h" ${SPECIFIED_COMMAND_LINE_OPTIONS[@]} || ElementInArray "--help" ${SPECIFIED_COMMAND_LINE_OPTIONS[@]}; then
     SPECIFIED_COMMAND_LINE_OPTIONS=( "--help" )
+elif ElementInArray "--helpDatabase" ${SPECIFIED_COMMAND_LINE_OPTIONS[@]}; then
+	SPECIFIED_COMMAND_LINE_OPTIONS=( "-d" "-h" )
 fi
 
 ParseCommandLineOption "${SPECIFIED_COMMAND_LINE_OPTIONS[@]}"
 CheckWilsonStaggeredVariables
+
+if [ "$CALL_DATABASE" = "TRUE" ]; then
+	projectStatisticsDatabase ${DATABASE_OPTIONS[@]}	
+	exit
+fi
+
 ReadParametersFromPath $(pwd)
 #-----------------------------------------------------------------------------------------------------------------#
 
@@ -147,12 +182,9 @@ fi
 #-----------------------------------------------------------------------------------------------------------------#
 # Perform all the checks on the path, reading out some variables 
 if [ "$CLUSTER_NAME" = "JUQUEEN" ]; then
-    CheckSingleOccurrenceInPath "homeb" "hkf8/" "hkf8[[:digit:]]\+" "mui" "k[[:digit:]]\+" "nt[[:digit:]]\+" "ns[[:digit:]]\+"
+    CheckSingleOccurrenceInPath "homeb" "hkf8/" "hkf8[[:digit:]]\+" "${NFLAVOUR_PREFIX}${NFLAVOUR_REGEX}" "${CHEMPOT_PREFIX}${CHEMPOT_REGEX}" "${MASS_PREFIX}${MASS_REGEX}" "${NTIME_PREFIX}${NTIME_REGEX}" "${NSPACE_PREFIX}${NSPACE_REGEX}"
 else
-    CheckSingleOccurrenceInPath $(echo $HOME_DIR | sed 's/\// /g') "$CHEMPOT_PREFIX" "${KAPPA_PREFIX}[[:digit:]]\+" "${NTIME_PREFIX}[[:digit:]]\+" "${NSPACE_PREFIX}[[:digit:]]\+"
-    if [ $STAGGERED = "TRUE" ]; then
-        CheckSingleOccurrenceInPath "Nf${NUM_TASTES}"
-    fi
+    CheckSingleOccurrenceInPath $(echo $HOME_DIR | sed 's/\// /g') "${NFLAVOUR_PREFIX}${NFLAVOUR_REGEX}" "${CHEMPOT_PREFIX}${CHEMPOT_REGEX}" "${MASS_PREFIX}${MASS_REGEX}" "${NTIME_PREFIX}${NTIME_REGEX}" "${NSPACE_PREFIX}${NSPACE_REGEX}"
 fi
 
 HOME_DIR_WITH_BETAFOLDERS="$HOME_DIR/$SIMULATION_PATH$PARAMETERS_PATH"
@@ -212,7 +244,7 @@ elif [ $THERMALIZE = "TRUE" ] || [ $CONTINUE_THERMALIZATION = "TRUE" ]; then
     #
     # TODO: If a thermalization from hot is finished but one other crashed and one wishes to resume it, the postfix should be
     #       from Hot but it is from conf since in $THERMALIZED_CONFIGURATIONS_PATH a conf from hot is found. Think about how to fix this.
-    if [ $(ls $THERMALIZED_CONFIGURATIONS_PATH | grep "conf.${PARAMETERS_STRING}_${BETA_PREFIX}[[:digit:]][.][[:digit:]]\{4\}_fromHot[[:digit:]]\+.*" | wc -l) -eq 0 ]; then
+    if [ $(ls $THERMALIZED_CONFIGURATIONS_PATH | grep "conf.${PARAMETERS_STRING}_${BETA_PREFIX}${BETA_REGEX}_fromHot[[:digit:]]\+.*" | wc -l) -eq 0 ]; then
 	    BETA_POSTFIX="_thermalizeFromHot"
     else
 	    BETA_POSTFIX="_thermalizeFromConf"
@@ -252,7 +284,7 @@ elif [ $ACCRATE_REPORT = "TRUE" ]; then
 elif [ $CLEAN_OUTPUT_FILES = "TRUE" ]; then
     
     if [ $SECONDARY_OPTION_ALL = "TRUE" ]; then
-        BETAVALUES=( $( ls $WORK_DIR_WITH_BETAFOLDERS | grep "^$BETA_PREFIX[[:digit:]][.][[:digit:]]\{4\}" | awk '{print substr($1,2)}') )
+        BETAVALUES=( $( ls $WORK_DIR_WITH_BETAFOLDERS | grep "^${BETA_PREFIX}${BETA_REGEX}" | awk '{print substr($1,2)}') )
     else
         ReadBetaValuesFromFile
     fi
