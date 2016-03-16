@@ -13,7 +13,11 @@
 # very handy when it comes to make fit after having reweighted the data with
 # different resolutions.
 
-
+#--------------------------------------------------------------------------------#
+# Load auxiliary bash files that will be used.
+source "$HOME/Script/PathManagement.sh" || exit -2
+source "$HOME/Script/UtilityFunctions.sh" || exit -2
+#--------------------------------------------------------------------------------#
 
 # trap ctrl-c and call ctrl_c()
 trap ctrl_c INT
@@ -22,21 +26,8 @@ function ctrl_c() {
     exit 17
 }
 
-#Setting of the correct case based on the path.                                                                                                                                                                                                                                
-STAGGERED="FALSE"
-WILSON="FALSE"
-[ $(grep "[sS]taggered" <<< "$PWD" | wc -l) -gt 0 ] && STAGGERED="TRUE"
-[ $(grep "[wW]ilson" <<< "$PWD" | wc -l) -gt 0 ] && WILSON="TRUE"
-
-#Check on path
-if [ $STAGGERED = 'FALSE' ] && [ $WILSON = 'FALSE' ]; then
-    printf "\n\e[0;31m Unable to choose between Wilson and Staggered from path! Aborting...\n\n\e[0m"
-    exit -1
-fi
-if [ $STAGGERED = 'TRUE' ] && [ $WILSON = 'TRUE' ]; then
-    printf "\n\e[0;31m Unable to choose between Wilson and Staggered from path! Aborting...\n\n\e[0m"
-    exit -1
-fi
+#Having loaded PathManagement.sh we get for free all the parameters variables and functionalities
+CheckWilsonStaggeredVariables
 
 #Variables for the script
 READ_ONLY='FALSE'
@@ -45,28 +36,19 @@ declare -A RESOLUTION
 OUTPUT_FILENAME="RESOLUTIONS"
 if [ $WILSON = 'TRUE' ]; then
     DATA_PATH_PREFIX='/home/phil-configs/wilson_nf2_muipi4/ImagMu'
-    MASS_PREFIX='k'
 elif [ $STAGGERED = 'TRUE' ]; then
-    DATA_PATH_PREFIX='/home/phil-configs/Staggered/Nf2'
-    MASS_PREFIX='mass'
+    DATA_PATH_PREFIX='/home/phil-configs/Staggered'
 fi
 
-#Functions to handle paths
+#Functions to handle paths (the only argument is NSPACE since the others are set from the path)
 function GetNsFolderGlobalpath(){
-    echo "$DATA_PATH_PREFIX/muiPiT/${MASS_PREFIX}${1}/nt${2}/ns${3}"
+    echo "${DATA_PATH_PREFIX}$(GetParametersPath $NFLAVOUR_PREFIX $CHEMPOT_PREFIX $MASS_PREFIX $NTIME_PREFIX)/${NSPACE_PREFIX}${1}"
 }
 function GetReweightingFolderGlobalpath(){
-    echo "$(GetNsFolderGlobalpath $1 $2 $3)/muiPiT_${MASS_PREFIX}${1}_nt${2}_ns${3}_reweighting"
+    echo "$(GetNsFolderGlobalpath $1)/$(GetParametersString $CHEMPOT_PREFIX $MASS_PREFIX $NTIME_PREFIX)_${NSPACE_PREFIX}${1}_reweighting"
 }
 function GetDatafileGlobalpath(){
-    echo "$(GetReweightingFolderGlobalpath $1 $2 $3)/muiPiT_${MASS_PREFIX}${1}_nt${2}_ns${3}_${4}_reweighted.dat"
-}
-
-function ElementInArray() {
-    #Remember in BASH 0 means true and >0 means false
-    local ELEMENT
-    for ELEMENT in "${@:2}"; do [[ "$ELEMENT" == "$1" ]] && return 0; done
-    return 1
+    echo "$(GetReweightingFolderGlobalpath $1)/$(GetParametersString $CHEMPOT_PREFIX $MASS_PREFIX $NTIME_PREFIX)_${NSPACE_PREFIX}${1}_${OBSERVABLE}_reweighted.dat"
 }
 
 if ElementInArray "--help" $@ || ElementInArray "-h" $@; then
@@ -94,11 +76,12 @@ done
 
 
 #==============================================================================================================
-##Read out from the path the parameters (do not check for multiple occurence!)
-MASS=$(echo $PWD | grep -o "/$MASS_PREFIX[[:digit:]]*" | grep -o "[[:digit:]]*")
-[ "$MASS" == "" ] && printf "\n\e[0;31m Unable to recover mass parameter from path! Aborting...\n\n\e[0m" && exit -1
-NTIME=$(echo $PWD | grep -o "/nt[[:digit:]]*"); NTIME=${NTIME/\/nt/}
-[ "$NTIME" == "" ] && printf "\n\e[0;31m Unable to recover nt from path! Aborting...\n\n\e[0m" && exit -1
+#Read out from the path the parameters (do not check for multiple occurence!)
+ReadSingleParameterFromPath $PWD $NFLAVOUR_PREFIX
+ReadSingleParameterFromPath $PWD $CHEMPOT_PREFIX
+ReadSingleParameterFromPath $PWD $MASS_PREFIX
+ReadSingleParameterFromPath $PWD $NTIME_PREFIX
+CheckParametersExtractedFromPath $NFLAVOUR_PREFIX $CHEMPOT_PREFIX $MASS_PREFIX $NTIME_PREFIX
 
 #==============================================================================================================
 #Ask for number of volumes
@@ -118,12 +101,14 @@ echo ''
 #If there are several reweighted folders, choose one interactively
 if [ $READ_ONLY = 'FALSE' ]; then
     for VOL in ${VOLUMES[@]}; do
-        CLASSIC_REWEIGHTING_FOLDER=$(GetReweightingFolderGlobalpath $MASS $NTIME ${VOL})
+        CLASSIC_REWEIGHTING_FOLDER=$(GetReweightingFolderGlobalpath $VOL)
         REWEIGHTING_FOLDERS=( $(ls -d ${CLASSIC_REWEIGHTING_FOLDER}_dBeta*/) )
         if [ ${#REWEIGHTING_FOLDERS[@]} -eq 0 ]; then
             if [ ! -d $CLASSIC_REWEIGHTING_FOLDER ]; then
                 printf "\e[38;5;9m\n No reweighting folder found for m=$MASS, nt=$NTIME and ns=${VOL}!!! Aborting...\e[0m\n\n"
                 exit -1
+            else
+                continue #It means that there is one folder with the classic name, fine.
             fi
         else
             if [ ${#REWEIGHTING_FOLDERS[@]} -gt 1 ]; then
@@ -157,13 +142,12 @@ if [ $READ_ONLY = 'FALSE' ]; then
         fi
     done
 fi
-
 #==============================================================================================================
 #Get Resolution from files
 printf "\nResolutions of reweighted data:\n" > $OUTPUT_FILENAME
 FIT_FOLDER_NAME=""
 for VOL in ${VOLUMES[@]}; do
-    FILE_GLOBALPATH=$(GetDatafileGlobalpath $MASS $NTIME ${VOL} $OBSERVABLE)
+    FILE_GLOBALPATH=$(GetDatafileGlobalpath $VOL)
     if [ -f $FILE_GLOBALPATH ]; then
         BETAS=( $(awk '/^($|[#]+)/{next}{print $0}' $FILE_GLOBALPATH | cut -f1) )
         RESOLUTIONS=( $(echo ${BETAS[@]} | awk 'BEGIN{RS=" "}{if(last){print $1-last}; last=$1}' | sort -u) )

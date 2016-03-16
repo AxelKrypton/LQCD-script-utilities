@@ -2,8 +2,8 @@ function CreateGnuplotFitWithHardCodedParameters(){
     #Remove temporary file for gnuplot if existing
     rm -f $TMP_FILE_FOR_GNUPLOT_SCRIPT
     # Values of volumes
-    for INDEX in ${!VOLUMES[@]}; do
-        echo "ns${INDEX}=${VOLUMES[$INDEX]}" >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+    for INDEX in ${!NSPACE[@]}; do
+        echo "ns${INDEX}=${NSPACE[$INDEX]}" >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     done
     # Starting values for fit params
     echo 'bc=5.5'    >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
@@ -23,20 +23,20 @@ function CreateGnuplotFitWithHardCodedParameters(){
     # linear model:    f(x) = B4 + a1*(x-bc)*Ns**1/nu                             with variables B4,a1,bc,nu independent of Ns
     # quadratic model: f(x) = B4 + a1*(x-bc)*Ns**1/nu + a2*((x-bc)*Ns**1/nu)**2   with variables B4,a1,a2,bc,nu independent of Ns
     if [ $FIT_TYPE = 'linear' ]; then
-        for INDEX in ${!VOLUMES[@]}; do
+        for INDEX in ${!NSPACE[@]}; do
             echo "fns${INDEX}(x) = B4  + a1*(x-bc)*ns${INDEX}**(1./nu)" >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
         done
     elif [ $FIT_TYPE = 'quadratic' ]; then
-        for INDEX in ${!VOLUMES[@]}; do
+        for INDEX in ${!NSPACE[@]}; do
             echo "fns${INDEX}(x) = B4  + a1*(x-bc)*ns${INDEX}**(1./nu) + a2*(x-bc)*ns${INDEX}**(2./nu)" >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
         done
     fi
     echo -n 'fit_data(x,y) = ' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-    for INDEX in ${!VOLUMES[@]}; do
+    for INDEX in ${!NSPACE[@]}; do
         echo -n "y==$INDEX ? fns${INDEX}(x) : (" >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     done
     echo  -n "1./0"  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-    for INDEX in ${!VOLUMES[@]}; do
+    for INDEX in ${!NSPACE[@]}; do
         echo -n ")"  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     done
     echo '' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
@@ -109,7 +109,7 @@ function CreateGnuplotFitWithHardCodedParameters(){
     echo 'set style arrow 1 nohead lt 0 lc -1 lw .5'                    >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     echo 'set arrow from bc,graph(0,0) to bc,graph(1,1) arrowstyle 1'   >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     #Key titles
-    for INDEX in ${!VOLUMES[@]}; do
+    for INDEX in ${!NSPACE[@]}; do
         if [ $TEX_PLOT = 'FALSE' ]; then
             echo 'title'$INDEX' = sprintf("{/=9 Ns=".ns'$INDEX'.", {/Symbol b} {/Symbol \316} ['${BETA_RANGES[$(($INDEX*2))]}','${BETA_RANGES[$(($INDEX*2+1))]}']}")' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
         else
@@ -118,11 +118,11 @@ function CreateGnuplotFitWithHardCodedParameters(){
     done
     #Actual plot
     echo -n 'plot ' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-    for INDEX in ${!VOLUMES[@]}; do
-        echo '"'$(GetDatafileGlobalpath $MASS $NTIME ${VOLUMES[$INDEX]} $OBSERVABLE)'" u 1:8:9 pt 1 lc '$INDEX' w e title title'$INDEX' \'  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
+    for INDEX in ${!NSPACE[@]}; do
+        echo '"'$(GetDatafileGlobalpath ${NSPACE[$INDEX]})'" u 1:8:9 pt 1 lc '$INDEX' w e title title'$INDEX' \'  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
         echo '     , "'$TMP_FILE_FOR_DATA_TO_BE_FITTED'" index '$INDEX' u 1:8:9 pt 5 ps 0.3 lc '$INDEX' notitle \'       >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
         echo -n '     , fns'$INDEX'(x) notitle lt 1 lc '$INDEX                                                           >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-        if [ $INDEX -ne $((${#VOLUMES[@]} - 1)) ]; then
+        if [ $INDEX -ne $((${#NSPACE[@]} - 1)) ]; then
             echo ' \'          >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
             echo -n '     , '  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
         else
@@ -153,7 +153,7 @@ function CreateGnuplotTemplateFitScriptWithoutPlotting(){
     echo '  print "Mandatory variable nt not provided! Exiting..."' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
 	echo '  q()'                                                    >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     echo '}'                                                        >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
-    for INDEX in ${!VOLUMES[@]}; do
+    for INDEX in ${!NSPACE[@]}; do
         echo 'if (!exists("b'$INDEX'l") || !exists("b'$INDEX'r")){'                           >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
         echo '  print "Mandatory variable b'$INDEX'l or b'$INDEX'r not provided! Exiting..."' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
 	    echo '  q()'                                                                          >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
@@ -171,7 +171,7 @@ function CreateGnuplotTemplateFitScriptWithoutPlotting(){
 	    echo '  q()'                                                      >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
         echo '}'                                                          >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     fi
-    for INDEX in ${!VOLUMES[@]}; do
+    for INDEX in ${!NSPACE[@]}; do
         echo 'if (!exists("ns'$INDEX'")){'                                      >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
         echo '  print "Mandatory variable ns'$INDEX' not provided! Exiting..."' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
 	    echo '  q()'                                                            >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
@@ -180,7 +180,7 @@ function CreateGnuplotTemplateFitScriptWithoutPlotting(){
     echo '#==========================================================================================================='  >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     #Datafiles
     echo '#Datafiles with all data' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
-    for INDEX in ${!VOLUMES[@]}; do
+    for INDEX in ${!NSPACE[@]}; do
         if [ $WILSON = 'TRUE' ]; then
 	        echo 'fn'$INDEX' = "'$DATA_PATH_PREFIX'/muiPiT/k".kappa."/nt".nt."/ns".ns'$INDEX'."/muiPiT_k".kappa."_nt".nt."_ns".ns'$INDEX'."_reweighting/muiPiT_k".kappa."_nt".nt."_ns".ns'$INDEX'."_".obs."_reweighted.dat"' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
         elif [ $STAGGERED = 'TRUE' ]; then
@@ -189,14 +189,14 @@ function CreateGnuplotTemplateFitScriptWithoutPlotting(){
     done
     echo '#Datafiles with only the data to be fitted: two empty lines are needed to separate the datasets...' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     echo 'system("echo \"\n\" > emptyfile")' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
-    for INDEX in ${!VOLUMES[@]}; do
+    for INDEX in ${!NSPACE[@]}; do
         echo 'fn'$INDEX'_f = "fn'$INDEX'_f"' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     done
-    for INDEX in ${!VOLUMES[@]}; do
+    for INDEX in ${!NSPACE[@]}; do
 	    echo 'system("awk '"'"'$1 >= ".b'$INDEX'l." && $1 <=".b'$INDEX'r." {print $0}'"'"' ".fn'$INDEX'." > ".fn'$INDEX'_f)' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     done
     echo -n 'data_all = "cat "' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
-    for INDEX in ${!VOLUMES[@]}; do
+    for INDEX in ${!NSPACE[@]}; do
         echo -n '.fn'$INDEX'_f." emptyfile "' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     done
     echo '' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
@@ -226,20 +226,20 @@ function CreateGnuplotTemplateFitScriptWithoutPlotting(){
         echo '# quadratic model: f(x) = B4 + a1*(x-bc)*Ns**1/nu + a2*((x-bc)*Ns**1/nu)**2   with variables B4,a1,a2,bc,nu independent of Ns' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     fi
     if [ $FIT_TYPE = 'linear' ]; then
-        for INDEX in ${!VOLUMES[@]}; do
+        for INDEX in ${!NSPACE[@]}; do
             echo "fns${INDEX}(x) = B4  + a1*(x-bc)*ns${INDEX}**(1./nu)" >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
         done
     elif [ $FIT_TYPE = 'quadratic' ]; then
-        for INDEX in ${!VOLUMES[@]}; do
+        for INDEX in ${!NSPACE[@]}; do
             echo "fns${INDEX}(x) = B4  + a1*(x-bc)*ns${INDEX}**(1./nu) + a2*(x-bc)*ns${INDEX}**(2./nu)" >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
         done
     fi
     echo -n 'fit_data(x,y) = ' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
-    for INDEX in ${!VOLUMES[@]}; do
+    for INDEX in ${!NSPACE[@]}; do
         echo -n "y==$INDEX ? fns${INDEX}(x) : (" >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     done
     echo  -n "1./0"  >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
-    for INDEX in ${!VOLUMES[@]}; do
+    for INDEX in ${!NSPACE[@]}; do
         echo -n ")"  >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     done
     echo '' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
@@ -248,7 +248,7 @@ function CreateGnuplotTemplateFitScriptWithoutPlotting(){
 	echo 'fitrange_low = (b1l<b0l) ? b1l : b0l' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     echo 'fitrange_high = (b1r>b0r) ? b1r : b0r' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     INDEX=2
-    while [ $INDEX -lt ${#VOLUMES[@]} ]; do
+    while [ $INDEX -lt ${#NSPACE[@]} ]; do
         echo 'fitrange_low = (b'$INDEX'l<fitrange_low) ? b'$INDEX'l : fitrange_low' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
         echo 'fitrange_high = (b'$INDEX'r>fitrange_high) ? b'$INDEX'r : fitrange_high' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
         (( ++INDEX ))
@@ -267,25 +267,25 @@ function CreateGnuplotTemplateFitScriptWithoutPlotting(){
     echo 'chisq = FIT_STDFIT**2 * ndf'            >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH  # chi-squared
     echo 'Q = 1 - igamma(0.5 * ndf, 0.5 * chisq)' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH  # the quality of fit parameter Q -> NOTE: From version 5.0 this is in the variable FIT_P (activated by "set fit errorscaling")
     #Print to standard output some parameters from within gnuplot to make later a report
-    local STRING_FOR_VOLUMES_FORMAT=""
-    local STRING_FOR_VOLUMES=""
+    local STRING_FOR_NSPACE_FORMAT=""
+    local STRING_FOR_NSPACE=""
     local STRING_FOR_RANGES=""
-    for INDEX in ${!VOLUMES[@]}; do
-        STRING_FOR_VOLUMES_FORMAT="${STRING_FOR_VOLUMES_FORMAT}.%d"
-        STRING_FOR_VOLUMES="${STRING_FOR_VOLUMES}, ns$INDEX"
+    for INDEX in ${!NSPACE[@]}; do
+        STRING_FOR_NSPACE_FORMAT="${STRING_FOR_NSPACE_FORMAT}.%d"
+        STRING_FOR_NSPACE="${STRING_FOR_NSPACE}, ns$INDEX"
         STRING_FOR_RANGES=${STRING_FOR_RANGES}.b${INDEX}l.'" "'.b${INDEX}r.'"   "'
     done
     echo 'set print "-"' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     if [ $FIT_TYPE = 'linear' ]; then
-        echo 'print sprintf("'${STRING_FOR_VOLUMES_FORMAT:1}'\t\t%2d %f %5.2f\t\t%.5f %.5f\t\t%.5f %.5f\t\t%.5f %.5f\t\t%.6f %.6f\t\t"'"${STRING_FOR_RANGES}"${STRING_FOR_VOLUMES}', FIT_NDF, FIT_STDFIT**2, Q*100, nu, nu_err, bc, bc_err, B4, B4_err, a1, a1_err)'                          >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
+        echo 'print sprintf("'${STRING_FOR_NSPACE_FORMAT:1}'\t\t%2d %f %5.2f\t\t%.5f %.5f\t\t%.5f %.5f\t\t%.5f %.5f\t\t%.6f %.6f\t\t"'"${STRING_FOR_RANGES}"${STRING_FOR_NSPACE}', FIT_NDF, FIT_STDFIT**2, Q*100, nu, nu_err, bc, bc_err, B4, B4_err, a1, a1_err)'                          >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     elif [ $FIT_TYPE = 'quadratic' ]; then
-        echo 'print sprintf("'${STRING_FOR_VOLUMES_FORMAT:1}'\t\t%2d %f %5.2f\t\t%.5f %.5f\t\t%.5f %.5f\t\t%.5f %.5f\t\t%.6f %.6f\t\t%.6f %.6f\t\t"'"${STRING_FOR_RANGES}"${STRING_FOR_VOLUMES}', FIT_NDF, FIT_STDFIT**2, Q*100, nu, nu_err, bc, bc_err, B4, B4_err, a1, a1_err, a2, a2_err)' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
+        echo 'print sprintf("'${STRING_FOR_NSPACE_FORMAT:1}'\t\t%2d %f %5.2f\t\t%.5f %.5f\t\t%.5f %.5f\t\t%.5f %.5f\t\t%.6f %.6f\t\t%.6f %.6f\t\t"'"${STRING_FOR_RANGES}"${STRING_FOR_NSPACE}', FIT_NDF, FIT_STDFIT**2, Q*100, nu, nu_err, bc, bc_err, B4, B4_err, a1, a1_err, a2, a2_err)' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     fi
     echo 'set print' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     # Removing auxiliary files
     echo '# Removing auxiliary files' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     echo 'system("rm emptyfile")'     >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH 
-    for INDEX in ${!VOLUMES[@]}; do
+    for INDEX in ${!NSPACE[@]}; do
         echo 'system("rm fn'$INDEX'_f")' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     done
     unset -v 'INDEX'
