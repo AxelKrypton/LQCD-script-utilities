@@ -15,24 +15,14 @@
 #
 #######################################################################################
 
-#Source auxiliary files
+#--------------------------------------------------------------------------------#
+# Load auxiliary bash files that will be used.
+source "$HOME/Script/PathManagement.sh" || exit -2
 source "${HOME}/Script/FittingUtilities/CreateGnuplotBinderFitScript.sh" || exit -2
+#--------------------------------------------------------------------------------#
 
-#Setting of the correct case based on the path.                                                                                                                                                                                                                                
-STAGGERED="FALSE"
-WILSON="FALSE"
-[ $(grep "[sS]taggered" <<< "$PWD" | wc -l) -gt 0 ] && STAGGERED="TRUE"
-[ $(grep "[wW]ilson" <<< "$PWD" | wc -l) -gt 0 ] && WILSON="TRUE"
-
-#Check on path
-if [ $STAGGERED = 'FALSE' ] && [ $WILSON = 'FALSE' ]; then
-    printf "\n\e[0;31m Unable to choose between Wilson and Staggered from path! Aborting...\n\n\e[0m"
-    exit -1
-fi
-if [ $STAGGERED = 'TRUE' ] && [ $WILSON = 'TRUE' ]; then
-    printf "\n\e[0;31m Unable to choose between Wilson and Staggered from path! Aborting...\n\n\e[0m"
-    exit -1
-fi
+#Having loaded PathManagement.sh we get for free all the parameters variables and functionalities
+CheckWilsonStaggeredVariables
 
 #Variables connected to command line options
 FIT_TYPE='linear'
@@ -56,7 +46,8 @@ fi
 
 #Function to get the file global path given: mass, nt, ns, observable
 function GetDatafileGlobalpath(){
-    echo "$DATA_PATH_PREFIX/muiPiT/${MASS_PREFIX}${1}/nt${2}/ns${3}/muiPiT_${MASS_PREFIX}${1}_nt${2}_ns${3}_reweighting/muiPiT_${MASS_PREFIX}${1}_nt${2}_ns${3}_${4}_reweighted.dat"
+    local PARAMS_STRING="$(GetParametersString $CHEMPOT_PREFIX $MASS_PREFIX $NTIME_PREFIX)_${NSPACE_PREFIX}${1}"
+    echo "$DATA_PATH_PREFIX/${CHEMPOT_PREFIX}${CHEMPOT}/${MASS_PREFIX}${MASS}/${NTIME_PREFIX}${NTIME}/${NSPACE_PREFIX}${1}/${PARAMS_STRING}_reweighting/${PARAMS_STRING}_${OBSERVABLE}_reweighted.dat"
 }
 
 #Parse command line parameters
@@ -130,19 +121,21 @@ done
 
 #==============================================================================================================
 #Read out from the path the parameters (do not check for multiple occurence!)
-MASS=$(echo $PWD | grep -o "/$MASS_PREFIX[[:digit:]]*/" | grep -o "[[:digit:]]*")
-[ "$MASS" == "" ] && printf "\n\e[0;31m Unable to recover mass parameter from path! Aborting...\n\n\e[0m" && exit -1
-NTIME=$(echo $PWD | grep -o "/nt[[:digit:]]*/"); NTIME=${NTIME/\/nt/}; NTIME=${NTIME%?}
-[ "$NTIME" == "" ] && printf "\n\e[0;31m Unable to recover nt from path! Aborting...\n\n\e[0m" && exit -1
-VOLUMES=( $(basename $PWD | grep -o "ns[[:digit:]]*" | grep -o "[[:digit:]]*") )
-[ ${#VOLUMES[@]} -eq 0 ] && printf "\n\e[0;31m Unable to recover volumes from directory name! Aborting...\n\n\e[0m" && exit -1
-[ ${#VOLUMES[@]} -lt 1 ] && printf "\n\e[0;31m One volume is not enough to perform the fit! Aborting...\n\n\e[0m" && exit -1
+ReadSingleParameterFromPath $PWD $NFLAVOUR_PREFIX
+ReadSingleParameterFromPath $PWD $CHEMPOT_PREFIX
+ReadSingleParameterFromPath $PWD $MASS_PREFIX
+ReadSingleParameterFromPath $PWD $NTIME_PREFIX
+ReadSingleParameterFromPathWithMultipleOccurence ${PWD##*/} $NSPACE_PREFIX #Here read out from basename!
+CheckParametersExtractedFromPath $NFLAVOUR_PREFIX $CHEMPOT_PREFIX $MASS_PREFIX $NTIME_PREFIX $NSPACE_PREFIX
 
 #==============================================================================================================
-#Checks on command line parameters
+#Extra checks on command line parameters
+[ ${#NSPACE[@]} -eq 0 ] && printf "\n\e[0;31m Unable to recover volumes from directory name! Aborting...\n\n\e[0m" && exit -1
+[ ${#NSPACE[@]} -lt 1 ] && printf "\n\e[0;31m One volume is not enough to perform the fit! Aborting...\n\n\e[0m" && exit -1
+
 if [ $PRODUCE_TEMPLATE = 'FALSE' ]; then
-    if [ ${#BETA_RANGES[@]} -ne $(( ${#VOLUMES[@]} * 2 )) ]; then
-        printf "\n\e[0;31m $(( ${#VOLUMES[@]} * 2 )) values are needed to specify beta ranges where to fit for ${#VOLUMES[@]} volumes (${#BETA_RANGES[@]} were provided)! Aborting...\n\n\e[0m"
+    if [ ${#BETA_RANGES[@]} -ne $(( ${#NSPACE[@]} * 2 )) ]; then
+        printf "\n\e[0;31m $(( ${#NSPACE[@]} * 2 )) values are needed to specify beta ranges where to fit for ${#NSPACE[@]} volumes (${#BETA_RANGES[@]} were provided)! Aborting...\n\n\e[0m"
         exit -1
     fi
 fi
@@ -152,9 +145,9 @@ fi
 if [ $PRODUCE_TEMPLATE = 'TRUE' ]; then
     if [ ! ${GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH:+x} ]; then
         if [ $WILSON = 'TRUE' ]; then
-            GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH="BinderFitTemplate_Wilson_${#VOLUMES[@]}volumes_${FIT_TYPE}.plt"
+            GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH="BinderFitTemplate_Wilson_${#NSPACE[@]}volumes_${FIT_TYPE}.plt"
         elif [ $STAGGERED = 'TRUE' ]; then
-            GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH="BinderFitTemplate_Staggered_${#VOLUMES[@]}volumes_${FIT_TYPE}.plt"
+            GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH="BinderFitTemplate_Staggered_${#NSPACE[@]}volumes_${FIT_TYPE}.plt"
         fi
     fi       
     CreateGnuplotTemplateFitScriptWithoutPlotting
@@ -170,16 +163,17 @@ fi
 rm -f $TMP_FILE_FOR_DATA_TO_BE_FITTED
 FIT_LOWER_BOUND=${BETA_RANGES[0]}
 FIT_UPPER_BOUND=${BETA_RANGES[1]}
-for INDEX in ${!VOLUMES[@]}; do
+for INDEX in ${!NSPACE[@]}; do
     BETA_MIN=${BETA_RANGES[$(($INDEX*2))]}
     BETA_MAX=${BETA_RANGES[$(($INDEX*2+1))]}
-    awk -v betaMin="$BETA_MIN" -v betaMax="$BETA_MAX" '$1>=betaMin && $1<=betaMax{print $0}' $(GetDatafileGlobalpath $MASS $NTIME ${VOLUMES[$INDEX]} $OBSERVABLE) >> $TMP_FILE_FOR_DATA_TO_BE_FITTED
+    awk -v betaMin="$BETA_MIN" -v betaMax="$BETA_MAX" '$1>=betaMin && $1<=betaMax{print $0}' $(GetDatafileGlobalpath ${NSPACE[$INDEX]}) >> $TMP_FILE_FOR_DATA_TO_BE_FITTED
     printf "\n\n" >> $TMP_FILE_FOR_DATA_TO_BE_FITTED
     [ $(bc <<< "$BETA_MIN < $FIT_LOWER_BOUND") -eq 1 ] && FIT_LOWER_BOUND="$BETA_MIN"
     [ $(bc <<< "$BETA_MAX > $FIT_UPPER_BOUND") -eq 1 ] && FIT_UPPER_BOUND="$BETA_MAX"
 done && unset -v 'BETA_MIN' 'BETA_MAX' 'INDEX'
 #Check if there was any range without any data inside
-if [ $(awk 'BEGIN{failed=0; lastEmptyLine=-1; num=0}/^$/{if(NR==lastEmptyLine+1){num++; if(num>1){failed=1; exit}}else{num=0}; lastEmptyLine=NR}END{print failed}' $TMP_FILE_FOR_DATA_TO_BE_FITTED) -eq 1 ]; then
+if [ ! -f $TMP_FILE_FOR_DATA_TO_BE_FITTED ] || 
+   [ $(awk 'BEGIN{failed=0; lastEmptyLine=-1; num=0}/^$/{if(NR==lastEmptyLine+1){num++; if(num>1){failed=1; exit}}else{num=0}; lastEmptyLine=NR}END{print failed}' $TMP_FILE_FOR_DATA_TO_BE_FITTED) -eq 1 ]; then
     printf "\n\e[0;31m No data found for the given observable in some provided beta ranges! Aborting...\n\n\e[0m"
     exit -1
 fi

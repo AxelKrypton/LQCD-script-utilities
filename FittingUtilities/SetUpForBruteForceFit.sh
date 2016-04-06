@@ -143,23 +143,20 @@ echo ""
 declare -A BETA_MIN_ARRAY
 declare -A BETA_MAX_ARRAY
 while [ ${#BETA_MIN_ARRAY[@]} -ne ${#VOLUMES[@]} ]; do
-	while [[ ! $TMP =~ ^[[:digit:]]([.][[:digit:]]+)?$ ]]; do
+	while [[ ! $TMP1 =~ ^[[:digit:]]([.][[:digit:]]+)?$ ]]; do
 		printf "\e[38;5;118mPlease enter beta_min for ns${VOLUMES[${#BETA_MIN_ARRAY[@]}]}: \e[0m"
-		read TMP
+		read TMP1
 	done
-	BETA_MIN_ARRAY[${VOLUMES[${#BETA_MIN_ARRAY[@]}]}]="$TMP"
-	unset -v 'TMP'
-done
-echo ""
-while [ ${#BETA_MAX_ARRAY[@]} -ne ${#VOLUMES[@]} ]; do
-	while [[ ! $TMP =~ ^[[:digit:]]([.][[:digit:]]+)?$ ]]; do
+	BETA_MIN_ARRAY[${VOLUMES[${#BETA_MIN_ARRAY[@]}]}]="$TMP1"
+	while [[ ! $TMP2 =~ ^[[:digit:]]([.][[:digit:]]+)?$ ]]; do
 		printf "\e[38;5;128mPlease enter beta_max for ns${VOLUMES[${#BETA_MAX_ARRAY[@]}]}: \e[0m"
-		read TMP
+		read TMP2
 	done
-	BETA_MAX_ARRAY[${VOLUMES[${#BETA_MAX_ARRAY[@]}]}]="$TMP"
-	unset -v 'TMP'
+	BETA_MAX_ARRAY[${VOLUMES[${#BETA_MAX_ARRAY[@]}]}]="$TMP2"
+	unset -v 'TMP1' 'TMP2'
 done
 echo ''
+
 SCRIPT_PATH="`readlink -e $0`"
 ABSOLUTE_FOLDER_PATH="${SCRIPT_PATH%%$(basename $SCRIPT_PATH)}"
 
