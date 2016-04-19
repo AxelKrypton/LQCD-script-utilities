@@ -104,7 +104,6 @@ while [ "$1" != "" ]; do
         
         -r | --remote )
             while [[ ! "$2" =~ ^- ]] && [ "$2" != "" ]; do
-                echo $2
                 REMOTE=$2
                 shift
             done

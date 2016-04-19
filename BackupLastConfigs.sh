@@ -9,7 +9,11 @@
 #       (i.e. not a lime file), it is copied back as if it was.
 #       This should not be the case but however is up to the user to manage it.
 
-source $HOME/Script/UtilityFunctions.sh || exit -2
+#--------------------------------------------------------------------------------#
+# Load auxiliary bash files that will be used.
+source "$HOME/Script/PathManagement.sh" || exit -2
+source "$HOME/Script/UtilityFunctions.sh" || exit -2
+#--------------------------------------------------------------------------------#
 
 function ParseCommandLineOptions(){
 
@@ -23,7 +27,7 @@ function ParseCommandLineOptions(){
                 echo "   --remotePrefix     ->    remote prefix (default = ${REMOTE_PREFIX[$(whoami)]})"
                 echo "   --rsyncOptions     ->    options passed to rsync (default = $RSYNC_OPTIONS)"
                 echo " "
-                echo " NOTE: Change rsync permissions could affect permissions on reciever that are"
+                echo " NOTE: Changing rsync permissions could affect permissions on reciever that are"
                 echo "       by default set to \"--chmod=Du=rwx,Dg=rwx,Do=r,Fu=rw,Fog=r\" how it should be."
                 printf "\n\e[0m"
                 exit
@@ -38,12 +42,8 @@ function ParseCommandLineOptions(){
 }
 
 #-------------------------------------------------------------------------------------------------------#
-
-#Wilson o staggered
-STAGGERED="FALSE"
-WILSON="FALSE"
-[ $(grep "[sS]taggered" <<< "$PWD" | wc -l) -gt 0 ] && STAGGERED="TRUE"
-[ $(grep "[wW]ilson" <<< "$PWD" | wc -l) -gt 0 ] && WILSON="TRUE"
+#Having loaded PathManagement.sh we get for free all the parameters variables and functionalities
+CheckWilsonStaggeredVariables
 
 #Associative array to make the script user specific
 declare -A REMOTE_PREFIX
@@ -51,16 +51,14 @@ declare -A EXPECTED_POSITION
 
 if [ $STAGGERED = "TRUE" ]; then
     EXPECTED_POSITION["sciarra"]="/home/phil-configs/Staggered/Nf2/muiPiT/LastConfigurations"
-    REMOTE_PREFIX["sciarra"]="/lustre/nyx/lcsc/asciarra/StaggeredNf2Project/muiPiT"
-    MASS_PREFIX="mass"
+    REMOTE_PREFIX["sciarra"]="/lustre/nyx/lcsc/asciarra/StaggeredProject/Nf2/muiPiT"
 elif [ $WILSON = "TRUE" ]; then
     REMOTE_PREFIX["sciarra"]="/scratch/hfftheo/sciarra/WilsonProject/muiPiT"
     EXPECTED_POSITION["sciarra"]="/home/phil-configs/wilson_nf2_muipi4/ImagMu/muiPiT/LastConfigurations"
-    REMOTE_PREFIX["czaban"]="/scratch/hfftheo/czaban/ImagMu_Output_Data/muiPiT"
-    EXPECTED_POSITION["czaban"]="/home/phil-configs/wilson_nf2_muipi4/ImagMu/muiPiT/LastConfigurations"
+    REMOTE_PREFIX["czaban"]="/scratch/hfftheo/czaban/WilsonProject/Nf2/mui0"
+    EXPECTED_POSITION["czaban"]="/home/phil-configs/wilson_nf2_muipi4/ImagMu/mui0/LastConfigurations"
     REMOTE_PREFIX["cuteri"]="/scratch/hfftheo/cuteri/ImagMu/muiPiT"
     EXPECTED_POSITION["cuteri"]="/home/phil-configs/wilson_nf2_muipi4/ImagMu/muiPiT/LastConfigurations"
-    MASS_PREFIX="k"
 fi
 
 #Variables

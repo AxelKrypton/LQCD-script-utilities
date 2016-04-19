@@ -29,15 +29,15 @@ source $HOME/Script/JobScriptAutomation/ProjectStatisticsDatabase.sh || exit -2
 #   CHEMPOT_PREFIX="mui"
 #   NTIME_PREFIX="nt"
 #   NSPACE_PREFIX="ns"
-#   KAPPA_PREFIX="k" or KAPPA_PREFIX="mass"
+#   MASS_PREFIX="k" or MASS_PREFIX="mass"
 #   NFLAVOUR_POSITION=0
 #   CHEMPOT_POSITION=1
-#   KAPPA_POSITION=2
+#   MASS_POSITION=2
 #   NTIME_POSITION=3
 #   NSPACE_POSITION=4
 #   NFLAVOUR
 #   CHEMPOT
-#   KAPPA
+#   MASS
 #   NSPACE
 #   NTIME
 #   PARAMETERS_PATH    <---This is the string in the path with the 4 parameters with slash in front, e.g. /Nf2/muiPiT/k1550/nt6/ns12   or   /Nf2/mui0/mass0250/nt4/ns8
@@ -80,7 +80,6 @@ LOEWE_NODE="unset"
 JOBS_STATUS_PREFIX="jobs_status_"
 SHOWJOBS="FALSE"
 ACCRATE_REPORT="FALSE"
-ACCRATE_REPORT_GLOBAL="FALSE"
 EMPTY_BETA_DIRS="FALSE"
 CLEAN_OUTPUT_FILES="FALSE"
 SECONDARY_OPTION_ALL="FALSE"
@@ -182,9 +181,9 @@ fi
 #-----------------------------------------------------------------------------------------------------------------#
 # Perform all the checks on the path, reading out some variables 
 if [ "$CLUSTER_NAME" = "JUQUEEN" ]; then
-    CheckSingleOccurrenceInPath "homeb" "hkf8/" "hkf8[[:digit:]]\+" "${NFLAVOUR_PREFIX}${NFLAVOUR_REGEX}" "${CHEMPOT_PREFIX}${CHEMPOT_REGEX}" "${KAPPA_PREFIX}${KAPPA_REGEX}" "${NTIME_PREFIX}${NTIME_REGEX}" "${NSPACE_PREFIX}${NSPACE_REGEX}"
+    CheckSingleOccurrenceInPath "homeb" "hkf8/" "hkf8[[:digit:]]\+" "${NFLAVOUR_PREFIX}${NFLAVOUR_REGEX}" "${CHEMPOT_PREFIX}${CHEMPOT_REGEX}" "${MASS_PREFIX}${MASS_REGEX}" "${NTIME_PREFIX}${NTIME_REGEX}" "${NSPACE_PREFIX}${NSPACE_REGEX}"
 else
-    CheckSingleOccurrenceInPath $(echo $HOME_DIR | sed 's/\// /g') "${NFLAVOUR_PREFIX}${NFLAVOUR_REGEX}" "${CHEMPOT_PREFIX}${CHEMPOT_REGEX}" "${KAPPA_PREFIX}${KAPPA_REGEX}" "${NTIME_PREFIX}${NTIME_REGEX}" "${NSPACE_PREFIX}${NSPACE_REGEX}"
+    CheckSingleOccurrenceInPath $(echo $HOME_DIR | sed 's/\// /g') "${NFLAVOUR_PREFIX}${NFLAVOUR_REGEX}" "${CHEMPOT_PREFIX}${CHEMPOT_REGEX}" "${MASS_PREFIX}${MASS_REGEX}" "${NTIME_PREFIX}${NTIME_REGEX}" "${NSPACE_PREFIX}${NSPACE_REGEX}"
 fi
 
 HOME_DIR_WITH_BETAFOLDERS="$HOME_DIR/$SIMULATION_PATH$PARAMETERS_PATH"
@@ -195,6 +194,12 @@ if [ "$HOME_DIR_WITH_BETAFOLDERS" != "$(pwd)" ]; then
 	printf "\e[0;31m Constructed path to directory containing beta folders does not match the actual position! Aborting...\n\n\e[0m"
 	exit -1
 fi
+if [ ! -d $WORK_DIR_WITH_BETAFOLDERS ]; then
+    printf "\n\e[0;31m WORK_DIR_WITH_BETAFOLDERS=$WORK_DIR_WITH_BETAFOLDERS\n"
+	printf "\e[0;31m seems not to be an existing folder! Aborting...\n\n\e[0m"
+	exit -1
+fi
+
 #-----------------------------------------------------------------------------------------------------------------#
 
 
@@ -279,6 +284,7 @@ elif [ $SHOWJOBS = "TRUE" ]; then
 
 elif [ $ACCRATE_REPORT = "TRUE" ]; then
 
+	ReadBetaValuesFromFile
     AcceptanceRateReport
 
 elif [ $CLEAN_OUTPUT_FILES = "TRUE" ]; then

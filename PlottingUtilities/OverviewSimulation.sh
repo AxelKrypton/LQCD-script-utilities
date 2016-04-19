@@ -5,9 +5,9 @@
 
 #-----------------------------------------------------------------------------------------------------------------#
 # Load auxiliary bash files that will be used.
-source $HOME/Script/UtilityFunctions.sh || exit -2
+source "$HOME/Script/PathManagement.sh" || exit -2
+source "$HOME/Script/UtilityFunctions.sh" || exit -2
 #-----------------------------------------------------------------------------------------------------------------#
-
 
 #-----------------------------------------------------------------------------------------------------------------#
 # Auxiliary functions
@@ -85,34 +85,8 @@ function MakeGnuplotHistogram() {
     echo 'set style fill solid 0.25 border -1' >> $GNUPLOT_TEMP_SCRIPT
     echo 'set boxwidth 0.95 relative' >> $GNUPLOT_TEMP_SCRIPT
     echo 'set xtic scale 0' >> $GNUPLOT_TEMP_SCRIPT
-    #Depending on the maximum put tics on y axis (REMARK: make them 5chars long to avoid bad overlay in bottom left corner)
-    if [ $MAXIMUM_YVALUE -lt 10000 ]; then
-        echo 'set ytic ("   1k" 1e3, "   5k" 5e3, "  10k" 1e4)' >> $GNUPLOT_TEMP_SCRIPT
-    elif [ $MAXIMUM_YVALUE -lt 50000 ]; then
-        echo 'set ytic ("   5k" 5e3, "  25k" 2.5e4, "  50k" 5e4)' >> $GNUPLOT_TEMP_SCRIPT
-    elif [ $MAXIMUM_YVALUE -lt 75000 ]; then
-        echo 'set ytic (" 7.5k" 7.5e3, "  30k" 3e4, "52.5k" 5.25e4, "  75k" 7.5e4)' >> $GNUPLOT_TEMP_SCRIPT
-    elif [ $MAXIMUM_YVALUE -lt 100000 ]; then
-        echo 'set ytic ("  10k" 1e4, "  40k" 4e4, "  70k" 7e4, " 100k" 1e4)' >> $GNUPLOT_TEMP_SCRIPT
-    elif [ $MAXIMUM_YVALUE -lt 250000 ]; then
-        echo 'set ytic ("  25k" 2.5e4, " 100k" 1e5, " 175k" 1.75e5, " 250k" 2.5e5)' >> $GNUPLOT_TEMP_SCRIPT
-    elif [ $MAXIMUM_YVALUE -lt 500000 ]; then
-        echo 'set ytic ("  50k" 5e4, " 200k" 2e5, " 350k" 3.5e5, " 500k" 5e5)' >> $GNUPLOT_TEMP_SCRIPT
-    elif [ $MAXIMUM_YVALUE -lt 750000 ]; then
-        echo 'set ytic ("  75k" 7.5e4, " 300k" 3e5, " 525k" 5.25e5, " 750k" 7.5e5)' >> $GNUPLOT_TEMP_SCRIPT
-    elif [ $MAXIMUM_YVALUE -lt 1000000 ]; then
-        echo 'set ytic (" 100k" 1e5, " 400k" 4e5, " 700k" 7e5, "   1M" 1e6)' >> $GNUPLOT_TEMP_SCRIPT
-    elif [ $MAXIMUM_YVALUE -lt 1500000 ]; then
-        echo 'set ytic (" 150k" 1.5e5, " 600k" 6e5, "1.05M" 1.05e6, " 1.5M" 1.5e6)' >> $GNUPLOT_TEMP_SCRIPT
-    elif [ $MAXIMUM_YVALUE -lt 2000000 ]; then
-        echo 'set ytic (" 200k" 2e5, " 800k" 8e5, " 1.4M" 1.4e6, "   2M" 2e6)' >> $GNUPLOT_TEMP_SCRIPT
-    elif [ $MAXIMUM_YVALUE -lt 3000000 ]; then
-        echo 'set ytic (" 300k" 3e5, " 1.2M" 1.2e6, " 2.1M" 2.1e6, "   3M" 3e6)' >> $GNUPLOT_TEMP_SCRIPT
-    elif [ $MAXIMUM_YVALUE -lt 5000000 ]; then
-        echo 'set ytic (" 500k" 5e5, "   2M" 2e6, " 3.5M" 3.5e6, "   5M" 5e6)' >> $GNUPLOT_TEMP_SCRIPT
-    elif [ $MAXIMUM_YVALUE -lt 10000000 ]; then
-        echo 'set ytic ("   1M" 1e6, "   4M" 4e6, "   7M" 7e6, "  10M" 1e7)' >> $GNUPLOT_TEMP_SCRIPT
-    fi
+    echo 'set format y "%.2s%c"' >> $GNUPLOT_TEMP_SCRIPT
+    echo "set ytics add ('' 0)" >> $GNUPLOT_TEMP_SCRIPT
     echo 'set xrange [-1:A_records+A_blocks-1]' >> $GNUPLOT_TEMP_SCRIPT
     echo '' >> $GNUPLOT_TEMP_SCRIPT
     echo "shifts = \"${HISTOGRAM_SHIFTS[@]}\"" >> $GNUPLOT_TEMP_SCRIPT
@@ -155,19 +129,12 @@ function ProducePlotAndRemoveAuxiliaryFiles(){
 }
 
 #-----------------------------------------------------------------------------------------------------------------#
-
-#Setting of the correct case based on the path.                                                                                                                                                                                                                                
-STAGGERED="FALSE"
-WILSON="FALSE"
-[ $(grep "[sS]taggered" <<< "$PWD" | wc -l) -gt 0 ] && STAGGERED="TRUE"
-[ $(grep "[wW]ilson" <<< "$PWD" | wc -l) -gt 0 ] && WILSON="TRUE"
-
+#Having loaded PathManagement.sh we get for free all the parameters variables and functionalities
+CheckWilsonStaggeredVariables
 if [ $STAGGERED = 'TRUE' ]; then
     DATAFILE_NAME="rhmc_output"
-    MASS_PREFIX="mass"
 elif [ $WILSON = 'TRUE' ]; then
     DATAFILE_NAME="hmc_output"
-    MASS_PREFIX="k"
 fi
 
 MASS_OVERVIEW='FALSE'
@@ -190,24 +157,21 @@ while [ "$1" != "" ]; do
             echo "     1) get an overview of total statistics per volume;"
             echo "     2) get an overview of total statistics per beta."
             echo ""
-            echo "   In the first case this script has to be invoqued from where the"
-            echo "   mass folders are, while in the second from where the beta folders"
-            echo "   are. The prefix of the mass folders is set to k for Wilson and to"
-            echo "   mass for staggered (the path must then contain either Wilson or"
-            echo "   staggered)."
+            echo "   In the first case this script has to be invoqued from where the mass"
+            echo "   folders are, while in the second from where the beta folders are."
             echo ""
 	        printf "\n \e[1m\e[4m\e[38;5;48m"
 	        echo "Call the script $0 with the following optional arguments:"
 	        printf "\n\e[0;32m"
-	        echo "   -k | --masses           ->    mass values to be used (use the number in the folder names)"
+	        echo "   -k | -m | --masses      ->    mass values to be used (use the number in the folder names)"
 	        echo "   -b | --betas            ->    beta values to be used"
             echo "   -s | --save             ->    save the output plot"
-	        echo "   -o | --outputFilename   ->    default value = $OUTPUT_PLOT_FILENAME (provide it without extension!)"
+	        echo "   -o | --outputFilename   ->    default value = OverviewSimulationsPer(Masses|Betas) (provide it without extension!)"
 	        echo "   --nt                    ->    nt value to be used (default ${NTIME})"
 	        printf "\n\e[0m"
 	        exit
 	        shift;;
-        -k | --masses )
+        -k | -m | --masses )
             MASSES=()
             if [ $BETA_OVERVIEW = 'TRUE' ]; then
                 printf "\n\e[0;31mOption \"-b | --betas\" and \"-k | --masses\" are mutually exclusive! Aborting...\n\n\e[0m" ; exit -1
@@ -224,8 +188,8 @@ while [ "$1" != "" ]; do
                 printf "\n\e[0;31mOption \"-b | --betas\" and \"-k | --masses\" are mutually exclusive! Aborting...\n\n\e[0m" ; exit -1
             fi
             BETA_OVERVIEW='TRUE'
-            while [[ $2 =~ ^[[:digit:]]{1}[.]?[[:digit:]]+$ ]]; do
-                BETAS+=( "$2" )
+            while [[ $2 =~ ^[[:digit:]]{1}[.]?[[:digit:]]*$ ]]; do
+                BETAS+=( "$(printf "%1.4f" "$2")" )
                 shift
             done
             shift ;;
@@ -235,6 +199,7 @@ while [ "$1" != "" ]; do
             else
                 printf "\n\e[0;31mValue for --nt option invalid! Aborting...\n\n\e[0m" ; exit -1
             fi
+            CheckParametersExtractedFromPath $NTIME_PREFIX
             shift 2 ;;
         -s | --save )
             SAVE_PLOT='TRUE'
@@ -247,8 +212,8 @@ while [ "$1" != "" ]; do
 done
 
 if [ "$OUTPUT_FILENAME" = "" ]; then
-    [ $MASS_OVERVIEW = 'TRUE' ] && OUTPUT_PLOT_FILENAME="OverviewSimulationsOfMasses"
-    [ $BETA_OVERVIEW = 'TRUE' ] && OUTPUT_PLOT_FILENAME="OverviewSimulationsOfBetas"
+    [ $MASS_OVERVIEW = 'TRUE' ] && OUTPUT_PLOT_FILENAME="OverviewSimulationsPerMasses"
+    [ $BETA_OVERVIEW = 'TRUE' ] && OUTPUT_PLOT_FILENAME="OverviewSimulationsPerBetas"
 fi
 
 if [ $MASS_OVERVIEW = 'TRUE' ]; then
@@ -256,7 +221,7 @@ if [ $MASS_OVERVIEW = 'TRUE' ]; then
     rm -f $TEMPORARY_DATA_FILE
     #If masses were not given, then collect all
     if [ ${#MASSES[@]} -eq 0 ]; then
-        MASSES=( $(ls -d ${MASS_PREFIX}*/ | grep -oE "[[:digit:]]{4}") )
+        MASSES=( $(ls -d ${MASS_PREFIX}*/ | grep -o "$MASS_REGEX") )
         if [ ${#MASSES[@]} -eq 0 ]; then
             printf "\n\e[0;31m No mass folder found! Aborting...\n\n\e[0m"
             exit -1
@@ -269,14 +234,19 @@ if [ $MASS_OVERVIEW = 'TRUE' ]; then
             continue
         fi
         NUMBER_OF_VOLUMES["$VALUE"]=0
-        for VOLUME in $(ls -d ${MASS_PREFIX}${VALUE}/nt${NTIME}/ns*/); do
-            NSPACE=${VOLUME%?}
-            NSPACE=${NSPACE##*/ns}
-            printf "$VALUE\t$NSPACE\t$(wc -l ${VOLUME}/b?.????/$DATAFILE_NAME | awk 'END{print $1}')\n" >> $TEMPORARY_DATA_FILE
+        for VOLUME in $(ls -d ${MASS_PREFIX}${VALUE}/${NTIME_PREFIX}${NTIME}/${NSPACE_PREFIX}*/); do
+            EXTRACTED_NSPACE=${VOLUME%?}
+            EXTRACTED_NSPACE=${EXTRACTED_NSPACE##*/ns}
+            printf "$VALUE\t$EXTRACTED_NSPACE\t$(wc -l ${VOLUME}/b?.????/$DATAFILE_NAME | awk 'END{print $1}')\n" >> $TEMPORARY_DATA_FILE
             (( NUMBER_OF_VOLUMES["$VALUE"]++ ))
         done
         printf "\n\n" >> $TEMPORARY_DATA_FILE
     done
+    #If no data collected exit
+    if [ ! -s $TEMPORARY_DATA_FILE ]; then
+        printf "\n\e[0;31m No data were collected! Aborting...\n\n\e[0m"
+        exit -1
+    fi
     #Remove last two empty lines of data file
     { rm $TEMPORARY_DATA_FILE && head -n -2 > $TEMPORARY_DATA_FILE; } < $TEMPORARY_DATA_FILE
     #Finally plot
@@ -289,7 +259,7 @@ if [ $BETA_OVERVIEW = 'TRUE' ]; then
     rm -f $TEMPORARY_DATA_FILE
     #If betas were not given, then collect all
     if [ ${#BETAS[@]} -eq 0 ]; then
-        BETAS=( $(ls -d b?.????_s????_continueWithNewChain/ | grep -oE "[[:digit:]]{1}[.][[:digit:]]{4}" | sort -u) )
+        BETAS=( $(ls -d b?.????_s????_continueWithNewChain/ | grep -o "$BETA_REGEX" | sort -u) )
         if [ ${#BETAS[@]} -eq 0 ]; then
             printf "\n\e[0;31m No betas folder with new chains found! Aborting...\n\n\e[0m"
             exit -1
@@ -310,6 +280,11 @@ if [ $BETA_OVERVIEW = 'TRUE' ]; then
         done
         printf "\n\n" >> $TEMPORARY_DATA_FILE
     done
+    #If no data collected exit
+    if [ ! -s $TEMPORARY_DATA_FILE ]; then
+        printf "\n\e[0;31m No data were collected! Aborting...\n\n\e[0m"
+        exit -1
+    fi
     #Remove last two empty lines of data file
     { rm $TEMPORARY_DATA_FILE && head -n -2 > $TEMPORARY_DATA_FILE; } < $TEMPORARY_DATA_FILE
     #Finally plot

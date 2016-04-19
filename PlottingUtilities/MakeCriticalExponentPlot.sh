@@ -6,11 +6,13 @@
 # kappa or the mass on the x axis (use command line options
 # though to be sure the correct data columns are used).
 
-#Setting of the correct case based on the path.
-STAGGERED="FALSE"
-WILSON="FALSE"
-[ $(grep "[sS]taggered" <<< "$PWD" | wc -l) -gt 0 ] && STAGGERED="TRUE"
-[ $(grep "[wW]ilson" <<< "$PWD" | wc -l) -gt 0 ] && WILSON="TRUE"
+#--------------------------------------------------------------------------------#
+# Load auxiliary bash files that will be used.
+source "$HOME/Script/PathManagement.sh" || exit -2
+#--------------------------------------------------------------------------------#
+
+#Having loaded PathManagement.sh we get for free all the parameters variables and functionalities
+CheckWilsonStaggeredVariables
 
 #Variables for the script
 COLUMN_X=1

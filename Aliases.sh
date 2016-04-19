@@ -172,11 +172,18 @@ if [ $LOAD_PYTHON_ALIASES = "TRUE" ]; then
         echo -n ' && mv ${FOLDER%?} ${FOLDER%?}_dBeta'$3
         echo    ' && unset -v '"'FOLDER'"
     }
+    function GetReweightingPolySqSkewCommand(){
+        [ $# -eq 3 ] && local NUM_POINTS=$(bc <<< "($2-$1)/$3+1")
+        echo "time PyReweighting --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_im_withZeroMean --deactivateMean --deactivateSusc -za --doNotUseSimulatedPointsAsNewPoints -r $1 $2 -p $NUM_POINTS"
+    }
     function GetFindBetaCPbpCommand(){
         echo "PyFindBetaC --deactivatePlaq --deactivatePoly --activatePbp --deactivateMean --deactivateSusc --deactivateBinder"
     }
     function GetFindBetaCPolySqCommand(){
         echo "PyFindBetaC --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivateMean --deactivateSkew"
+    }
+    function GetFindBetaCPolySqSkewCommand(){
+        echo "PyFindBetaC --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_withZeroMean --deactivatePoly_im_abs --deactivateMean --deactivateSusc"
     }
     function GetPlotScalingPolySqCommand(){
         echo "PyPlotScaling --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_im_withZeroMean --nsArray $@ --doNotPlotRawData --doNotMakeCombinedPlots --deactivateMean --deactivateSkew --deactivateBinder"
@@ -308,7 +315,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
                 local FOLDER=b${ARGUMENT%_*}_continueWithNewChain
             fi
             FOLDERS_ARRAY+=( $FOLDER )
-        done
+        done && unset -v 'ARGUMENT'
         echo ${FOLDERS_ARRAY[@]}
     }
     
@@ -331,37 +338,42 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
     }
 
     function FindMissingTrajectories(){
-        if [ -d $1 ]; then
-            local FOLDER="$1"
-        else
-            local FOLDER=$(CompleteFolderName $1)
-        fi
-        if [ $(grep "[sS]taggered" <<< "$PWD" | wc -l) -gt 0 ]; then
-            local FILE="${FOLDER}/rhmc_output"
-        elif [ $(grep "[wW]ilson" <<< "$PWD" | wc -l) -gt 0 ]; then
-            local FILE="${FOLDER}/hmc_output"
-        else
-            echo "Neither in Staggered nor in Wilson path!"
-        fi
-        printf "\n\e[38;5;32m Checking file \e[36m$FILE"
-        local TRAJ=( $(awk '
-             NR==1{last=$1}
-             NR>1{if($1>last+1){missTraj[arraylength++]=$1}; last=$1}
-             END{if(arraylength==0){exit 0}
-                 else{for(i in missTraj){print missTraj[i]}; exit 1}}' $FILE) )
-        if [ "${#TRAJ[@]}" -eq 0 ]; then
-            printf "\e[32m ...no missing trajectory found!\e[0m\n\n"
-        else
-            for VALUE in ${TRAJ[@]}; do
-                local LINE_NUMBER=$(grep -n "^$VALUE[[:space:]]" $FILE | cut -f1 -d':')
-                if [ -z ${EDITOR:+x} ]; then
-                    vim +$LINE_NUMBER $FILE
-                else
-                    $EDITOR +$LINE_NUMBER $FILE
-                fi
-            done && unset -v 'VALUE'
-            printf "\n\n"
-        fi
+        for ARGUMENT in $@; do
+            if [ -d $ARGUMENT ]; then
+                local FOLDER="$ARGUMENT"
+            else
+                local FOLDER=$(CompleteFolderName $ARGUMENT)
+                [ ! -d $FOLDER ] && printf "\n \e[31mSkipping folder \"$ARGUMENT\" which has not been found!\n" && continue
+            fi
+            if [ $(grep "[sS]taggered" <<< "$PWD" | wc -l) -gt 0 ]; then
+                local FILE="${FOLDER}/rhmc_output"
+            elif [ $(grep "[wW]ilson" <<< "$PWD" | wc -l) -gt 0 ]; then
+                local FILE="${FOLDER}/hmc_output"
+            else
+                echo "Neither in Staggered nor in Wilson path!"
+            fi
+            printf "\n\e[38;5;32m Checking file \e[36m$FILE"
+            [ ! -f $FILE ] && printf "\n \e[31mFile \"$FILE\" not found! Skipping it...\n" && continue
+            local TRAJ=( $(awk '
+                           NR==1{last=$1}
+                           NR>1{if($1>last+1){missTraj[arraylength++]=$1}; last=$1}
+                           END{if(arraylength==0){exit 0}
+                               else{for(i in missTraj){print missTraj[i]}; exit 1}}' $FILE) )
+            if [ "${#TRAJ[@]}" -eq 0 ]; then
+                printf "\e[32m ...no missing trajectory found!\e[0m\n\n"
+            else
+                printf "\e[38;5;202m ...found ${#TRAJ[@]} missing trajectory(ies)!\e[0m\n\n"
+                for VALUE in ${TRAJ[@]}; do
+                    local LINE_NUMBER=$(grep -n "^$VALUE[[:space:]]" $FILE | cut -f1 -d':')
+                    if [ -z ${EDITOR:+x} ]; then
+                        vim +$LINE_NUMBER $FILE
+                    else
+                        $EDITOR +$LINE_NUMBER $FILE
+                    fi
+                done && unset -v 'VALUE'
+                printf "\n\n"
+            fi
+        done && unset -v 'ARGUMENT'
     }
 
 

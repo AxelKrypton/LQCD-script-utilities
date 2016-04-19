@@ -111,7 +111,7 @@ else
 fi
 
 #The following if is a workaround for Loewe where squeue is old and %Z and %V are not available in the format! TODO: Remove as soon as possible.
-if [ $CLUSTER_NAME = 'LOEWE' ]; then
+if [ $CLUSTER_NAME = 'LOEWE' ] && [ "$SQUEUE_OUTPUT" != "" ]; then
     JOB_SUBMISSION_FOLDER=""
     JOB_SUBMISSION_TIME=""
     for ID in $(cut -d'@' -f1  <<< "$SQUEUE_OUTPUT"); do
@@ -147,6 +147,9 @@ fi
 if [ $LOCAL_JOBS = 'TRUE' ]; then
         SQUEUE_OUTPUT="$(grep --color=never "${PWD}" <<< "$SQUEUE_OUTPUT")"
 fi
+
+#If any field is empty, fill it with empty word in order to have later all arrays with same number of elements
+SQUEUE_OUTPUT=$(sed "s/@@/@empty@/g" <<< "$SQUEUE_OUTPUT")
 
 #Split squeue output and prepare table layout
 JOB_ID=(                $(cut -d'@' -f1  <<< "$SQUEUE_OUTPUT") )
@@ -284,7 +287,7 @@ if [ $DISPLAY_STANDARD_LIST = "TRUE" ]; then
         if [[ ${JOB_STATUS[$i]} == "RUNNING" ]]; then
             printf "\e[0;32m"
         elif [[ ${JOB_STATUS[$i]} == "PENDING" ]]; then
-            if [[ ${JOB_START_TIME[$i]} != "Unknown" ]]; then
+            if [[ ${JOB_START_TIME[$i]} != "N/A" ]]; then
                 printf "\e[0;33m"
             else
                 printf "\e[0;31m"
