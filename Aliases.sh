@@ -251,6 +251,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
     alias Acceptance="awk '{ sum+=\$11} END {printf \"Accepted %d over %d (%lf%%)\n\", sum, NR, 100*sum/(NR)}'"
     alias LastAcceptance='bash ${HOME}/Script/AcceptanceLastTrajectories.sh'
     alias HandlerJobs='bash ${HOME}/Script/JobScriptAutomation/JobHandler.sh'
+	alias FillInMissingLines='bash ${HOME}/Script/FillInMissingLinesOutputFile.sh'
         
     #Function to easy calculate the walltime
     function Walltime(){
