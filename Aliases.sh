@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source ~/Script/UtilityFunctions.sh
+
 function PrintHelp(){
 	echo ''
 	echo '# Script to collect useful commands for working'
@@ -268,10 +270,31 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
 
     #Function to delete conf and prng not multiple of X trajectories
     function DeleteConfPrngNotEvery() {
+		local MIN_REMAINING_NR="4"
+		ERROR_STRING="\e[31mPlease specify a valid number >= $MIN_REMAINING_NR as first argument ...\e[0m"
+		USAGE_STRING="\e[31mUsage: $0 <value of which multiples will be deleted> <number up to which the last configurations will not be cleaned> <beta directories ... >\e[0m"
         if [[ ! $1 =~ ^[[:digit:]]+$ ]]; then
 	        echo "Invalid frequency or frequency not given as first parameter!"
+			echo -e $USAGE_STRING	
 	        return
         fi
+		FREQUENCY=$1
+
+		shift
+
+		if [[ ! "$1" =~ ^[[:digit:]]{1,2}$ ]]
+		then	
+			echo -e $ERROR_STRING 
+			echo -e $USAGE_STRING	
+			return
+		fi
+		if [ "$1" -lt "$MIN_REMAINING_NR" ]
+		then	
+			echo -e $ERROR_STRING 
+			echo -e $USAGE_STRING	
+			return
+		fi
+		REMAINING_NR=$1
         echo ''
         echo "Actual position: $(pwd)"
         echo -n "All conf.XXXXX and prng.XXXXX with XXXXX not multiple of $1 will be deleted. Proceed (Y/N)? "
@@ -285,14 +308,17 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
 			if [ -d $BETA ]; then
 				echo $BETA
 				cd $BETA
-                local LAST_CONF_NOT_TO_DELETE=$(ls conf.* | grep -o "conf.[[:digit:]]\+$" | sort -V | tail -n1)
+                local LAST_CONF_NOT_TO_DELETE=($(ls conf.* | grep -o "conf.[[:digit:]]\+$" | sort -V | tail -n$REMAINING_NR))
+				#echo ${LAST_CONF_NOT_TO_DELETE[@]}
 				for FILE in conf.????? conf.??????; do
-                    if [ "$FILE" != "$LAST_CONF_NOT_TO_DELETE" ]; then
+					#echo "checking $FILE..."
+					if ! ElementInArray $FILE ${LAST_CONF_NOT_TO_DELETE[@]}
+					then
 					    NUM=$(grep -o "[[:digit:]]*" <<< $FILE)
 					    if [ ${NUM:+x} ]; then
-						    [ $(awk -v freq="$1" '{print $1%freq}' <<< $NUM) -ne 0 ] && rm -f $FILE ${FILE/conf/prng}
+						    [ $(awk -v freq="$FREQUENCY" '{print $1%freq}' <<< $NUM) -ne 0 ] && rm -f $FILE ${FILE/conf/prng}
 					    fi
-                    fi
+					fi
 				done
 				cd ..
 			fi
