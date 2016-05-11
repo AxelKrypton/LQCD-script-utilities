@@ -42,8 +42,7 @@ QUIET_MODE="FALSE"
 #VARIABLES FOR THE SCRIPT
 NAME_OF_TMP_FILE="tmpFileWithDataToBePlotted.tmp"
 TMP_FILE_FOR_GNUPLOT="FileThatHopefullyDoesNotExist.plt"
-FILE_WITH_DATA_TO_BE_FITTED="poly_sq_BinderCumulantAtBetaC.dat"
-FILE_WITH_DATA_TO_BE_PLOTTED=$FILE_WITH_DATA_TO_BE_FITTED
+#FILE_WITH_DATA_TO_BE_FITTED="poly_sq_BinderCumulantAtBetaC.dat"
 OUTPUT_FILENAME="BinderCumulant_poly_sq_Fit.tex"
 SEPERATE_MASS_VALUES="FALSE"
 MIN_SHIFT="0.0001"
@@ -122,6 +121,12 @@ while [ $# -gt 0 ]; do
 done
 
 [ "$FILE_WITH_DATA_TO_BE_FITTED" = "" ] && echo "No data filename given - specify via -f | --dataFilename option...exiting" && exit
+
+[ ! -f "$FILE_WITH_DATA_TO_BE_FITTED" ] && echo "Specified data file does exist...exiting" && exit
+
+if [ $SEPERATE_MASS_VALUES = "FALSE" ]; then
+    FILE_WITH_DATA_TO_BE_PLOTTED=$FILE_WITH_DATA_TO_BE_FITTED
+fi
 
 function ReadDataFile(){
     VOLUMES=( $(awk '$0 !~ /^([[:space:]]*#|$)/ {print $2}' $FILE_WITH_DATA_TO_BE_FITTED | sort -un) ) 
