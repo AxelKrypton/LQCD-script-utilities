@@ -111,7 +111,7 @@ else
 fi
 
 #The following if is a workaround for Loewe where squeue is old and %Z and %V are not available in the format! TODO: Remove as soon as possible.
-if [ $CLUSTER_NAME = 'LOEWE' ]; then
+if [ $CLUSTER_NAME = 'LOEWE' ] && [ "$SQUEUE_OUTPUT" != "" ]; then
     JOB_SUBMISSION_FOLDER=""
     JOB_SUBMISSION_TIME=""
     for ID in $(cut -d'@' -f1  <<< "$SQUEUE_OUTPUT"); do
@@ -287,7 +287,7 @@ if [ $DISPLAY_STANDARD_LIST = "TRUE" ]; then
         if [[ ${JOB_STATUS[$i]} == "RUNNING" ]]; then
             printf "\e[0;32m"
         elif [[ ${JOB_STATUS[$i]} == "PENDING" ]]; then
-            if [[ ${JOB_START_TIME[$i]} != "Unknown" ]]; then
+            if [[ ${JOB_START_TIME[$i]} != "N/A" ]]; then
                 printf "\e[0;33m"
             else
                 printf "\e[0;31m"

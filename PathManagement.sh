@@ -57,7 +57,9 @@ BETA_PREFIX="b"
 SEED_PREFIX="s"
 BETA_POSTFIX=""
 BETA_POSITION=5
-BETA_REGEX='[[:digit:]]\.[[:digit:]]\{4\}'
+BETA_REGEX='[[:digit:]][.][[:digit:]]\{4\}'
+BETA_FOLDER_SHORT_REGEX=$BETA_REGEX'_'$SEED_PREFIX'[[:digit:]]\{4\}_[[:alpha:]]\+'
+BETA_FOLDER_REGEX=$BETA_PREFIX$BETA_FOLDER_SHORT_REGEX
 PARAMETERS_PATH=""
 PARAMETERS_STRING=""
 #-------------------------------------------------------------

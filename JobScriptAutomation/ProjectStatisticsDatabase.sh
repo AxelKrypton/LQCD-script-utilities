@@ -369,7 +369,7 @@ function projectStatisticsDatabase(){
 			    echo -e "  \e[4m\e[1mDisplaying options\e[24m:\e[21m"
 			    echo -e "  \e[38;5;69m"
 			    echo -e "     -c | --columns -->  Specify the columns to be displayed."
-		   	    echo -e "                         Possible columns are: mu, $MASS_PARAMETER, nt, ns, beta_chain_type, trajNo, acc, status, lastTraj."
+		   	    echo -e "                         Possible columns are: mu, $MASS_PARAMETER, nt, ns, beta_chain_type, trajNo, acc, accLast1k, status, lastTraj."
 		   	    echo -e "                         Example: -c $MASS_PARAMETER nt ns beta_chain_type trajNo."
 			    echo -e "                         If no columns are specified, all of the above columns will be printed by default."
 			    echo -e "     --color        -->  Specifiy this option for displaying coloured output.(NOT YET IMPLEMENTED)"
@@ -718,11 +718,11 @@ function projectStatisticsDatabase(){
 		    if [ "$UPDATE_TIME" != "" ]; then
 			    CURRENT_EPOCH=$(date +%s)
 			    if [ $CURRENT_EPOCH -gt $(date -d "$UPDATE_TIME" +%s) ]; then
-				    TARGET_EPOCH=$(date -d "$UPDATE_TIME + 1 days" +%s)
-				    printf "\t\e[1m\e[38;5;147mEntering sleeping mode. Performing next update on \e[38;5;86m$(date -d "$UPDATE_TIME + 1 days" +"%d.%m.%Y \e[38;5;147mat\e[38;5;86m %H:%M")\e[0m\n\n"
+				    TARGET_EPOCH=$(date -d "$UPDATE_TIME tomorrow" +%s)
+				    printf "\n\t\e[1m\e[38;5;147mEntering sleeping mode. Performing next update on \e[38;5;86m$(date -d "$UPDATE_TIME tomorrow" +"%d.%m.%Y \e[38;5;147mat\e[38;5;86m %H:%M")\e[0m\n\n"
 			    else
 				    TARGET_EPOCH=$(date -d "$UPDATE_TIME" +%s)
-				    printf "\t\e[1m\e[38;5;147mEntering sleeping mode. Performing next update today at \e[38;5;86m$(date -d "$UPDATE_TIME" +"%H:%M")\e[0m\n\n"
+				    printf "\n\t\e[1m\e[38;5;147mEntering sleeping mode. Performing next update today at \e[38;5;86m$(date -d "$UPDATE_TIME" +"%H:%M")\e[0m\n\n"
 			    fi
 			    SLEEP_SECONDS=$(( $TARGET_EPOCH - $CURRENT_EPOCH ))
 			    sleep $SLEEP_SECONDS
