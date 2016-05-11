@@ -494,9 +494,10 @@ if [ $LOAD_ROOTHIST_ALIASES = "TRUE" ]; then
             shift
         done
 
-        source $HOME/Script/PathManagement.sh || exit -2
-        ReadParametersFromPath $(pwd)
-        local CURRENT_PATH=$PATH_PREFIX/$CHEMPOT_PREFIX$CHEMPOT/$KAPPA_PREFIX$KAPPA/$NTIME_PREFIX$NTIME/$NSPACE_PREFIX$NSPACE
+        #source $HOME/Script/PathManagement.sh || echo "Error sourcing PathManagement.sh" && return
+        #ReadParametersFromPath $(pwd)
+        #local CURRENT_PATH=$PATH_PREFIX/$CHEMPOT_PREFIX$CHEMPOT/$KAPPA_PREFIX$KAPPA/$NTIME_PREFIX$NTIME/$NSPACE_PREFIX$NSPACE
+        local CURRENT_PATH=$(pwd)
 
         #Create tmpfile for Root
         local BETA_PATH_ARRAY=()
