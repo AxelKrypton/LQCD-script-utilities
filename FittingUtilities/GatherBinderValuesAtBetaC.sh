@@ -2,30 +2,31 @@
 
 source $HOME/Script/PathManagement.sh || exit -2
 
-declare -A PATH_TO_DATA
-PATH_TO_DATA["sciarra"]="/home/phil-configs/Staggered/Nf3/mui0"
-PATH_TO_DATA["czaban"]="/home/phil-configs/wilson_nf2_muipi4/ImagMu/mui0"
+CheckWilsonStaggeredVariables
 
-#Check on existence of PATH_TO_DATA
-if [ "${PATH_TO_DATA[$(whoami)]}" = "" ]; then
-    printf "\n\e[38;5;9m Variable PATH_TO_DATA not set for the actual user!\n\n\e[0m"
-    exit -1
+if [ $WILSON = "TRUE" ]; then
+    PATH_TO_DATA="/home/phil-configs/wilson_nf2_muipi4/ImagMu"   
+elif [ $STAGGERED = "TRUE" ]; then
+    PATH_TO_DATA="/home/phil-configs/Staggered"
 fi
 
 #Other variables for the script
-SPECIFIED_NTIME=""
 MASS_PARAMETER_ARRAY=()
 OBSERVABLE=""
 
 while [ "$#" -gt 0 ] 
 do
     case $1 in
+        --nf)
+            NFLAVOUR=$2
+            shift
+            ;;
         --mui)
-            SPECIFIED_MU=$2
+            CHEMPOT=$2
             shift
             ;;
         --nt)
-            SPECIFIED_NTIME=$2
+            NTIME=$2
             shift
             ;;
         --mp | --massParameter)
@@ -39,12 +40,17 @@ do
             OBSERVABLE=$2
             shift
             ;;
+        --betaCFromBinder)
+            EXTRACT_BETAC_FROM_BINDER="TRUE"
+            ;;
         -h)
             echo "availble options:"
+            echo "--nf (specify the number of flavours)"
             echo "--mui (specify chemical potential value, e.g. 0 or PiT )"
             echo "--nt (specify time value)"
             echo "--mp | --massParameter (specify mass parameter values - either kappa value for wilson or mass value for staggered)"
             echo "--obs | --observable (specify observable, e.g. poly_sq, poly_im, ...)"
+            echo "--betaCFromBinder (extract beta_c from reweighted binder cumulant)"
             exit
             ;;
         *)
@@ -60,32 +66,44 @@ do
 done
 
 [ "$OBSERVABLE" = "" ] && echo "No observable specified...exiting" && exit
-[ "$SPECIFIED_NTIME" = "" ] && echo "No ntime value specified...exiting" && exit
-[ "$SPECIFIED_MU" = "" ] && echo "No mu value specified...exiting" && exit
+[ "$NFLAVOUR" = "" ] && ReadSingleParameterFromPath $PWD $NFLAVOUR_PREFIX
+[ "$NTIME" = "" ] && ReadSingleParameterFromPath $PWD $NTIME_PREFIX
+[ "$CHEMPOT" = "" ] && ReadSingleParameterFromPath $PWD $CHEMPOT_PREFIX
+
+CheckParametersExtractedFromPath $NFLAVOUR_PREFIX $CHEMPOT_PREFIX $NTIME_PREFIX
+
+PATH_TO_DATA=$PATH_TO_DATA$(GetParametersPath $NFLAVOUR_PREFIX $CHEMPOT_PREFIX)
 
 EXTRACTED_DATA_FILENAME="${OBSERVABLE}_BinderCumulantAtBetaC.dat"
 
-echo "path to data: ${PATH_TO_DATA[$(whoami)]}"
-echo "SPECIFIED_NTIME:  $SPECIFIED_NTIME"
+echo "path to data: $PATH_TO_DATA"
+echo "NFLAVOR: $NFLAVOUR"
+echo "NTIME:  $NTIME"
+echo "CHEMPOT: $CHEMPOT"
 echo "observable: $OBSERVABLE"
 echo "mass prefix: $MASS_PREFIX"
 
 function ExtractAvailableMassParameterValues(){
-    MASS_PARAMETER_ARRAY=( $(ls $PATH_TO_DATA | grep -o "$MASS_PREFIX[[:digit:]]\{4\}") )
+    MASS_PARAMETER_ARRAY=( $(ls $PATH_TO_DATA | grep -o "$MASS_PREFIX$MASS_REGEX" | grep -o "$MASS_REGEX") )
 }
 
 function ExtractAvailableVolumes(){
-    #The reason for the following implementation is to have the volumes in the array in sorted.
-    VOLUMES_VALUES=( $(ls ${PATH_TO_DATA[$(whoami)]}/$MASS_PREFIX$1/$NTIME_PREFIX$SPECIFIED_NTIME | grep -o "ns[[:digit:]]\{1\}$") )
-    VOLUMES_VALUES+=( $(ls ${PATH_TO_DATA[$(whoami)]}/$MASS_PREFIX$1/$NTIME_PREFIX$SPECIFIED_NTIME | grep -o "ns[[:digit:]]\{2\}$") )
+    #The reason for the following implementation is to have the volumes in the array sorted.
+    VOLUMES_VALUES=(  $(ls $PATH_TO_DATA/$MASS_PREFIX$1/$NTIME_PREFIX$NTIME | grep -o "$NSPACE_PREFIX$NSPACE_REGEX" | grep -o "$NSPACE_REGEX") )
+    #VOLUMES_VALUES=(  $(ls $PATH_TO_DATA/$MASS_PREFIX$1/$NTIME_PREFIX$NTIME | grep -o "$NSPACE_PREFIX[[:digit:]]\{1\}" | grep -o "$NSPACE_REGEX") )
+    #VOLUMES_VALUES+=( $(ls $PATH_TO_DATA/$MASS_PREFIX$1/$NTIME_PREFIX$NTIME | grep -o "$NSPACE_PREFIX[[:digit:]]\{2\}" | grep -o "$NSPACE_REGEX") )
 }
 
 function GetBetaCFolderName(){
-    echo "${PATH_TO_DATA[$(whoami)]}/$MASS_PREFIX${1}/$NTIME_PREFIX$SPECIFIED_NTIME/${2}/$CHEMPOT_PREFIX${SPECIFIED_MU}_$MASS_PREFIX${1}_$NTIME_PREFIX${SPECIFIED_NTIME}_${2}_betacEstimates"
+    echo "$PATH_TO_DATA/$MASS_PREFIX${1}/$NTIME_PREFIX$NTIME/$NSPACE_PREFIX${2}/$CHEMPOT_PREFIX${CHEMPOT}_$MASS_PREFIX${1}_$NTIME_PREFIX${NTIME}_$NSPACE_PREFIX${2}_betacEstimates"
 }
 
 function GetBetaCFileName(){
-    echo "mui0_$MASS_PREFIX${1}_nt${SPECIFIED_NTIME}_${2}_betaC_${OBSERVABLE}_from_skew_reweightedData.dat"
+    if [ "$EXTRACT_BETAC_FROM_BINDER" = "TRUE" ]; then
+        echo "$CHEMPOT_PREFIX${CHEMPOT}_$MASS_PREFIX${1}_$NTIME_PREFIX${NTIME}_$NSPACE_PREFIX${2}_betaC_${OBSERVABLE}_from_binder_reweightedData.dat"
+    else
+        echo "$CHEMPOT_PREFIX${CHEMPOT}_$MASS_PREFIX${1}_$NTIME_PREFIX${NTIME}_$NSPACE_PREFIX${2}_betaC_${OBSERVABLE}_from_skew_reweightedData.dat"
+    fi
 }
 
 if [ -f $EXTRACTED_DATA_FILENAME ]; then
@@ -107,7 +125,7 @@ for MASS in ${MASS_PARAMETER_ARRAY[@]}; do
         FILENAME=$(GetBetaCFileName $MASS $VOL)
         if [ -d $FOLDER ]; then
             if [ -f $FOLDER/$FILENAME ]; then
-                printf "%-12s%-10s" "0.${MASS#mass}" "${VOL#ns}" >> $EXTRACTED_DATA_FILENAME
+                printf "%-12s%-10s" "0.${MASS}" "${VOL}" >> $EXTRACTED_DATA_FILENAME
                 awk 'END{printf "%-25s%-25s%-25s%-25s%-25s\n", $1, $6, $7, $8, $9}' $FOLDER/$FILENAME >> $EXTRACTED_DATA_FILENAME
             else
                 printf "\n\e[38;5;9m File \"$FILENAME\" not found, skipping it!\e[0m\n"
