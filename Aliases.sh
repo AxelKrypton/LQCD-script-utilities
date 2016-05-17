@@ -360,9 +360,9 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
                            END{if(arraylength==0){exit 0}
                                else{for(i in missTraj){print missTraj[i]}; exit 1}}' $FILE) )
             if [ "${#TRAJ[@]}" -eq 0 ]; then
-                printf "\e[32m ...no missing trajectory found!\e[0m\n\n"
+                printf "\e[32m ...no missing trajectory found!\e[0m\n"
             else
-                printf "\e[38;5;202m ...found ${#TRAJ[@]} missing trajectory(ies)!\e[0m\n\n"
+                printf "\e[38;5;202m ...found ${#TRAJ[@]} bunch(es) of missing trajectory(ies)!\e[0m\n"
                 for VALUE in ${TRAJ[@]}; do
                     local LINE_NUMBER=$(grep -n "^$VALUE[[:space:]]" $FILE | cut -f1 -d':')
                     if [ -z ${EDITOR:+x} ]; then
@@ -371,7 +371,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
                         $EDITOR +$LINE_NUMBER $FILE
                     fi
                 done && unset -v 'VALUE'
-                printf "\n\n"
+                printf "\n"
             fi
         done && unset -v 'ARGUMENT'
     }
@@ -404,15 +404,19 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
                 echo "Neither in Staggered nor in Wilson path!"
             fi
         else
-            printf "\n\e[0;31m Unknown first parameter!\n\n\e[0m"
+            printf "\n\e[0;31m Unknown first command line parameter!\n\n\e[0m"
         fi
         if [ "$2" = "" ]; then
             less $FILE_NAME
         elif [ "$2" = "-e" ]; then
             less ${FILE_NAME/.out/.err}
         else
-            printf "\n\e[0;31m Unknown second parameter!\n\n\e[0m"
+            printf "\n\e[0;31m Unknown second command line parameter!\n\n\e[0m"
         fi
+        #Print jobid and node to screen
+        local JOBID=$(grep -o "[[:digit:]]\+" <<< ${FILE_NAME##*hmc})
+        printf "\n\e[0;36m Job ID: ${JOBID}   "
+        printf "$(grep "Host" JobScripts/?hmc_ref.${JOBID}.out)\n\n\e[0m"
     }
 
     #Function to eliminate conf.save* and prng.save*
