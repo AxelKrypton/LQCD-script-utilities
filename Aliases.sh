@@ -1,7 +1,5 @@
 #!/bin/bash
 
-source ~/Script/UtilityFunctions.sh
-
 function PrintHelp(){
 	echo ''
 	echo '# Script to collect useful commands for working'
@@ -270,59 +268,55 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
 
     #Function to delete conf and prng not multiple of X trajectories
     function DeleteConfPrngNotEvery() {
-		local MIN_REMAINING_NR="4"
-		ERROR_STRING="\e[31mPlease specify a valid number >= $MIN_REMAINING_NR as first argument ...\e[0m"
-		USAGE_STRING="\e[31mUsage: $0 <value of which multiples will be deleted> <number up to which the last configurations will not be cleaned> <beta directories ... >\e[0m"
+		local REMAINING_NR="4"
+		local USAGE_STRING="\e[31m Usage: $0 <value of which multiples will be deleted> <number up to which the last configurations will not be cleaned> <beta directories ... >\e[0m\n"
         if [[ ! $1 =~ ^[[:digit:]]+$ ]]; then
 	        echo "Invalid frequency or frequency not given as first parameter!"
 			echo -e $USAGE_STRING	
 	        return
         fi
-		FREQUENCY=$1
-
-		shift
-
-		if [[ ! "$1" =~ ^[[:digit:]]{1,2}$ ]]
-		then	
-			echo -e $ERROR_STRING 
-			echo -e $USAGE_STRING	
-			return
+		local FREQUENCY=$1 && shift
+		if [[ "$1" =~ ^[[:digit:]]{1,2}$ ]]; then
+            if [ "$1" -eq 0 ]; then
+                printf "\n\e[31m Please specify a valid POSITIVE number as second argument ...\e[0m\n\n" && return
+            fi
+            REMAINING_NR=$1 && shift #Here we assume beta to have a prefix like "b"
 		fi
-		if [ "$1" -lt "$MIN_REMAINING_NR" ]
-		then	
-			echo -e $ERROR_STRING 
-			echo -e $USAGE_STRING	
-			return
-		fi
-		REMAINING_NR=$1
         echo ''
-        echo "Actual position: $(pwd)"
-        echo -n "All conf.XXXXX and prng.XXXXX with XXXXX not multiple of $1 will be deleted. Proceed (Y/N)? "
+        printf "\e[36m Actual position: \e[1m$(pwd)\n\e[21m"
+        printf "\e[38;5;202m All conf.XXXXX and prng.XXXXX with XXXXX not multiple of $FREQUENCY will be deleted. Proceed (Y/N)?\e[0m "
         local CONFIRM="";
         while read CONFIRM; do
-	        if [ "$CONFIRM" = "Y" ]; then break; elif [ "$CONFIRM" = "N" ]; then return; else  printf "\n\e[0;33m Please enter Y (yes) or N (no): \e[0m"; fi
+	        if [ "$CONFIRM" = "Y" ]; then break; elif [ "$CONFIRM" = "N" ]; then echo '' && return; else  printf "\n\e[0;33m Please enter Y (yes) or N (no): \e[0m"; fi
         done
-        BETA_ARRAY=( ${@:2} )
+        echo ''
+        local BETA_ARRAY=( $@ )
         [ ${#BETA_ARRAY[@]} -eq 0 ] && BETA_ARRAY=( $(ls -d b{5,6}*/ 2>/dev/null) )
         for BETA in ${BETA_ARRAY[@]}; do
 			if [ -d $BETA ]; then
-				echo $BETA
+				printf "  \e[0;32m$BETA\e[0m\n"
 				cd $BETA
                 local LAST_CONF_NOT_TO_DELETE=($(ls conf.* | grep -o "conf.[[:digit:]]\+$" | sort -V | tail -n$REMAINING_NR))
-				#echo ${LAST_CONF_NOT_TO_DELETE[@]}
-				for FILE in conf.????? conf.??????; do
-					#echo "checking $FILE..."
-					if ! ElementInArray $FILE ${LAST_CONF_NOT_TO_DELETE[@]}
-					then
-					    NUM=$(grep -o "[[:digit:]]*" <<< $FILE)
-					    if [ ${NUM:+x} ]; then
-						    [ $(awk -v freq="$FREQUENCY" '{print $1%freq}' <<< $NUM) -ne 0 ] && rm -f $FILE ${FILE/conf/prng}
+                (
+				    #Start a subshell in order to source "locally"
+                    source ~/Script/UtilityFunctions.sh
+				    for FILE in conf.????? conf.??????; do
+					    #echo "checking $FILE..."
+					    if ! ElementInArray $FILE ${LAST_CONF_NOT_TO_DELETE[@]}
+					    then
+					        local NUM=$(grep -o "[[:digit:]]*" <<< $FILE)
+					        if [ ${NUM:+x} ]; then
+						        [ $(awk -v freq="$FREQUENCY" '{print $1%freq}' <<< $NUM) -ne 0 ] && rm -f $FILE ${FILE/conf/prng}
+					        fi
 					    fi
-					fi
-				done
+				    done
+                )
 				cd ..
-			fi
-        done
+            else
+                printf "  \e[1;31m$BETA\e[21m folder not found, skipping it!\e[0m\n"
+            fi
+        done && unset -v 'BETA'
+        echo ''
     }
 
     #Functions useful later
