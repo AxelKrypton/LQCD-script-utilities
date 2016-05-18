@@ -284,7 +284,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
 		fi
         echo ''
         printf "\e[36m Actual position: \e[1m$(pwd)\n\e[21m"
-        printf "\e[38;5;202m All conf.XXXXX and prng.XXXXX with XXXXX not multiple of $FREQUENCY will be deleted. Proceed (Y/N)?\e[0m "
+        printf "\e[38;5;202m All conf.XXXXX and prng.XXXXX with XXXXX \e[1mnot multiple of $FREQUENCY\e[21m will be deleted (except the last ${REMAINING_NR}). Proceed (Y/N)?\e[0m "
         local CONFIRM="";
         while read CONFIRM; do
 	        if [ "$CONFIRM" = "Y" ]; then break; elif [ "$CONFIRM" = "N" ]; then echo '' && return; else  printf "\n\e[0;33m Please enter Y (yes) or N (no): \e[0m"; fi
