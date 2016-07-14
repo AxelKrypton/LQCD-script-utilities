@@ -252,6 +252,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
     alias LastAcceptance='bash ${HOME}/Script/AcceptanceLastTrajectories.sh'
     alias HandlerJobs='bash ${HOME}/Script/JobScriptAutomation/JobHandler.sh'
 	alias FillInMissingLines='bash ${HOME}/Script/FillInMissingLinesOutputFile.sh'
+	alias ClusterUsage='bash ${HOME}/Script/ClusterUsage.sh --doNotUpdateFiles'
         
     #Function to easy calculate the walltime
     function Walltime(){
@@ -266,6 +267,17 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         printf "\e[0;32m \n walltime = %d-%02d:%02d:%02d\n\n\e[0m" "${days%.*}" "${hours%.*}" "${minutes%.*}" "${seconds}"
     }
 
+    #Function to know gaps on saved functions
+    function CalculateGapsInTrajectoriesBetweenStoredConfigurations(){
+        local BETA_ARRAY=( $@ )
+        for BETA in ${BETA_ARRAY[@]}; do
+            printf "\n  \e[38;5;129m\e[1m\e[4m$BETA\e[0m\n\e[38;5;199m"
+            ls $BETA | grep "conf.[[:digit:]]\+" | grep -o "[[:digit:]]\+" | sort -n | \
+                awk 'NR==1{tr=$1}NR>1{countGaps[$1-tr]++; tr=$1}END{for(i in countGaps){printf "    Gap %d present %d times\n", i, countGaps[i]}}'
+        done && unset -v 'BETA'
+        echo ''
+    }
+    
     #Function to delete conf and prng not multiple of X trajectories
     function DeleteConfPrngNotEvery() {
 		local REMAINING_NR="4"
@@ -381,7 +393,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
                            END{if(arraylength==0){exit 0}
                                else{for(i in missTraj){print missTraj[i]}; exit 1}}' $FILE) )
             if [ "${#TRAJ[@]}" -eq 0 ]; then
-                printf "\e[32m ...no missing trajectory found!\e[0m\n"
+                printf "\e[32m ...no missing trajectory found!\e[0m\n\n"
             else
                 printf "\e[38;5;202m ...found ${#TRAJ[@]} bunch(es) of missing trajectory(ies)!\e[0m\n"
                 for VALUE in ${TRAJ[@]}; do
