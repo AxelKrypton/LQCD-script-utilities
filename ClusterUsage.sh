@@ -20,6 +20,42 @@
 source "$HOME/Script/UtilityFunctions.sh" || exit -2
 #--------------------------------------------------------------------------------#
 
+function ReconstructNodeListFromArrayOfNodes(){
+    #Nodes as command parameters; the task is to eliminate contigous nodes with range notation
+    #e.g. 0021 0022 0023 0024 0083 should become 0021-0024,0083
+    local TEMPORARY_STRING=$(awk \
+        '{
+             printf $1"|"
+             for(i=2; i<NF; i++){
+                 if( ($i==1+$(i-1)) && ($i==-1+$(i+1)) ){
+                     printf "|-|"
+                 } else {
+                     printf "|"$i"|"
+                 }
+             }
+             printf "|"
+             if(NF!=1){
+                 printf $NF
+             }
+         }' <<< "$@" | sed 's/|\(|-|\)\+|/-/g' | sed 's/[|]\+/,/g' )
+
+    if [[ $TEMPORARY_STRING =~ [[:digit:]]$ ]]; then
+        echo $TEMPORARY_STRING
+    else
+        echo ${TEMPORARY_STRING%?}
+    fi
+}
+
+function PrintHeader(){
+    printf "$TABLE_PRINTF_FORMAT" "Date" "Partition" "TotalNodes" "${USERS_LIST[@]}" "Others" "Idling" "NotAvailable" "ExcludedButIdle/Allocated" > $1
+}
+
+function PrintClusterUsageInformation(){
+    printf "$TABLE_PRINTF_FORMAT" $DATE $PARTITION $TOTAL_NUMBER_OF_NODES ${USERS_USAGE[@]} $OTHERS_USAGE $IDLE_NODES $NOT_AVAILABLE "$EXCLUDED_BUT_IDLING $EXCLUDED_BUT_IDLING_LIST $EXCLUDED_BUT_ALLOCATED $EXCLUDED_BUT_ALLOCATED_LIST" >> $1
+}
+
+#--------------------------------------------------------------------------------#
+
 #Variables to be changed, hardcoded for the moment
 USERS_LIST=( "czaban" "cuteri" "sciarra" )
 CLUSTER_NAME='LOEWE'
@@ -154,8 +190,10 @@ grep -oE "\-\-exclude=.*\[.*\]" ${REMOTE_PATH}/${EXCLUDED_NODES_FILENAME} 2>/dev
 EOF
                   )
     if [ "$EXCLUDED_NODES" == "" ]; then
-       BROKEN_BUT_AVAILABLE=''
-       BROKEN_BUT_AVAILABLE_LIST='----------------'
+       EXCLUDED_BUT_IDLING='#Excluded nodes information not available'
+       EXCLUDED_BUT_IDLING_LIST=''
+       EXCLUDED_BUT_ALLOCATED=''
+       EXCLUDED_BUT_ALLOCATED_LIST=''
     else
         PREFIX_NODES=$(sed -n 's/.*=\(.*\)\[.*/\1/p' <<< "$EXCLUDED_NODES")
         ARRAY_OF_EXCLUDED_NODES=( $(sed -n 's/.*\[\(.*\)\]/\1/p' <<< "$EXCLUDED_NODES" | sed 's/,/ /g') )
@@ -165,42 +203,61 @@ EOF
             fi
         done
         ARRAY_OF_EXCLUDED_NODES=( ${ARRAY_OF_EXCLUDED_NODES[@]} ) #To separate all entries in single ones
-        #Get idling nodes and parse into list of numbers
+        #Get allocated and idling nodes and parse into list of numbers
         ARRAY_OF_IDLING_NODES=( $(sinfo -h -p lcsc -t IDLE -o "%N" | sed -n 's/.*\[\(.*\)\]/\1/p' | sed 's/,/ /g') )
+        ARRAY_OF_ALLOCATED_NODES=( $(sinfo -h -p lcsc -t ALLOCATED -o "%N" | sed -n 's/.*\[\(.*\)\]/\1/p' | sed 's/,/ /g') )
         for INDEX in ${!ARRAY_OF_IDLING_NODES[@]}; do
             if [[ ${ARRAY_OF_IDLING_NODES[$INDEX]} =~ - ]]; then
                 ARRAY_OF_IDLING_NODES[$INDEX]=$(awk 'BEGIN{FS="-"}{num=length($1); for(i=$1; i<=$2; i++){printf "%0"num"d ", i}}' <<< "${ARRAY_OF_IDLING_NODES[$INDEX]}")
             fi
         done
-        ARRAY_OF_IDLING_NODES=( ${ARRAY_OF_IDLING_NODES[@]} ) #To separate all entries in single ones
-        #Now build up BROKEN_BUT_AVAILABLE comparing arrays excluded vs idling nodes
-        BROKEN_BUT_AVAILABLE=0
-        BROKEN_BUT_AVAILABLE_LIST=''
-        LAST_ELEM='-17' #Starting value such that at the first iteration nothing can happen
-        for ELEM in ${ARRAY_OF_EXCLUDED_NODES[@]}; do
-            if ElementInArray "$ELEM" ${ARRAY_OF_IDLING_NODES[@]}; then
-                (( BROKEN_BUT_AVAILABLE++ ))
-                BROKEN_BUT_AVAILABLE_LIST="${BROKEN_BUT_AVAILABLE_LIST} $ELEM"
+        for INDEX in ${!ARRAY_OF_ALLOCATED_NODES[@]}; do
+            if [[ ${ARRAY_OF_ALLOCATED_NODES[$INDEX]} =~ - ]]; then
+                ARRAY_OF_ALLOCATED_NODES[$INDEX]=$(awk 'BEGIN{FS="-"}{num=length($1); for(i=$1; i<=$2; i++){printf "%0"num"d ", i}}' <<< "${ARRAY_OF_ALLOCATED_NODES[$INDEX]}")
             fi
         done
-        BROKEN_BUT_AVAILABLE_LIST=($(awk '{printf $1"|"; for(i=2; i<NF; i++){if( ($i==1+$(i-1)) && ($i==-1+$(i+1)) ){printf "-"}else{printf "|"$i}}; printf "|"$NF}' <<< "$BROKEN_BUT_AVAILABLE_LIST" | sed 's/|[-]\+|/-/g' | sed 's/[|]\+/,/g') )
-        BROKEN_BUT_AVAILABLE_LIST="${PREFIX_NODES}["$(sed 's/ /,/g' <<< "${BROKEN_BUT_AVAILABLE_LIST[@]}")"]"
+        ARRAY_OF_ALLOCATED_NODES=( ${ARRAY_OF_ALLOCATED_NODES[@]} ) #To separate all entries in single ones
+        #Now build up EXCLUDED_BUT_IDLING/ALLOCATED comparing arrays excluded vs idling/allocated nodes
+        EXCLUDED_BUT_IDLING=0
+        EXCLUDED_BUT_ALLOCATED=0
+        EXCLUDED_BUT_IDLING_LIST=''
+        EXCLUDED_BUT_ALLOCATED_LIST=''
+        for ELEM in ${ARRAY_OF_EXCLUDED_NODES[@]}; do
+            if ElementInArray "$ELEM" ${ARRAY_OF_IDLING_NODES[@]}; then
+                (( EXCLUDED_BUT_IDLING++ ))
+                EXCLUDED_BUT_IDLING_LIST="${EXCLUDED_BUT_IDLING_LIST} $ELEM"
+            elif ElementInArray "$ELEM" ${ARRAY_OF_ALLOCATED_NODES[@]}; then
+                (( EXCLUDED_BUT_ALLOCATED++ ))
+                EXCLUDED_BUT_ALLOCATED_LIST="${EXCLUDED_BUT_ALLOCATED_LIST} $ELEM"
+            fi
+        done
+        if [ $EXCLUDED_BUT_IDLING -eq 0 ]; then
+            EXCLUDED_BUT_IDLING_LIST=' ---------------'
+        else
+        EXCLUDED_BUT_IDLING_LIST="${PREFIX_NODES}["$(ReconstructNodeListFromArrayOfNodes $EXCLUDED_BUT_IDLING_LIST)"]"
+        fi            
+        if [ $EXCLUDED_BUT_ALLOCATED -eq 0 ]; then
+            EXCLUDED_BUT_ALLOCATED_LIST=' ---------------'
+        else
+            EXCLUDED_BUT_ALLOCATED_LIST="${PREFIX_NODES}["$(ReconstructNodeListFromArrayOfNodes $EXCLUDED_BUT_ALLOCATED_LIST)"]"
+        fi
     fi
 
+    #Table format stored here to shorten printing lines
+    TABLE_PRINTF_FORMAT="%-21s%-15s%-14s${STRING_DESCRIPTOR_FOR_USERS}%-11s%-11s%-17s%-s\n"
     if [ $PRINT_ONLY_TO_SHELL = 'TRUE' ]; then
         echo ''
-        printf "%-21s%-15s%-14s${STRING_DESCRIPTOR_FOR_USERS}%-11s%-11s%-17s%-23s\n" "Date" "Partition" "TotalNodes" "${USERS_LIST[@]}" "Others" "Idling" "NotAvailable" "BrokenButAvailable"                
-        printf "%-21s%-15s%-14s${STRING_DESCRIPTOR_FOR_USERS}%-11s%-11s%-17s%-s\n" $DATE $PARTITION $TOTAL_NUMBER_OF_NODES ${USERS_USAGE[@]} $OTHERS_USAGE $IDLE_NODES $NOT_AVAILABLE "$BROKEN_BUT_AVAILABLE $BROKEN_BUT_AVAILABLE_LIST"
+        PrintHeader                  /dev/stdout
+        PrintClusterUsageInformation /dev/stdout
         echo ''
     else
         #Printing to file
         if [ -s $OUTPUT_FILE ]; then
-            printf "%-21s%-15s%-14s${STRING_DESCRIPTOR_FOR_USERS}%-11s%-11s%-17s%-23s\n" $DATE $PARTITION $TOTAL_NUMBER_OF_NODES ${USERS_USAGE[@]} $OTHERS_USAGE $IDLE_NODES $NOT_AVAILABLE "$BROKEN_BUT_AVAILABLE $BROKEN_BUT_AVAILABLE_LIST" >> $OUTPUT_FILE
+            PrintClusterUsageInformation $OUTPUT_FILE
         else
-            printf "%-21s%-15s%-14s${STRING_DESCRIPTOR_FOR_USERS}%-11s%-11s%-17s%-23s\n" "Date" "Partition" "TotalNodes" "${USERS_LIST[@]}" "Others" "Idling" "NotAvailable" "BrokenButAvailable"                  > $OUTPUT_FILE
-            printf "%-21s%-15s%-14s${STRING_DESCRIPTOR_FOR_USERS}%-11s%-11s%-17s%-23s\n" $DATE $PARTITION $TOTAL_NUMBER_OF_NODES ${USERS_USAGE[@]} $OTHERS_USAGE $IDLE_NODES $NOT_AVAILABLE "$BROKEN_BUT_AVAILABLE $BROKEN_BUT_AVAILABLE_LIST" >> $OUTPUT_FILE
+            PrintHeader                  $OUTPUT_FILE
+            PrintClusterUsageInformation $OUTPUT_FILE
         fi
-
         #Rsync removing writing permissions to everybody
         rsync -qluz --no-p --no-g --chmod=ugo=rX $OUTPUT_FILE $RSYNC_PATH/$OUTPUT_FILE
     fi
