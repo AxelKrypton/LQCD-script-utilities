@@ -147,7 +147,7 @@ IFS='@' #In order to make printf preserve contigous whitespaces
 if [ ${#NUM_FIRST_TR[@]} -eq 0 ] && [ ${#NUM_LAST_TR[@]} -eq 0 ]; then
     printf "\n\e[0;36m==================================\e[0m\n"
     for TR in 100 200 300 400 500 600 700 800 900; do
-        eval $(tail -n${TR} $SCRATCH_PATH | awk '{sum+=$11} END {if(sum/NR>=0.7){print 100*sum/(NR), sum, NR, 100*sum/(NR)}}' | xargs printf 'printf "$(GoodAcc %f)  Accepted %%3d over %%3d (%%.2f%%%%) \\e[0m\\n" "%d" "%d" "%f"')
+        eval $(tail -n${TR} $SCRATCH_PATH | awk '{sum+=$11} END {print 100*sum/(NR), sum, NR, 100*sum/(NR)}' | xargs printf 'printf "$(GoodAcc %f)  Accepted %%3d over %%3d (%%.2f%%%%) \\e[0m\\n" "%d" "%d" "%f"')
     done
     printf "\e[0;36m==================================\e[0m\n\n"
 elif [ ${#NUM_FIRST_TR[@]} -ne 0 ] && [ ${#NUM_LAST_TR[@]} -ne 0 ]; then
@@ -158,7 +158,7 @@ elif [ ${#NUM_FIRST_TR[@]} -ne 0 ] && [ ${#NUM_LAST_TR[@]} -ne 0 ]; then
         TR_FOR_HEAD_COMMAND=$(( $(wc -l < $SCRATCH_PATH) - ${NUM_LAST_TR[$INDEX]} )) #Keeping this amount of lines from the beginning wil cut ${NUM_LAST_TR[$INDEX]} from the end
         TR_FOR_TAIL_COMMAND=$(( ${NUM_FIRST_TR[$INDEX]} + 1 )) #Here I use "tail -n+x" to cut from the beginning x-1 lines
         eval $(head -n${TR_FOR_HEAD_COMMAND}  $SCRATCH_PATH | tail -n+${TR_FOR_TAIL_COMMAND} |
-                      awk '{sum+=$11} END {if(sum/NR>=0.7){print 100*sum/(NR), sum, NR, 100*sum/(NR)}}' | xargs printf 'printf "$(GoodAcc %f)  Accepted %%${LENGTH}d over first %%${LENGTH}d (%%.2f%%%%) \\e[0m\\n" "%d" "%d" "%f"')
+                      awk '{sum+=$11} END {print 100*sum/(NR), sum, NR, 100*sum/(NR)}' | xargs printf 'printf "$(GoodAcc %f)  Accepted %%${LENGTH}d over first %%${LENGTH}d (%%.2f%%%%) \\e[0m\\n" "%d" "%d" "%f"')
     done
     printf "\e[0;36m${LINE_OF_EQUAL// /=}\e[0m\n\n"
 else
@@ -166,10 +166,10 @@ else
     printf -v LINE_OF_EQUAL '%*s' $((34 + 2 * $LENGTH)) ''
     printf "\n\e[0;36m${LINE_OF_EQUAL// /=}\e[0m\n"
     for TR in ${NUM_FIRST_TR[@]}; do
-        eval $(head -n${TR} $SCRATCH_PATH | awk '{sum+=$11} END {if(sum/NR>=0.7){print 100*sum/(NR), sum, NR, 100*sum/(NR)}}' | xargs printf 'printf "$(GoodAcc %f)  Accepted %%${LENGTH}d over first %%${LENGTH}d (%%.2f%%%%) \\e[0m\\n" "%d" "%d" "%f"')
+        eval $(head -n${TR} $SCRATCH_PATH | awk '{sum+=$11} END {print 100*sum/(NR), sum, NR, 100*sum/(NR)}' | xargs printf 'printf "$(GoodAcc %f)  Accepted %%${LENGTH}d over first %%${LENGTH}d (%%.2f%%%%) \\e[0m\\n" "%d" "%d" "%f"')
     done
     for TR in ${NUM_LAST_TR[@]}; do
-        eval $(tail -n${TR} $SCRATCH_PATH | awk '{sum+=$11} END {if(sum/NR>=0.7){print 100*sum/(NR), sum, NR, 100*sum/(NR)}}' | xargs printf 'printf "$(GoodAcc %f)  Accepted %%${LENGTH}d over  last %%${LENGTH}d (%%.2f%%%%) \\e[0m\\n" "%d" "%d" "%f"')
+        eval $(tail -n${TR} $SCRATCH_PATH | awk '{sum+=$11} END {print 100*sum/(NR), sum, NR, 100*sum/(NR)}' | xargs printf 'printf "$(GoodAcc %f)  Accepted %%${LENGTH}d over  last %%${LENGTH}d (%%.2f%%%%) \\e[0m\\n" "%d" "%d" "%f"')
     done
     printf "\e[0;36m${LINE_OF_EQUAL// /=}\e[0m\n\n"
 fi
