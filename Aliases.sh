@@ -312,7 +312,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
                 (
 				    #Start a subshell in order to source "locally"
                     source ~/Script/UtilityFunctions.sh
-				    for FILE in conf.????? conf.??????; do
+				    for FILE in conf.????? conf.?????? conf.???????; do
 					    #echo "checking $FILE..."
 					    if ! ElementInArray $FILE ${LAST_CONF_NOT_TO_DELETE[@]}
 					    then
