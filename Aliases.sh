@@ -253,6 +253,8 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
     alias HandlerJobs='bash ${HOME}/Script/JobScriptAutomation/JobHandler.sh'
 	alias FillInMissingLines='bash ${HOME}/Script/FillInMissingLinesOutputFile.sh'
 	alias ClusterUsage='bash ${HOME}/Script/ClusterUsage.sh --doNotUpdateFiles'
+    alias groupQuota='lfs quota -hg uf7 /lustre/nyx/lcsc'
+    alias CountJobs="echo ''; squeue -u $(whoami) -h -t RUNNING,PENDING --format '%50j' | cut -d'_' -f3 | sort | uniq -c | awk '{sum+=\$1; print \$0} END{printf \"\\n Total number of jobs (RUNNING or PENDING): %d\\n\\n\", sum}'"
         
     #Function to easy calculate the walltime
     function Walltime(){
