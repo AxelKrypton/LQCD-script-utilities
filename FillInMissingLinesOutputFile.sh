@@ -16,6 +16,17 @@ PROMPT_AT_MISSING_NR_LINES="20"
 START_TRAJ_NR=($(awk '$1 != (last+1) && NR > 1 {print last}{last=$1}' $INPUT_FILE))
 NR_MISSING_LINES=($(awk '$1 != (last+1) && NR > 1 {print $1-last-1}{last=$1}' $INPUT_FILE))
 
+for((i=0; i<${#NR_MISSING_LINES[@]};i++))
+do
+	if [ ${NR_MISSING_LINES[$i]} -lt 0 ]
+	then
+		echo -e "\e[1m\e[31m WARNING: Computed negative number of missing lines for trajectory number ${START_TRAJ_NR[$i]}\e[0m"
+		NEGATIVE_NUMBER_DETECTED="TRUE"
+	fi
+done
+
+[ "$NEGATIVE_NUMBER_DETECTED" = "TRUE" ] && exit
+
 #echo ${START_TRAJ_NR[@]}
 #echo ${NR_MISSING_LINES[@]}
 
