@@ -253,7 +253,19 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
     alias HandlerJobs='bash ${HOME}/Script/JobScriptAutomation/JobHandler.sh'
 	alias FillInMissingLines='bash ${HOME}/Script/FillInMissingLinesOutputFile.sh'
 	alias ClusterUsage='bash ${HOME}/Script/ClusterUsage.sh --doNotUpdateFiles'
-    alias CountJobs="echo ''; squeue -u $(whoami) -h -t RUNNING,PENDING --format '%50j' | cut -d'_' -f3 | sort | uniq -c | awk '{sum+=\$1; print \$0} END{printf \"\\n Total number of jobs (RUNNING or PENDING): %d\\n\\n\", sum}'"
+
+    #Function to count own jobs according to part of string in job name
+    function CountJobs(){
+        if [ $# -eq 0 ]; then
+             printf "\e[0;91m \n Number of desired chunck of jobname to be used needed as argument!\n\n\e[0m"
+             return
+        else
+            echo
+            for COLUMNS in $@; do
+                squeue -u $(whoami) -h -t RUNNING,PENDING --format '%j' | cut -d'_' -f$COLUMNS | sort | uniq -c | awk '{sum+=$1; print $0} END{printf "\n Total number of jobs (RUNNING or PENDING): %d\n\n", sum}'
+            done && unset -v 'COLUMNS'
+        fi
+    }
     
     #Function to get overview of jobs on partition
     function OverviewJobs(){
@@ -266,7 +278,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
                 echo "${f}:"
                 squeue -h -p $1 -t $f | awk '{print $4}' | sort | uniq -c
                 echo
-            done
+            done && unset -v 'f'
         fi
     }
     
