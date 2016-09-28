@@ -101,7 +101,7 @@ function ReadBetaValuesFromFile(){
             exit -1
         fi
 
-        #NOTE: If one uses the option -u | --useMultipleChains and forgets the seeds column and the second integrator steps column
+        #NOTE: If one uses multiple chains and forgets the seeds column and the second integrator steps column
         #      in the betas file, then the first column of integrator steps is used as seed and the default integrators steps
         #      are used. In the case in which the first integrator steps is a 4-digit number, the script will do its job without
         #      throwing any exception. We didn't cure this case since it is a very remote case................
@@ -112,12 +112,12 @@ function ReadBetaValuesFromFile(){
         done
     fi
 
-    if [ ${#INTSTEPS0_ARRAY_TEMP[@]} -ne 0 ]; then #If the first intsteps array is empty the second CANNOT be not empt (because of how I read them with awk from file)
+    if [ ${#INTSTEPS0_ARRAY_TEMP[@]} -ne 0 ]; then #If the first intsteps array is empty the second CANNOT be not empty (because of how I read them with awk from file)
         for STEPS in ${INTSTEPS0_ARRAY_TEMP[@]} ${INTSTEPS1_ARRAY_TEMP[@]}; do
             if [[ ! $STEPS =~ ^[[:digit:]]{1,2}$ ]]; then
                 printf "\n\e[0;31m Invalid integrator step entry in betas file (only one or two digits admitted)! Aborting...\n\e[0m"
                 if [[ $STEPS =~ ^[[:digit:]]{4}$ ]]; then
-                    printf "\e[0;31m   \e[4mHINT\e[0;31m: Maybe your intention was to use the \e[1m-u | --useMultipleChains\e[0;31m option...\n\n\e[0m"
+                    printf "\e[0;31m   \e[4mHINT\e[0;31m: Maybe your intention was to use Multiple Chains...\n\n\e[0m"
                     exit -1
                 else
                     printf "\n"
@@ -186,41 +186,70 @@ function ReadBetaValuesFromFile(){
     printf "\e[0;36m============================================================================================================\n\e[0m"
 
     #If we are not in the continue scenario (and not in other script use cases), look for the correct configuration to start from and set the global path
-    if [ $CONTINUE = "FALSE" ] && [ $CLEAN_OUTPUT_FILES = "FALSE" ] && [ $EMPTY_BETA_DIRS = "FALSE" ] && [ $INVERT_CONFIGURATIONS = "FALSE" ]; then
+    if [ $CONTINUE = "FALSE" ] && [ $CLEAN_OUTPUT_FILES = "FALSE" ] && [ $EMPTY_BETA_DIRS = "FALSE" ] && [ $INVERT_CONFIGURATIONS = "FALSE" ] && [ $ACCRATE_REPORT = "FALSE" ]; then
         for BETA in "${BETAVALUES[@]}"; do
             if [ "$BETA_POSTFIX" == "" ]; then #Old nomenclature case: no beta postfix!
-                local FOUND_CONFIGURATIONS=( $(ls $THERMALIZED_CONFIGURATIONS_PATH | grep "conf.${PARAMETERS_STRING}_${BETA_PREFIX}${BETA}.*") )
+                local FOUND_CONFIGURATIONS=( $(ls $THERMALIZED_CONFIGURATIONS_PATH | grep "^conf.${PARAMETERS_STRING}_${BETA_PREFIX}${BETA}.*") )
                 if [ ${#FOUND_CONFIGURATIONS[@]} -eq 0 ]; then
                     STARTCONFIGURATION_GLOBALPATH[$BETA]="notFoundHenceStartFromHot"
                 elif [ ${#FOUND_CONFIGURATIONS[@]} -eq 1 ]; then
                     STARTCONFIGURATION_GLOBALPATH[$BETA]="${THERMALIZED_CONFIGURATIONS_PATH}/${FOUND_CONFIGURATIONS[0]}"
                 else
-                    printf "\n\e[0;31m No valid starting configuration found for beta = ${BETA%%_*} in \"$THERMALIZED_CONFIGURATIONS_PATH\"\n"
-                    printf " Zero or more than 1 configurations match the following name: \"conf.${PARAMETERS_STRING}_${BETA_PREFIX}${BETA}.*\"! Aborting...\n\n\e[0m"
+                    printf "\n\e[0;31m No valid starting configuration found for beta = ${BETA} in \"$THERMALIZED_CONFIGURATIONS_PATH\"\n"
+                    printf " More than 1 configuration matches the following name: \"conf.${PARAMETERS_STRING}_${BETA_PREFIX}${BETA}.*\"! Aborting...\n\n\e[0m"
                     exit -1
                 fi
             elif [ $BETA_POSTFIX == "_continueWithNewChain" ]; then
-                local FOUND_CONFIGURATIONS=( $(ls $THERMALIZED_CONFIGURATIONS_PATH | grep "conf.${PARAMETERS_STRING}_${BETA_PREFIX}${BETA%%_*}_fromConf[[:digit:]]\+.*") )
-                if [ ${#FOUND_CONFIGURATIONS[@]} -ne 1 ]; then
-                    printf "\n\e[0;31m No valid starting configuration found for beta = ${BETA%%_*} in \"$THERMALIZED_CONFIGURATIONS_PATH\"\n"
-                    printf " Zero or more than 1 configurations match the following name: \"conf.${PARAMETERS_STRING}_${BETA_PREFIX}${BETA%%_*}_fromConf*\"! Aborting...\n\n\e[0m"
-                    exit -1
-                else
+                local FOUND_CONFIGURATIONS=( $(ls $THERMALIZED_CONFIGURATIONS_PATH | grep "^conf.${PARAMETERS_STRING}_${BETA_PREFIX}${BETA%_*}_fromConf[[:digit:]]\+.*") )
+                if [ ${#FOUND_CONFIGURATIONS[@]} -eq 0 ]; then
+                    printf "\n\e[0;33m \e[1m\e[4mWARNING\e[24m:\e[0;33m No valid starting configuration found for beta = ${BETA%_*} in \"$THERMALIZED_CONFIGURATIONS_PATH\".\n"
+                    printf "          Looking for configuration with not exactely the same seed (i.e. matching \"conf.${PARAMETERS_STRING}_${BETA_PREFIX}${BETA%%_*}_${SEED_PREFIX}${SEED_REGEX}_fromConf.*\")..."
+                    FOUND_CONFIGURATIONS=( $(ls $THERMALIZED_CONFIGURATIONS_PATH | grep "^conf.${PARAMETERS_STRING}_${BETA_PREFIX}${BETA%%_*}_${SEED_PREFIX}${SEED_REGEX}_fromConf[[:digit:]]\+.*") )
+                    if [ ${#FOUND_CONFIGURATIONS[@]} -eq 0 ]; then
+                        printf "\e[38;5;9m none found! Aborting...\n\n\e[0m"
+                        exit -1
+                    elif [ ${#FOUND_CONFIGURATIONS[@]} -eq 1 ]; then
+                        printf "\e[0;32m found a valid one!\n\n\e[0m"
+                        STARTCONFIGURATION_GLOBALPATH[$BETA]="${THERMALIZED_CONFIGURATIONS_PATH}/${FOUND_CONFIGURATIONS[0]}"
+                    else
+                        printf "\e[38;5;202m found more than one! Which should be used?\n\n\e[38;5;27m"
+                        PS3=$'\n\e[38;5;118mEnter the number corresponding to the desired set: \e[38;5;27m'
+                        select CONFIGURATION_CHOSEN_BY_USER in "${FOUND_CONFIGURATIONS[@]}"; do
+	                        if ! ElementInArray "$CONFIGURATION_CHOSEN_BY_USER" "${FOUND_CONFIGURATIONS[@]}"; then
+		                        continue
+	                        else
+		                        break
+	                        fi
+                        done
+                        printf "\n\e[0m"
+                        STARTCONFIGURATION_GLOBALPATH[$BETA]="${THERMALIZED_CONFIGURATIONS_PATH}/$CONFIGURATION_CHOSEN_BY_USER"
+                    fi
+                elif [ ${#FOUND_CONFIGURATIONS[@]} -eq 1 ]; then
                     STARTCONFIGURATION_GLOBALPATH[$BETA]="${THERMALIZED_CONFIGURATIONS_PATH}/${FOUND_CONFIGURATIONS[0]}"
+                else
+                    printf "\n\e[0;31m No valid starting configuration found for beta = ${BETA%%_*} in \"$THERMALIZED_CONFIGURATIONS_PATH\"\n"
+                    printf " More than 1 configuration matches the following name: \"conf.${PARAMETERS_STRING}_${BETA_PREFIX}${BETA%_*}_fromConf.*\"! Aborting...\n\n\e[0m"
+                    exit -1
                 fi
             elif [ $BETA_POSTFIX == "_thermalizeFromConf" ]; then
-                if [ $(ls $THERMALIZED_CONFIGURATIONS_PATH | grep "conf.${PARAMETERS_STRING}_${BETA_PREFIX}${BETA%%_*}_fromConf[[:digit:]]\+.*" | wc -l) -ne 0 ]; then
-                    printf "\n\e[0;31m It seems that there is already a thermalized configuration for beta = ${BETA%%_*}\n"
+                if [ $(ls $THERMALIZED_CONFIGURATIONS_PATH | grep "^conf.${PARAMETERS_STRING}_${BETA_PREFIX}${BETA%_*}_fromConf[[:digit:]]\+.*" | wc -l) -ne 0 ]; then
+                    printf "\n\e[0;31m It seems that there is already a thermalized configuration for beta = ${BETA%_*}\n"
                     printf " in \"$THERMALIZED_CONFIGURATIONS_PATH\"! Aborting...\n\n\e[0m"
                     exit -1
                 fi
-                local FOUND_CONFIGURATIONS=( $(ls $THERMALIZED_CONFIGURATIONS_PATH | grep "conf.${PARAMETERS_STRING}_${BETA_PREFIX}[[:digit:]][.][[:digit:]]\{4\}_fromHot[[:digit:]]\+.*") )
+                local FOUND_CONFIGURATIONS=( $(ls $THERMALIZED_CONFIGURATIONS_PATH | grep "^conf.${PARAMETERS_STRING}_${BETA_PREFIX}${BETA_REGEX}_${SEED_PREFIX}${SEED_REGEX}_fromHot[[:digit:]]\+.*") )
+                #Here a 0 length of FOUND_CONFIGURATIONS is not checked since we rely on the fact that if this was the case we would have $BETA_POSTFIX == "_thermalizeFromHot" as set in JobHandler.sh (Thermalize case)
                 declare -A FOUND_CONFIGURATIONS_WITH_BETA_AS_KEY
                 for CONFNAME in "${FOUND_CONFIGURATIONS[@]}"; do
-                    local BETAVALUE_RECOVERED_FROM_NAME=$(echo $CONFNAME | awk '{split($1, res, "_fromHot"); print res[1]}' | sed 's/.*\([[:digit:]][.][[:digit:]]\{4\}\).*/\1/')
+                    local BETAVALUE_RECOVERED_FROM_NAME=$(echo $CONFNAME | awk '{split($1, res, "_fromHot"); print res[1]}' | sed 's/.*\('${BETA_REGEX}'\).*/\1/')
+                    #local BETAVALUE_RECOVERED_FROM_NAME=$(echo $CONFNAME | awk '{split($1, res, "_fromHot"); print res[1]}' | sed 's/.*\([[:digit:]][.][[:digit:]]\{4\}\).*/\1/')
                     FOUND_CONFIGURATIONS_WITH_BETA_AS_KEY["$BETAVALUE_RECOVERED_FROM_NAME"]=$CONFNAME
                 done
                 local CLOSEST_BETA=$(FindValueOfClosestElementInArrayToGivenValue ${BETA%%_*} "${!FOUND_CONFIGURATIONS_WITH_BETA_AS_KEY[@]}")
+                if [ "$CLOSEST_BETA" = "" ]; then
+                    printf "\n\e[0;31m Something went wrong in determinig the closest beta value to the actual one to pick up the correct thermalized from Hot configuration! Aborting...\n\n\e[0m"
+                    exit -1
+                fi
                 STARTCONFIGURATION_GLOBALPATH[$BETA]="${THERMALIZED_CONFIGURATIONS_PATH}/${FOUND_CONFIGURATIONS_WITH_BETA_AS_KEY[$CLOSEST_BETA]}"
             elif [ $BETA_POSTFIX == "_thermalizeFromHot" ]; then
                 STARTCONFIGURATION_GLOBALPATH[$BETA]="notFoundHenceStartFromHot"

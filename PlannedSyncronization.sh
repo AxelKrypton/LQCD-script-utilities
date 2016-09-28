@@ -19,7 +19,7 @@
 #
 # ATTENTION: In order to get it work constantly, you have to:
 #             1) Do an ssh to go to kampala (server that is 24h a day on)
-#                 ---> ssh kampala
+#                 ---> ssh un
 #             2) Invoke the ssh-agent in order to let it use the ssh key
 #                 ---> eval `ssh-agent`
 #                 ---> ssh-add

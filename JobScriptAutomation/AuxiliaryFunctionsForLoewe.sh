@@ -221,19 +221,19 @@ function ProcessBetaValuesForContinue_Loewe() {
                     continue
                 fi
             fi
-            printf "\e[0;35m\e[1m\e[4mATTENTION\e[24m: The simulation for beta = ${BETA%_*} will be resumed from trajectory"
-            printf " ${CONTINUE_RESUMETRAJ_ARRAY[$BETA]}. Is it what you would like to do (Y/N)? \e[0m"
-            local CONFIRM="";
-            while read CONFIRM; do
-                if [ "$CONFIRM" = "Y" ]; then
-                    break;
-                elif [ "$CONFIRM" = "N" ]; then
-                    printf "\n\e[1;31m Leaving out beta = $BETA\e[0m\n\n"
-                    continue 2
-                else
-                    printf "\e[0;36m\e[1m Please enter Y (yes) or N (no): \e[0m"
-                fi
-            done
+            printf "\e[0;35m\e[1m\e[4mATTENTION\e[24m: The simulation for beta = ${BETA%_*} will be resumed from trajectory ${CONTINUE_RESUMETRAJ_ARRAY[$BETA]}.\n\e[0m"
+#printtf " ${CONTINUE_RESUMETRAJ_ARRAY[$BETA]}. Is it what you would like to do (Y/N)? \e[0m"
+#local CONFIRM="";
+#while read CONFIRM; do
+#    if [ "$CONFIRM" = "Y" ]; then
+#        break;
+#    elif [ "$CONFIRM" = "N" ]; then
+#        printf "\n\e[1;31m Leaving out beta = $BETA\e[0m\n\n"
+#        continue 2
+#    else
+#        printf "\e[0;36m\e[1m Please enter Y (yes) or N (no): \e[0m"
+#    fi
+#done
             #If the user wants to resume from a given trajectory, first check that the conf is available
             if [ -f $WORK_BETADIRECTORY/$(printf "conf.%05d" "${CONTINUE_RESUMETRAJ_ARRAY[$BETA]}") ];then
                 local NAME_LAST_CONFIGURATION=$(printf "conf.%05d" "${CONTINUE_RESUMETRAJ_ARRAY[$BETA]}")
@@ -257,7 +257,7 @@ function ProcessBetaValuesForContinue_Loewe() {
             fi
             #Now it should be feasable to resume simulation ---> clean WORK_BETADIRECTORY
             #Create in WORK_BETADIRECTORY a folder named Trash_$(date) where to mv all the file produced after the traj. ${CONTINUE_RESUMETRAJ_ARRAY[$BETA]}
-            local TRASH_NAME="$WORK_BETADIRECTORY/Trash_$(date +'%F_%H%M')"
+            local TRASH_NAME="$WORK_BETADIRECTORY/Trash_$(date +'%F_%H%M%S')"
             mkdir $TRASH_NAME || exit 2
             for FILE in $WORK_BETADIRECTORY/conf.* $WORK_BETADIRECTORY/prng.*; do
                 #Move to trash only conf.xxxxx prng.xxxxx files or conf.xxxxx_pbp.dat files where xxxxx are digits
@@ -297,8 +297,8 @@ function ProcessBetaValuesForContinue_Loewe() {
                 local NAME_LAST_PRNG=""
             fi
         else
-            local NAME_LAST_CONFIGURATION=$(ls $WORK_BETADIRECTORY | grep -o "conf.[[:digit:]]\{5,6\}$" | sort -t '.' -k2n | tail -n1)
-            local NAME_LAST_PRNG=$(ls $WORK_BETADIRECTORY | grep -o "prng.[[:digit:]]\{5,6\}$" | sort -t '.' -k2n | tail -n1)
+            local NAME_LAST_CONFIGURATION=$(ls $WORK_BETADIRECTORY | grep -o "conf.[[:digit:]]\+$" | sort -t '.' -k2n | tail -n1)
+            local NAME_LAST_PRNG=$(ls $WORK_BETADIRECTORY | grep -o "prng.[[:digit:]]\+$" | sort -t '.' -k2n | tail -n1)
         fi
 
         #The variable NAME_LAST_CONFIGURATION should have been set above, if not it means no conf was available!
@@ -471,7 +471,7 @@ function ProcessBetaValuesForContinue_Loewe() {
         #            to do one trajectory less since the configuration from which the run would be resumed would be the last but one!!
         #            Nevertheless, doing so could lead to wrong number of measurements as well in the case in which the last standard
         #            output is wrong (for example: a simulation runs for 20k trajectories, it is stopped and by accident it is restarted
-        #            from the beginning for 5k trajectorie; then the last standard output will give a wrong number of measurements).
+        #            from the beginning for 5k trajectories; then the last standard output will give a wrong number of measurements).
         #            This case is left out here and it should be the user to avoid it.
         # 
         # NOTE: If the configuration from which we are starting, i.e. NAME_LAST_CONFIGURATION, contains digits then it is

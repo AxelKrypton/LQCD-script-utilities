@@ -176,11 +176,18 @@ if [ $LOAD_PYTHON_ALIASES = "TRUE" ]; then
         echo -n ' && mv ${FOLDER%?} ${FOLDER%?}_dBeta'$3
         echo    ' && unset -v '"'FOLDER'"
     }
+    function GetReweightingPolySqSkewCommand(){
+        [ $# -eq 3 ] && local NUM_POINTS=$(bc <<< "($2-$1)/$3+1")
+        echo "time PyReweighting --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_im_withZeroMean --deactivateMean --deactivateSusc -za --doNotUseSimulatedPointsAsNewPoints -r $1 $2 -p $NUM_POINTS"
+    }
     function GetFindBetaCPbpCommand(){
         echo "PyFindBetaC --deactivatePlaq --deactivatePoly --activatePbp --deactivateMean --deactivateSusc --deactivateBinder"
     }
     function GetFindBetaCPolySqCommand(){
         echo "PyFindBetaC --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivateMean --deactivateSkew"
+    }
+    function GetFindBetaCPolySqSkewCommand(){
+        echo "PyFindBetaC --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_withZeroMean --deactivatePoly_im_abs --deactivateMean --deactivateSusc"
     }
     function GetPlotScalingPolySqCommand(){
         echo "PyPlotScaling --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_im_withZeroMean --nsArray $@ --doNotPlotRawData --doNotMakeCombinedPlots --deactivateMean --deactivateSkew --deactivateBinder"
@@ -248,7 +255,37 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
     alias Acceptance="awk '{ sum+=\$11} END {printf \"Accepted %d over %d (%lf%%)\n\", sum, NR, 100*sum/(NR)}'"
     alias LastAcceptance='bash ${HOME}/Script/AcceptanceLastTrajectories.sh'
     alias HandlerJobs='bash ${HOME}/Script/JobScriptAutomation/JobHandler.sh'
-        
+	alias FillInMissingLines='bash ${HOME}/Script/FillInMissingLinesOutputFile.sh'
+	alias ClusterUsage='bash ${HOME}/Script/ClusterUsage.sh --doNotUpdateFiles'
+
+    #Function to count own jobs according to part of string in job name
+    function CountJobs(){
+        if [ $# -eq 0 ]; then
+             printf "\e[0;91m \n Number of desired chunck of jobname to be used needed as argument!\n\n\e[0m"
+             return
+        else
+            echo
+            for COLUMNS in $@; do
+                squeue -u $(whoami) -h -t RUNNING,PENDING --format '%j' | cut -d'_' -f$COLUMNS | sort | uniq -c | awk '{sum+=$1; print $0} END{printf "\n Total number of jobs (RUNNING or PENDING): %d\n\n", sum}'
+            done && unset -v 'COLUMNS'
+        fi
+    }
+    
+    #Function to get overview of jobs on partition
+    function OverviewJobs(){
+        if [ $# -ne 1 ]; then
+             printf "\e[0;31m \n Name of a partition needed as argument!\n\n\e[0m"
+             return
+        else
+            echo
+            for f in RUNNING PENDING; do 
+                echo "${f}:"
+                squeue -h -p $1 -t $f | awk '{print $4}' | sort | uniq -c
+                echo
+            done && unset -v 'f'
+        fi
+    }
+    
     #Function to easy calculate the walltime
     function Walltime(){
         [ $# -ne 2 ] && printf "\n\e[0;31m Call:    \e[1m$FUNCNAME <number_of_trajectory_to_do> <seconds_per_trajectory>\n\n\e[0m" && return
@@ -262,37 +299,68 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         printf "\e[0;32m \n walltime = %d-%02d:%02d:%02d\n\n\e[0m" "${days%.*}" "${hours%.*}" "${minutes%.*}" "${seconds}"
     }
 
+    #Function to know gaps on saved functions
+    function CalculateGapsInTrajectoriesBetweenStoredConfigurations(){
+        local BETA_ARRAY=( $@ )
+        for BETA in ${BETA_ARRAY[@]}; do
+            printf "\n  \e[38;5;129m\e[1m\e[4m$BETA\e[0m\n\e[38;5;199m"
+            ls $BETA | grep "conf.[[:digit:]]\+" | grep -o "[[:digit:]]\+" | sort -n | \
+                awk 'NR==1{tr=$1}NR>1{countGaps[$1-tr]++; tr=$1}END{for(i in countGaps){printf "    Gap %d present %d times\n", i, countGaps[i]}}'
+        done && unset -v 'BETA'
+        echo ''
+    }
+    
     #Function to delete conf and prng not multiple of X trajectories
     function DeleteConfPrngNotEvery() {
+		local REMAINING_NR="4"
+		local USAGE_STRING="\e[31m Usage: $0 <value of which multiples will be deleted> <number up to which the last configurations will not be cleaned> <beta directories ... >\e[0m\n"
         if [[ ! $1 =~ ^[[:digit:]]+$ ]]; then
 	        echo "Invalid frequency or frequency not given as first parameter!"
+			echo -e $USAGE_STRING	
 	        return
         fi
+		local FREQUENCY=$1 && shift
+		if [[ "$1" =~ ^[[:digit:]]{1,2}$ ]]; then
+            if [ "$1" -eq 0 ]; then
+                printf "\n\e[31m Please specify a valid POSITIVE number as second argument ...\e[0m\n\n" && return
+            fi
+            REMAINING_NR=$1 && shift #Here we assume beta to have a prefix like "b"
+		fi
         echo ''
-        echo "Actual position: $(pwd)"
-        echo -n "All conf.XXXXX and prng.XXXXX with XXXXX not multiple of $1 will be deleted. Proceed (Y/N)? "
+        printf "\e[36m Actual position: \e[1m$(pwd)\n\e[21m"
+        printf "\e[38;5;202m All conf.XXXXX and prng.XXXXX with XXXXX \e[1mnot multiple of $FREQUENCY\e[21m will be deleted (except the last ${REMAINING_NR}). Proceed (Y/N)?\e[0m "
         local CONFIRM="";
         while read CONFIRM; do
-	        if [ "$CONFIRM" = "Y" ]; then break; elif [ "$CONFIRM" = "N" ]; then return; else  printf "\n\e[0;33m Please enter Y (yes) or N (no): \e[0m"; fi
+	        if [ "$CONFIRM" = "Y" ]; then break; elif [ "$CONFIRM" = "N" ]; then echo '' && return; else  printf "\n\e[0;33m Please enter Y (yes) or N (no): \e[0m"; fi
         done
-        BETA_ARRAY=( ${@:2} )
+        echo ''
+        local BETA_ARRAY=( $@ )
         [ ${#BETA_ARRAY[@]} -eq 0 ] && BETA_ARRAY=( $(ls -d b{5,6}*/ 2>/dev/null) )
         for BETA in ${BETA_ARRAY[@]}; do
 			if [ -d $BETA ]; then
-				echo $BETA
+				printf "  \e[0;32m$BETA\e[0m\n"
 				cd $BETA
-                local LAST_CONF_NOT_TO_DELETE=$(ls conf.* | grep -o "conf.[[:digit:]]\+$" | sort -V | tail -n1)
-				for FILE in conf.????? conf.??????; do
-                    if [ "$FILE" != "$LAST_CONF_NOT_TO_DELETE" ]; then
-					    NUM=$(grep -o "[[:digit:]]*" <<< $FILE)
-					    if [ ${NUM:+x} ]; then
-						    [ $(awk -v freq="$1" '{print $1%freq}' <<< $NUM) -ne 0 ] && rm -f $FILE ${FILE/conf/prng}
+                local LAST_CONF_NOT_TO_DELETE=($(ls conf.* | grep -o "conf.[[:digit:]]\+$" | sort -V | tail -n$REMAINING_NR))
+                (
+				    #Start a subshell in order to source "locally"
+                    source ~/Script/UtilityFunctions.sh
+				    for FILE in conf.????? conf.?????? conf.???????; do
+					    #echo "checking $FILE..."
+					    if ! ElementInArray $FILE ${LAST_CONF_NOT_TO_DELETE[@]}
+					    then
+					        local NUM=$(grep -o "[[:digit:]]*" <<< $FILE)
+					        if [ ${NUM:+x} ]; then
+						        [ $(awk -v freq="$FREQUENCY" '{print $1%freq}' <<< $NUM) -ne 0 ] && rm -f $FILE ${FILE/conf/prng}
+					        fi
 					    fi
-                    fi
-				done
+				    done
+                )
 				cd ..
-			fi
-        done
+            else
+                printf "  \e[1;31m$BETA\e[21m folder not found, skipping it!\e[0m\n"
+            fi
+        done && unset -v 'BETA'
+        echo ''
     }
 
     #Functions useful later
@@ -359,7 +427,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
             if [ "${#TRAJ[@]}" -eq 0 ]; then
                 printf "\e[32m ...no missing trajectory found!\e[0m\n\n"
             else
-                printf "\e[38;5;202m ...found ${#TRAJ[@]} missing trajectory(ies)!\e[0m\n\n"
+                printf "\e[38;5;202m ...found ${#TRAJ[@]} bunch(es) of missing trajectory(ies)!\e[0m\n"
                 for VALUE in ${TRAJ[@]}; do
                     local LINE_NUMBER=$(grep -n "^$VALUE[[:space:]]" $FILE | cut -f1 -d':')
                     if [ -z ${EDITOR:+x} ]; then
@@ -368,7 +436,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
                         $EDITOR +$LINE_NUMBER $FILE
                     fi
                 done && unset -v 'VALUE'
-                printf "\n\n"
+                printf "\n"
             fi
         done && unset -v 'ARGUMENT'
     }
@@ -401,15 +469,19 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
                 echo "Neither in Staggered nor in Wilson path!"
             fi
         else
-            printf "\n\e[0;31m Unknown first parameter!\n\n\e[0m"
+            printf "\n\e[0;31m Unknown first command line parameter!\n\n\e[0m"
         fi
         if [ "$2" = "" ]; then
             less $FILE_NAME
         elif [ "$2" = "-e" ]; then
             less ${FILE_NAME/.out/.err}
         else
-            printf "\n\e[0;31m Unknown second parameter!\n\n\e[0m"
+            printf "\n\e[0;31m Unknown second command line parameter!\n\n\e[0m"
         fi
+        #Print jobid and node to screen
+        local JOBID=$(grep -o "[[:digit:]]\+" <<< ${FILE_NAME##*hmc})
+        printf "\n\e[0;36m Job ID: ${JOBID}   "
+        printf "$(grep "Host" JobScripts/?hmc_ref.${JOBID}.out)\n\n\e[0m"
     }
 
     #Function to eliminate conf.save* and prng.save*
@@ -491,9 +563,10 @@ if [ $LOAD_ROOTHIST_ALIASES = "TRUE" ]; then
             shift
         done
 
-        source $HOME/Script/PathManagement.sh || exit -2
-        ReadParametersFromPath $(pwd)
-        local CURRENT_PATH=$PATH_PREFIX/$CHEMPOT_PREFIX$CHEMPOT/$KAPPA_PREFIX$KAPPA/$NTIME_PREFIX$NTIME/$NSPACE_PREFIX$NSPACE
+        #source $HOME/Script/PathManagement.sh || echo "Error sourcing PathManagement.sh" && return
+        #ReadParametersFromPath $(pwd)
+        #local CURRENT_PATH=$PATH_PREFIX/$CHEMPOT_PREFIX$CHEMPOT/$KAPPA_PREFIX$KAPPA/$NTIME_PREFIX$NTIME/$NSPACE_PREFIX$NSPACE
+        local CURRENT_PATH=$(pwd)
 
         #Create tmpfile for Root
         local BETA_PATH_ARRAY=()
