@@ -132,6 +132,10 @@ if [ $LOAD_FIT_ALIASES = "TRUE" ]; then
     function GetFilteringProcedure(){
         echo "FilterFitResults -f FitByBruteForce.dat -o -p a1 100 | FilterFitResults -p chi2 1 | FilterFitResults -p MinOv% g80 > FilteredResults_a1_100_chi2_1_MinOv%_g80"
     }
+    function GetSelectingBestFitProcedure(){
+        echo 'SelectBestFits <COMPLETE_WITH_OPTIONS> | awk '"'"'{ print length, $0 }'"'"' | sort -n -s | cut -d" " -f2-'
+    }
+
 fi
 
 #============================================================================================================================#
