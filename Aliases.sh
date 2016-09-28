@@ -252,7 +252,36 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
     alias LastAcceptance='bash ${HOME}/Script/AcceptanceLastTrajectories.sh'
     alias HandlerJobs='bash ${HOME}/Script/JobScriptAutomation/JobHandler.sh'
 	alias FillInMissingLines='bash ${HOME}/Script/FillInMissingLinesOutputFile.sh'
-        
+	alias ClusterUsage='bash ${HOME}/Script/ClusterUsage.sh --doNotUpdateFiles'
+
+    #Function to count own jobs according to part of string in job name
+    function CountJobs(){
+        if [ $# -eq 0 ]; then
+             printf "\e[0;91m \n Number of desired chunck of jobname to be used needed as argument!\n\n\e[0m"
+             return
+        else
+            echo
+            for COLUMNS in $@; do
+                squeue -u $(whoami) -h -t RUNNING,PENDING --format '%j' | cut -d'_' -f$COLUMNS | sort | uniq -c | awk '{sum+=$1; print $0} END{printf "\n Total number of jobs (RUNNING or PENDING): %d\n\n", sum}'
+            done && unset -v 'COLUMNS'
+        fi
+    }
+    
+    #Function to get overview of jobs on partition
+    function OverviewJobs(){
+        if [ $# -ne 1 ]; then
+             printf "\e[0;31m \n Name of a partition needed as argument!\n\n\e[0m"
+             return
+        else
+            echo
+            for f in RUNNING PENDING; do 
+                echo "${f}:"
+                squeue -h -p $1 -t $f | awk '{print $4}' | sort | uniq -c
+                echo
+            done && unset -v 'f'
+        fi
+    }
+    
     #Function to easy calculate the walltime
     function Walltime(){
         [ $# -ne 2 ] && printf "\n\e[0;31m Call:    \e[1m$FUNCNAME <number_of_trajectory_to_do> <seconds_per_trajectory>\n\n\e[0m" && return
@@ -266,6 +295,17 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         printf "\e[0;32m \n walltime = %d-%02d:%02d:%02d\n\n\e[0m" "${days%.*}" "${hours%.*}" "${minutes%.*}" "${seconds}"
     }
 
+    #Function to know gaps on saved functions
+    function CalculateGapsInTrajectoriesBetweenStoredConfigurations(){
+        local BETA_ARRAY=( $@ )
+        for BETA in ${BETA_ARRAY[@]}; do
+            printf "\n  \e[38;5;129m\e[1m\e[4m$BETA\e[0m\n\e[38;5;199m"
+            ls $BETA | grep "conf.[[:digit:]]\+" | grep -o "[[:digit:]]\+" | sort -n | \
+                awk 'NR==1{tr=$1}NR>1{countGaps[$1-tr]++; tr=$1}END{for(i in countGaps){printf "    Gap %d present %d times\n", i, countGaps[i]}}'
+        done && unset -v 'BETA'
+        echo ''
+    }
+    
     #Function to delete conf and prng not multiple of X trajectories
     function DeleteConfPrngNotEvery() {
 		local REMAINING_NR="4"
@@ -300,7 +340,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
                 (
 				    #Start a subshell in order to source "locally"
                     source ~/Script/UtilityFunctions.sh
-				    for FILE in conf.????? conf.??????; do
+				    for FILE in conf.????? conf.?????? conf.???????; do
 					    #echo "checking $FILE..."
 					    if ! ElementInArray $FILE ${LAST_CONF_NOT_TO_DELETE[@]}
 					    then
@@ -381,7 +421,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
                            END{if(arraylength==0){exit 0}
                                else{for(i in missTraj){print missTraj[i]}; exit 1}}' $FILE) )
             if [ "${#TRAJ[@]}" -eq 0 ]; then
-                printf "\e[32m ...no missing trajectory found!\e[0m\n"
+                printf "\e[32m ...no missing trajectory found!\e[0m\n\n"
             else
                 printf "\e[38;5;202m ...found ${#TRAJ[@]} bunch(es) of missing trajectory(ies)!\e[0m\n"
                 for VALUE in ${TRAJ[@]}; do

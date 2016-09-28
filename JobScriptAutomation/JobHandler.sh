@@ -93,15 +93,17 @@ if [ $STAGGERED = "TRUE" ]; then
     USE_RATIONAL_APPROXIMATION_FILE="TRUE"
 fi
 
-#Variables for Liststatus colors and acceptances thresholds (here since they are used also by the database)
+#Variables for Liststatus colors and acceptances/deltaS thresholds (here since they are used also by the database)
 DEFAULT_LISTSTATUS_COLOR="\e[0;36m"
 SUSPICIOUS_BETA_LISTSTATUS_COLOR="\e[0;33m"
 WRONG_BETA_LISTSTATUS_COLOR="\e[0;91m"
+TOO_HIGH_DELTA_S_LISTSTATUS_COLOR="\e[0;91m"
 TOO_LOW_ACCEPTANCE_LISTSTATUS_COLOR="\e[38;5;9m"
 LOW_ACCEPTANCE_LISTSTATUS_COLOR="\e[38;5;208m"
 OPTIMAL_ACCEPTANCE_LISTSTATUS_COLOR="\e[38;5;10m"
 HIGH_ACCEPTANCE_LISTSTATUS_COLOR="\e[38;5;11m"
 TOO_HIGH_ACCEPTANCE_LISTSTATUS_COLOR="\e[38;5;202m"
+TOO_HIGH_DELTA_S_LISTSTATUS_COLOR="\e[0;91m"
 RUNNING_LISTSTATUS_COLOR="\e[0;32m"
 PENDING_LISTSTATUS_COLOR="\e[0;33m"
 CLEANING_LISTSTATUS_COLOR="\e[0;31m"
@@ -112,6 +114,7 @@ TOO_LOW_ACCEPTANCE_THRESHOLD=68
 LOW_ACCEPTANCE_THRESHOLD=70
 HIGH_ACCEPTANCE_THRESHOLD=78
 TOO_HIGH_ACCEPTANCE_THRESHOLD=90
+DELTA_S_THRESHOLD=6
 
 #####################################CREATE OPTIONS FOR COMMAND-LINE-PARSER######################################
 #Inverter Options
@@ -249,7 +252,7 @@ elif [ $THERMALIZE = "TRUE" ] || [ $CONTINUE_THERMALIZATION = "TRUE" ]; then
     #
     # TODO: If a thermalization from hot is finished but one other crashed and one wishes to resume it, the postfix should be
     #       from Hot but it is from conf since in $THERMALIZED_CONFIGURATIONS_PATH a conf from hot is found. Think about how to fix this.
-    if [ $(ls $THERMALIZED_CONFIGURATIONS_PATH | grep "conf.${PARAMETERS_STRING}_${BETA_PREFIX}${BETA_REGEX}_fromHot[[:digit:]]\+.*" | wc -l) -eq 0 ]; then
+    if [ $(ls $THERMALIZED_CONFIGURATIONS_PATH | grep "conf.${PARAMETERS_STRING}_${BETA_PREFIX}${BETA_REGEX}_${SEED_PREFIX}${SEED_REGEX}_fromHot[[:digit:]]\+.*" | wc -l) -eq 0 ]; then
 	    BETA_POSTFIX="_thermalizeFromHot"
     else
 	    BETA_POSTFIX="_thermalizeFromConf"
@@ -258,13 +261,27 @@ elif [ $THERMALIZE = "TRUE" ] || [ $CONTINUE_THERMALIZATION = "TRUE" ]; then
 	    printf "\n \e[1;33;4mMeasurement of PBP switched off during thermalization!!\n\e[0m"
 	    MEASURE_PBP="FALSE"
     fi
+
     ReadBetaValuesFromFile  # Here we declare and fill the array BETAVALUES
+
     if [ $THERMALIZE = "TRUE" ]; then
         ProduceInputFileAndJobScriptForEachBeta
+        CONFIRM="";
+        printf "\n\e[0;33m Check if everything is fine. Would you like to submit the jobs (Y/N)? \e[0m"
+		while read CONFIRM; do
+		    if [ "$CONFIRM" = "Y" ]; then
+			    break;
+		    elif [ "$CONFIRM" = "N" ]; then
+			    printf "\n\e[1;37;41mNo jobs will be submitted.\e[0m\n"
+			    exit
+		    else
+			    printf "\n\e[0;33m Please enter Y (yes) or N (no): \e[0m"
+		    fi
+		done
+        unset -v 'CONFIRM'
     elif [ $CONTINUE_THERMALIZATION = "TRUE" ]; then
         ProcessBetaValuesForContinue
     fi
-    
     SubmitJobsForValidBetaValues #TODO: Declare all possible local variable in this function as local!
     
 elif [ $CONTINUE = "TRUE" ]; then
