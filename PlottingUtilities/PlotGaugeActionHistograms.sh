@@ -16,8 +16,8 @@ add_plot() {
 source ${HOME}/Script/PathManagement.sh || exit -2
 
 BETA_ARRAY=()
-DIR_WITH_INPUT_FILES=$(ls | grep "^mui.\{1,3\}_${KAPPA_PREFIX}[[:digit:]]\{4\}_nt[[:digit:]]\{1,2\}_ns[[:digit:]]\{1,2\}_reweighting$")
-if [ ! -d $DIR_WITH_INPUT_FILES ]; then
+DIR_WITH_INPUT_FILES=$(ls | grep "^mui.\{1,3\}_${MASS_PREFIX}[[:digit:]]\{4\}_nt[[:digit:]]\{1,2\}_ns[[:digit:]]\{1,2\}_reweighting$")
+if [ ! -d "$DIR_WITH_INPUT_FILES" ]; then
     echo "Couldn't match any directory with mui.\{1,3\}_k[[:digit:]]\{4\}_nt[[:digit:]]\{1,2\}_ns[[:digit:]]\{1,2\}_reweighting...exiting"
     exit -1
 fi
