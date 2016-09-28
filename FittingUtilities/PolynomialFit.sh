@@ -16,6 +16,7 @@ COLUMN_Y=2
 COLUMN_DY=3
 OUTPUT_FILENAME='PolynomialFit'
 EXTRAPOLATE_TO=()
+XRANGE=()
 LABEL_X="x"
 LABEL_Y="y"
 PLOT_TITLE=""
@@ -38,6 +39,7 @@ if ElementInArray "--help" $@ || ElementInArray "-h" $@; then
 	printf "   -y | --columnY           ->   default value = $COLUMN_Y\n\t"
 	printf "   --dy | --columnDY        ->   default value = $COLUMN_DY\n\t"
     printf "   -e | --extrapolateTo     ->   extrapolate fitted quantity to provided value(s)\n\t"
+	printf "   --xRange                 ->   requires two entries, default is gnuplot determined\n\t"
 	printf "   --xLabel                 ->   default value = $LABEL_X\n\t"
 	printf "   --yLabel                 ->   default value = $LABEL_Y\n\t"
 	printf "   --plotTitle              ->   default value = \"$PLOT_TITLE\"\n\t"
@@ -91,6 +93,13 @@ while [ "$1" != "" ]; do
             done
             shift
             ;;
+        --xRange )
+            while [[ $2 =~ ^[+-]?[[:digit:]]+[.]?[[:digit:]]+$ ]]; do
+                XRANGE+=( $2 )
+                shift
+            done
+            shift
+            ;;
         --xLabel )
             LABEL_X="$2"
             shift 2
@@ -119,6 +128,11 @@ if [[ ! $POLYNOMIAL_DEGREE =~ ^[[:digit:]]+$  ]]; then
     exit -1
 fi
 
+if [ ${#XRANGE[@]} -ne 0 ] && [ ${#XRANGE[@]} -ne 2 ]; then
+    printf "\n\e[0;31m X range has been not correctly specified (two numbers should be given)! Aborting...\n\n\e[0m"
+    exit -1
+fi
+
 #==============================================================================================================
 #==============================================================================================================
 #Remove temporary file for gnuplot if existing
@@ -130,7 +144,9 @@ done
 # Terminal get the fit in pdf via latex
 echo 'set terminal lua tikz standalone solid preamble '"'"'\usepackage{amsmath, mathabx}'"'" >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 echo 'set fit errorvariables  # to get the errors' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-echo 'set fit quiet' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+if [ $QUIET_MODE = 'TRUE' ]; then
+    echo 'set fit quiet' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+fi
 # Fit function: polynomial
 echo -n "f(x) = a0" >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 for((i=1; i<=$POLYNOMIAL_DEGREE; i++)); do
@@ -169,6 +185,9 @@ echo 'set xlabel "'$LABEL_X'"'                          >> $TMP_FILE_FOR_GNUPLOT
 echo 'set ylabel "'$LABEL_Y'"'                          >> $TMP_FILE_FOR_GNUPLOT_SCRIPT  
 echo 'set key at graph 0.9, graph 0.95 spacing 1.25'    >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
 echo 'set title titlePlot'                              >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+if [ ${#XRANGE[@]} -ne 0 ]; then
+    echo 'set xrange ['${XRANGE[0]}':'${XRANGE[1]}']'   >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
+fi
 #Set output name
 echo 'set output  "'$OUTPUT_FILENAME'.tex"'   >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
 #Actual plot

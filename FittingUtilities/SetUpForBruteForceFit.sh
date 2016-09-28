@@ -104,7 +104,7 @@ if [ $(ls | wc -l) -ne 0 ]; then
 fi
 
 #Ask for number of volumes
-POSSIBLE_VOLS=( "12 18" "18 24" "12 18 24" "16 20 24" "20 24 30" "16 20 24 30" "20 24 30 36" "others" )
+POSSIBLE_VOLS=( "12 18" "18 24" "12 18 24" "16 20 24" "18 24 30" "20 24 30" "16 20 24 30" "20 24 30 36" "others" )
 printf "\n\e[38;5;118mWhich volumes have been simulated for this kappa?\n\e[0m"
 select VOLUMES in "${POSSIBLE_VOLS[@]}"; do
 	if ! ElementInArray "$VOLUMES" "${POSSIBLE_VOLS[@]}"; then
@@ -131,8 +131,9 @@ for VOL in ${VOLUMES[@]}; do
 done
 
 #Create folders
-VOLUMES=( $VOLUMES )
+VOLUMES=( ${VOLUMES[@]} ) #This line split above string (e.g. "18 24 30") into single array element
 FOLDER_NAMES=( $(MakeFolderNames | sort | uniq | awk 'BEGIN{OFS="_";}{for(i=1; i<=NF; i++){$i="ns"$i}; print $0}') )
+
 for FOLD in ${FOLDER_NAMES[@]}; do
 	[ $SETUP_LINEAR = 'TRUE' ] && [ ! -d "gnuplot_fit_${FOLD}_linear" ] && mkdir "gnuplot_fit_${FOLD}_linear"
 	[ $SETUP_QUADRATIC = 'TRUE' ] && [ ! -d "gnuplot_fit_${FOLD}_quadratic" ] && mkdir "gnuplot_fit_${FOLD}_quadratic"

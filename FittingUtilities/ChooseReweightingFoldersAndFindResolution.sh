@@ -85,7 +85,7 @@ CheckParametersExtractedFromPath $NFLAVOUR_PREFIX $CHEMPOT_PREFIX $MASS_PREFIX $
 
 #==============================================================================================================
 #Ask for number of volumes
-POSSIBLE_VOLS=( "12 18" "12 18 24")
+POSSIBLE_VOLS=( "12 18" "12 18 24" "18 24 30" "18 24 30 36" "24 30 36")
 printf "\n\e[38;5;208mFor which volumes do you want to know the resolution in the reweighted data?\e[38;5;226m\n"
 select VOLUMES in "${POSSIBLE_VOLS[@]}"; do
     if ! ElementInArray "$VOLUMES" "${POSSIBLE_VOLS[@]}"; then

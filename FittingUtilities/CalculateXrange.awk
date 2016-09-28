@@ -41,6 +41,31 @@ function CalculateSymmetryWithRespectToZero(min, max,     D){
     }
 }
 
+function CalculateWidthCommonIntervalInX(     maxOfMins, minOfMaxs){
+    maxOfMins=xMins[1]
+    minOfMaxs=xMaxs[1]
+    for(i in volumes){
+        if(xMins[i]>maxOfMins)
+            maxOfMins=xMins[i]
+        if(xMaxs[i]<minOfMaxs)
+            minOfMaxs=xMaxs[i]
+    }
+    return minOfMaxs-maxOfMins
+}
+
+function CalculateWidthTotalIntervalInX(     minOfMins, maxOfMaxs){
+    minOfMins=xMins[1]
+    maxOfMaxs=xMaxs[1]
+    for(i in volumes){
+        if(xMins[i]<minOfMins)
+            minOfMins=xMins[i]
+        if(xMaxs[i]>maxOfMaxs)
+            maxOfMaxs=xMaxs[i]
+    }
+    return maxOfMaxs-minOfMins
+}
+
+
 function SetCombinationsOfVolumes(){
     if(numberOfVolumes==2)
     {
@@ -74,9 +99,9 @@ NR==1{
         }
     }
     if(fitType == "lin"){
-        printf "%-15s    %-22s    %-17s    %-17s    %-17s    %-17s    MinOv%  MinSymm%  Beta_Ranges_And_xRanges_And_Overlap_Percentages\n", $1, $2" "$3" "$4, $5" "$6, $7" "$8, $9" "$(10), $(11)" "$(12)
+        printf "%-15s    %-22s    %-17s    %-17s    %-17s    %-17s     MinOv%  MinSymm%  MinDx  TotDx       Beta_Ranges_And_xRanges_And_Overlap_Percentages\n", $1, $2" "$3" "$4, $5" "$6, $7" "$8, $9" "$(10), $(11)" "$(12)
     }else{
-        printf "%-15s    %-22s    %-17s    %-17s    %-17s    %-17s    %-17s    MinOv%  MinSymm%  Beta_Ranges_And_xRanges_And_Overlap_Percentages\n", $1, $2" "$3" "$4, $5" "$6, $7" "$8, $9" "$(10), $(11)" "$(12), $(13)" "$(14)
+        printf "%-15s    %-22s    %-17s    %-17s    %-17s    %-17s    %-17s     MinOv%  MinSymm%  MinDx  TotDx       Beta_Ranges_And_xRanges_And_Overlap_Percentages\n", $1, $2" "$3" "$4, $5" "$6, $7" "$8, $9" "$(10), $(11)" "$(12), $(13)" "$(14)
     }
     next
 }
@@ -146,6 +171,8 @@ NR==1{
     }
     printf "    %.2f", minimumOverlapPercentage
     printf "   %.2f  ", minimumSymmetryPercentage
+    printf "   %.5f  ", CalculateWidthCommonIntervalInX()
+    printf "   %.5f  ", CalculateWidthTotalIntervalInX()
     for(i=0; i<numberOfVolumes; i++){
         printf "   %.6f %.6f", $(columnBetaRanges+2*i), $(columnBetaRanges+1+2*i)
     }

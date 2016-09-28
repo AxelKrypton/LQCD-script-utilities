@@ -102,12 +102,14 @@ function CreateGnuplotFitWithHardCodedParameters(){
             echo '            .sprintf("%s", commit)'                                                                                                                                                             >> $TMP_FILE_FOR_GNUPLOT_SCRIPT            
         fi
     fi
-    echo 'set title fit_title'                                          >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+    echo 'set title fit_title'                                            >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     #Set output name
-    echo 'set output  "'$OUTPUT_FILENAME'"'                             >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
+    echo 'set output  "'$OUTPUT_FILENAME'"'                               >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
     #Draw other stuff
-    echo 'set style arrow 1 nohead lt 0 lc -1 lw .5'                    >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-    echo 'set arrow from bc,graph(0,0) to bc,graph(1,1) arrowstyle 1'   >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+    echo 'set style arrow 1 nohead lt 0 lc -1 lw .5'                      >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+    echo 'if (bc >= fitrange_low && bc <= fitrange_high){'                >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+    echo '  set arrow 1 from bc,graph(0,0) to bc,graph(1,1) arrowstyle 1' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+    echo '}'                                                              >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     #Key titles
     for INDEX in ${!NSPACE[@]}; do
         if [ $TEX_PLOT = 'FALSE' ]; then
@@ -130,14 +132,11 @@ function CreateGnuplotFitWithHardCodedParameters(){
         fi 
     done
     #Replot with different x range
-    echo 'set autoscale x'                                                       >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-    if [ $FIT_TYPE = 'linear' ]; then
-        echo 'set output "fit_linear_all_'$OBSERVABLE'_multiple_ranges.pdf"'     >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-    elif [ $FIT_TYPE = 'quadratic' ]; then
-        echo 'set output "fit_quadratic_all_'$OBSERVABLE'_multiple_ranges.pdf"'  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-    fi
-    echo 'replot'                                                                >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-    echo 'unset arrow'                                                           >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+    echo 'set autoscale x'                                                 >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+    echo 'set output "'${OUTPUT_FILENAME/$OBSERVABLE/all_$OBSERVABLE}      >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+    echo 'unset arrow'                                                     >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+    echo 'set arrow 1 from bc,graph(0,0) to bc,graph(1,1) arrowstyle 1'    >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+    echo 'replot'                                                          >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
   
     unset -v 'INDEX'
 }
