@@ -101,7 +101,7 @@ done
 
 #==============================================================================================================
 if [ $DO_NOT_CORRECT_ERRORS = 'FALSE' ]; then
-    printf "\n\t\e[38;5;11m\e[1m\e[4mWARNING\e[24m:\e[21m Did you ensure that the column associated to chi2 is correct? Use the \e[38;5;10m-h | --help\e[38;5;11m option in case!\n\n\e[0m"
+    printf "\n\t\e[38;5;11m\e[1m\e[4mWARNING\e[24m:\e[21m Since errors are corrected with chi2, did you ensure that the column associated to chi2 is correct? Use the \e[38;5;10m-h | --help\e[38;5;11m option in case!\n\n\e[0m"
 fi
 
 #==============================================================================================================
@@ -110,8 +110,6 @@ fi
 TMP_FILE_FOR_GNUPLOT_SCRIPT='TemporaryFileThatShouldNotExist.plt'
 rm -f $TMP_FILE_FOR_GNUPLOT_SCRIPT
 #Prepare the gnuplot temporary script
-echo 'set terminal lua tikz standalone solid preamble '"'"'\usepackage{amsmath}'"'" >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-echo "set output '${OUTPUT_FILENAME}.tex'"  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 echo 'dataFile = "'$DATA_FILENAME'"'  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 
 echo 'stats "'$DATA_FILENAME'" nooutput'                        >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
@@ -149,6 +147,9 @@ else
     echo '}' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 fi
 
+echo 'set terminal lua tikz standalone solid preamble '"'"'\usepackage{amsmath}'"'" >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+echo "set output '${OUTPUT_FILENAME}.tex'"  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+echo 'replot' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 #==============================================================================================================
 ERROR_GNUPLOT="$(gnuplot $TMP_FILE_FOR_GNUPLOT_SCRIPT)"
 #If any error plotting, then clean and exit

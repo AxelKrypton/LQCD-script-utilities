@@ -200,12 +200,14 @@ rm $TMP_FILE_FOR_DATA_TO_BE_FITTED
 #==============================================================================================================
 #In case compile tex file
 if [ $TEX_PLOT = 'TRUE' ]; then
-    pdflatex $OUTPUT_FILENAME 1>> /dev/null
-    rm ${OUTPUT_FILENAME}
-    rm ${OUTPUT_FILENAME/.tex/.log}
-    rm ${OUTPUT_FILENAME/.tex/.aux}
+    for TEX_FILE in *.tex; do
+        pdflatex $TEX_FILE 1>> /dev/null
+        rm ${TEX_FILE}
+        rm ${TEX_FILE/.tex/.log}
+        rm ${TEX_FILE/.tex/.aux}
+    done
 fi
 
 OUTPUT_FILENAME=${OUTPUT_FILENAME/$OBSERVABLE/all_$OBSERVABLE}
-evince ${OUTPUT_FILENAME/.*/.pdf} &
+evince ${OUTPUT_FILENAME/.tex/.pdf} &
 exit 0

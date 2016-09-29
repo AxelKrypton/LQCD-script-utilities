@@ -1,0 +1,28 @@
+function PlotRescaledDataAndDifferences(){
+
+    local SCREEN_DIMENSTIONS=$(xdpyinfo  | grep dimensions | awk '{print $2}' | sed 's/x/,/g')
+        
+    gnuplot <<-EOFMarker
+    set term wxt 0 size $SCREEN_DIMENSTIONS
+    files="${DATA_FILENAMES[@]}"
+    volumes="${VOLUMES[@]}"
+    differences=""
+    pairs=""
+    do for [i=1:words(volumes)] {
+      do for [j=i+1:words(volumes)] {
+        differences=differences." ${FILENAME_DATA_FOR_INTEGRATION}${BETA_C_NU_STRING}_ns".word(volumes, i)."_ns".word(volumes, j)."${SUFFIX_SQUARE_DIFFERENCE}"
+        pairs=pairs." ns".word(volumes, i)."_ns".word(volumes, j)
+      }
+    }
+    set xlabel "x=(beta-betaC)*L^(1/nu)"
+    set ylabel "B4"
+    set y2label "Distance between functions"
+    set ytics nomirror
+    set y2tics nomirror
+    set title "Rescaled data (betaC=${BETA_C[0]}, nu=${NU[0]}) and distance between pairs of volumes"
+    plot for [i=1:words(files)] word(files, i)."${BETA_C_NU_STRING}${SUFFIX_RESCALED_DATA}" using 1:2:3 w e title "Ns=".word(volumes, i) axes x1y1
+    replot for [i=1:words(differences)] word(differences, i) using 1:2:(\$4-\$2) w e title "Distance_".word(pairs, i) axes x1y2
+    pause mouse button1
+    q()
+EOFMarker
+}

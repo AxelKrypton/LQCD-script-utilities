@@ -103,10 +103,12 @@ function MakeGnuplotHistogram() {
         echo "set output \"${OUTPUT_PLOT_FILENAME}.tex\"" >> $GNUPLOT_TEMP_SCRIPT
         echo 'set label "\\scriptsize{$'$XAXIS_UPPERLEFT_LABEL'\\to$}" at screen '$XAXIS_UPPERLEFT_LABEL_POSITION_UP', screen 0.053 left' >> $GNUPLOT_TEMP_SCRIPT
         echo 'set label "\\scriptsize{$'$XAXIS_BOTTOM_LABEL'\\to$}" at screen '$XAXIS_UPPERLEFT_LABEL_POSITION_DOWN', screen 0.01 left' >> $GNUPLOT_TEMP_SCRIPT
-        echo 'plot for [i=1:A_blocks] "'$TEMPORARY_DATA_FILE'" index i-1 using ($0+word(shifts,i)):3:($2/'$FACTOR_TO_DIVIDE_FOR_COLOR'):xticlabels("\\scriptsize{$".stringcolumn(2)."$}") with boxes title "" linecolor variable' >> $GNUPLOT_TEMP_SCRIPT
+        echo 'plot for [i=1:A_blocks] "'$TEMPORARY_DATA_FILE'" index i-1 using ($0+word(shifts,i)):3:($2/'$FACTOR_TO_DIVIDE_FOR_COLOR'):xticlabels("\\scriptsize{$".stringcolumn(2)."$}") with boxes title "" linecolor variable, \' >> $GNUPLOT_TEMP_SCRIPT
+        echo '     for [i=1:A_blocks] "'$TEMPORARY_DATA_FILE'" index i-1 using ($0+word(shifts,i)):3:4 with labels center offset 0,-1 notitle' >> $GNUPLOT_TEMP_SCRIPT
     fi
     if [ "$1" = 'FALSE' ]; then
-        echo 'plot for [i=1:A_blocks] "'$TEMPORARY_DATA_FILE'" index i-1 using ($0+word(shifts,i)):3:($2/'$FACTOR_TO_DIVIDE_FOR_COLOR'):xticlabels(2) with boxes title "" linecolor variable' >> $GNUPLOT_TEMP_SCRIPT
+        echo 'plot for [i=1:A_blocks] "'$TEMPORARY_DATA_FILE'" index i-1 using ($0+word(shifts,i)):3:($2/'$FACTOR_TO_DIVIDE_FOR_COLOR'):xticlabels(2) with boxes title "" linecolor variable, \' >> $GNUPLOT_TEMP_SCRIPT
+        echo "                        ''" 'using ($0+word(shifts,i)):3:4 with labels center offset 0,-1 notitle' >> $GNUPLOT_TEMP_SCRIPT
         echo '' >> $GNUPLOT_TEMP_SCRIPT
         echo 'pause -1 ' >> $GNUPLOT_TEMP_SCRIPT
         echo 'q' >> $GNUPLOT_TEMP_SCRIPT
@@ -214,6 +216,8 @@ done
 if [ "$OUTPUT_FILENAME" = "" ]; then
     [ $MASS_OVERVIEW = 'TRUE' ] && OUTPUT_PLOT_FILENAME="OverviewSimulationsPerMasses"
     [ $BETA_OVERVIEW = 'TRUE' ] && OUTPUT_PLOT_FILENAME="OverviewSimulationsPerBetas"
+else
+    OUTPUT_PLOT_FILENAME=$OUTPUT_FILENAME
 fi
 
 if [ $MASS_OVERVIEW = 'TRUE' ]; then
@@ -237,7 +241,8 @@ if [ $MASS_OVERVIEW = 'TRUE' ]; then
         for VOLUME in $(ls -d ${MASS_PREFIX}${VALUE}/${NTIME_PREFIX}${NTIME}/${NSPACE_PREFIX}*/); do
             EXTRACTED_NSPACE=${VOLUME%?}
             EXTRACTED_NSPACE=${EXTRACTED_NSPACE##*/ns}
-            printf "$VALUE\t$EXTRACTED_NSPACE\t$(wc -l ${VOLUME}/b?.????/$DATAFILE_NAME | awk 'END{print $1}')\n" >> $TEMPORARY_DATA_FILE
+            LIST_BETA_WITH_CHAINS=( $(ls -d ${VOLUME}/b?.????*Chain/ | grep -Eo "b.[.]...." | sort -u | awk -v vol="${VOLUME}" -v file="$DATAFILE_NAME" '{print vol""$1"/"file}') )
+            printf "$VALUE\t$EXTRACTED_NSPACE\t$(wc -l ${LIST_BETA_WITH_CHAINS[@]} | awk 'END{print $1}')\t${#LIST_BETA_WITH_CHAINS[@]}\n" >> $TEMPORARY_DATA_FILE
             (( NUMBER_OF_VOLUMES["$VALUE"]++ ))
         done
         printf "\n\n" >> $TEMPORARY_DATA_FILE
