@@ -391,10 +391,10 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
             local FOLDER=$(CompleteFolderName $1)
         fi
         if [ $(grep "[sS]taggered" <<< "$PWD" | wc -l) -gt 0 ]; then
-            local FILE="$(ls $FOLDER/rhmc_ref.*.out | sort -V | tail -n1)"
+            local FILE="$(ls -rt1 $FOLDER/rhmc_ref.*.out | tail -n1)"
             FILE=${FILE/$FOLDER\//}
         elif [ $(grep "[wW]ilson" <<< "$PWD" | wc -l) -gt 0 ]; then
-            local FILE="$(ls $FOLDER/hmc_ref.*.out | sort -V | tail -n1)"
+            local FILE="$(ls -rt1 $FOLDER/hmc_ref.*.out | tail -n1)"
             FILE=${FILE/$FOLDER\//}
         else
             echo "Neither in Staggered nor in Wilson path!"
