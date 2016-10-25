@@ -125,6 +125,8 @@ if [ $LOAD_FIT_ALIASES = "TRUE" ]; then
     alias SetUpForBruteForceFit='bash ${HOME}/Script/FittingUtilities/SetUpForBruteForceFit.sh'
     alias SelectBestFits='bash ${HOME}/Script/FittingUtilities/FindClosestValue.sh'
     alias ChooseReweightingFolders='bash ${HOME}/Script/FittingUtilities/ChooseReweightingFoldersAndFindResolution.sh'
+    #TODO: Put this alias somewhere else, it is not about fit
+    alias QuantitativeCollapse='bash ${HOME}/Script/CollapsePlot/MathematicaQuantitativeCollapse/PerformAnalyticCollapse.sh'
     
     function PlotBestFits(){
         gnuplot -e "filenames='$*'" ${HOME}/Script/PlottingUtilities/PlotBestFits.plt
@@ -167,13 +169,30 @@ if [ $LOAD_PYTHON_ALIASES = "TRUE" ]; then
         echo "time PyReweighting --deactivatePlaq --deactivatePoly --activatePbp --deactivateMean --deactivateSusc -za --doNotUseSimulatedPointsAsNewPoints -r $1 $2 -p $NUM_POINTS"
     }
     function GetReweightingPolyImWithZeroMeanCommand(){
-        [ $# -eq 3 ] && local NUM_POINTS=$(bc <<< "($2-$1)/$3+1")
-        [ $(ls -1 | grep -c "^Nf") -ne 0 ] && printf "\n\e[91m Names matching \"^Nf\" detected in present folder, check alias!" && return
-        echo -n '[ $(ls mui*_nt?_ns??_reweighting 2>/dev/null | wc -l) -eq 0 ]'
-        echo -n " && time PyReweighting --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_sq --deactivateMean --deactivateSusc --deactivateSkew -za --doNotUseSimulatedPointsAsNewPoints -r $1 $2 -p $NUM_POINTS"
-        echo -n ' && [ $(ls -d -1 mui*_nt?_ns??_reweighting/ | wc -l) -eq 1 ]'
-        echo -n ' && FOLDER="$(ls -d -1 mui*_nt?_ns??_reweighting/)"'
-        echo -n ' && mv ${FOLDER%?} ${FOLDER%?}_dBeta'$3
+        if [ $# -eq 1 ]; then
+            local BETA_MIN=$(head -n1 betas | cut -f1)
+            local BETA_MAX=$(tail -n1 betas | cut -f1)
+            local RESOLUTION=$1
+        elif [ $# -eq 3 ]; then
+            local BETA_MIN=$1
+            local BETA_MAX=$2
+            local RESOLUTION=$3
+        else
+            printf "\n\e[91m One or three arguments needed to \"GetReweightingPolyImWithZeroMeanCommand\" alias!\e[0m\n\n"
+            return
+        fi
+        if [[ ! $BETA_MIN =~ [0-9][.][0-9]+ ]] || [[ ! $BETA_MAX =~ [0-9][.][0-9]+ ]]; then 
+            printf "\n\e[91m Wrong format of beta min and beta max!\e[0m\n\n"
+            return            
+        fi
+        local NUM_POINTS=$(bc <<< "($BETA_MAX-$BETA_MIN)/$RESOLUTION+1")
+        #[ $(ls -1 | grep -c "^Nf") -ne 0 ] && printf "\n\e[91m Names matching \"^Nf\" detected in present folder, check alias!\e[0m\n\n" && return
+        echo -n '[ $(ls Nf?_mui*_nt?_ns??_reweighting 2>/dev/null | wc -l) -eq 0 ]'
+        echo -n ' && time PyReweighting --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_sq --deactivateMean --deactivateSusc --deactivateSkew --printEstimatorsToFile -za'
+        echo -n " --doNotUseSimulatedPointsAsNewPoints -r $BETA_MIN $BETA_MAX -p $NUM_POINTS"
+        echo -n ' && [ $(ls -d -1 Nf?_mui*_nt?_ns??_reweighting/ | wc -l) -eq 1 ]'
+        echo -n ' && FOLDER="$(ls -d -1 Nf?_mui*_nt?_ns??_reweighting/)"'
+        echo -n ' && mv ${FOLDER%?} ${FOLDER%?}_dBeta'$RESOLUTION
         echo    ' && unset -v '"'FOLDER'"
     }
     function GetReweightingPolySqSkewCommand(){
