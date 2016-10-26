@@ -185,6 +185,9 @@ do
         LIST_STATE_JOBS_USER="$(squeue --noheader -u ${USERS_LIST[$INDEX]} -p $PARTITION -o '%T' | uniq -c)"
         COMMAND_FOR_ASSOCIATIVE_ARRAY="USER_USAGE=( $(awk '{printf "[%s]=%d ", $2, $1}END{printf "\n"}' <<< "$LIST_STATE_JOBS_USER") )"
         eval $COMMAND_FOR_ASSOCIATIVE_ARRAY
+        KeyInArray 'RUNNING' USER_USAGE || USER_USAGE['RUNNING']=0
+        KeyInArray 'PENDING' USER_USAGE || USER_USAGE['PENDING']=0
+        KeyInArray 'COMPLETING' USER_USAGE || USER_USAGE['COMPLETING']=0
         OTHER_BY_USER=$(( ( $(awk '{sum+=$1}END{print sum}' <<< "$LIST_STATE_JOBS_USER") - ${USER_USAGE['RUNNING']} - ${USER_USAGE['PENDING']}) ))
         (( RUNNING_BY_USERS += ${USER_USAGE['RUNNING']} ))
         (( PENDING_BY_USERS += ${USER_USAGE['PENDING']} ))
