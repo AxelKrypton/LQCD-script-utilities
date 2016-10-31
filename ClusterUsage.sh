@@ -183,22 +183,26 @@ do
     for INDEX in ${!USERS_LIST[@]}; do
         declare -A USER_USAGE
         LIST_STATE_JOBS_USER="$(squeue --noheader -u ${USERS_LIST[$INDEX]} -p $PARTITION -o '%T' | uniq -c)"
-        COMMAND_FOR_ASSOCIATIVE_ARRAY="USER_USAGE=( $(awk '{printf "[%s]=%d ", $2, $1}END{printf "\n"}' <<< "$LIST_STATE_JOBS_USER") )"
-        eval $COMMAND_FOR_ASSOCIATIVE_ARRAY
-        KeyInArray 'RUNNING' USER_USAGE || USER_USAGE['RUNNING']=0
-        KeyInArray 'PENDING' USER_USAGE || USER_USAGE['PENDING']=0
-        KeyInArray 'COMPLETING' USER_USAGE || USER_USAGE['COMPLETING']=0
-        OTHER_BY_USER=$(( ( $(awk '{sum+=$1}END{print sum}' <<< "$LIST_STATE_JOBS_USER") - ${USER_USAGE['RUNNING']} - ${USER_USAGE['PENDING']}) ))
-        (( RUNNING_BY_USERS += ${USER_USAGE['RUNNING']} ))
-        (( PENDING_BY_USERS += ${USER_USAGE['PENDING']} ))
-        (( OTHER_BY_USERS +=  $OTHER_BY_USER ))
+        if [ "$LIST_STATE_JOBS_USER" != "" ]; then
+            COMMAND_FOR_ASSOCIATIVE_ARRAY="USER_USAGE=( $(awk '{printf "[%s]=%d ", $2, $1}END{printf "\n"}' <<< "$LIST_STATE_JOBS_USER") )"
+            eval $COMMAND_FOR_ASSOCIATIVE_ARRAY
+            KeyInArray 'RUNNING' USER_USAGE || USER_USAGE['RUNNING']=0
+            KeyInArray 'PENDING' USER_USAGE || USER_USAGE['PENDING']=0
+            KeyInArray 'COMPLETING' USER_USAGE || USER_USAGE['COMPLETING']=0
+            OTHER_BY_USER=$(( ( $(awk '{sum+=$1}END{print sum}' <<< "$LIST_STATE_JOBS_USER") - ${USER_USAGE['RUNNING']} - ${USER_USAGE['PENDING']}) ))
+            (( RUNNING_BY_USERS += ${USER_USAGE['RUNNING']} ))
+            (( PENDING_BY_USERS += ${USER_USAGE['PENDING']} ))
+            (( OTHER_BY_USERS +=  $OTHER_BY_USER ))
+        else
+            USER_USAGE['RUNNING']=0; USER_USAGE['PENDING']=0; USER_USAGE['COMPLETING']=0
+        fi
         STRING_DESCRIPTOR_FOR_USERS="${STRING_DESCRIPTOR_FOR_USERS}%-13s"
         USERS_USAGE+=( "${USER_USAGE['RUNNING']} ${USER_USAGE['PENDING']} $OTHER_BY_USER" )
         unset -v 'USER_USAGE'
     done
     #Calculate information about users not in the list
-    RUNNING_IN_TOTAL=$(squeue -h -p lcsc -t RUNNING -o %D | awk '{sum+=$1}END{print sum}')
-    PENDING_IN_TOTAL=$(squeue -h -p lcsc -t PENDING -o %D | awk '{sum+=$1}END{print sum}')
+    RUNNING_IN_TOTAL=$(squeue -h -p $PARTITION -t RUNNING -o %D | awk '{sum+=$1}END{print sum}')
+    PENDING_IN_TOTAL=$(squeue -h -p $PARTITION -t PENDING -o %D | awk '{sum+=$1}END{print sum}')
     RUNNING_BY_OTHERS=$(( $RUNNING_IN_TOTAL - $RUNNING_BY_USERS))
     PENDING_BY_OTHERS=$(( $PENDING_IN_TOTAL - $PENDING_BY_USERS))
     OTHER_BY_OTHERS=$(( $ALLOCATED_NODES - $RUNNING_IN_TOTAL - $OTHER_BY_USERS ))
