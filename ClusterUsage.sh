@@ -51,7 +51,7 @@ function PrintHeader(){
 }
 
 function PrintClusterUsageInformation(){
-    printf "$TABLE_PRINTF_FORMAT" $DATE $PARTITION $TOTAL_NUMBER_OF_NODES ${USERS_USAGE[@]} $OTHERS_USAGE $IDLE_NODES $NOT_AVAILABLE "$EXCLUDED_BUT_IDLING $EXCLUDED_BUT_IDLING_LIST $EXCLUDED_BUT_ALLOCATED $EXCLUDED_BUT_ALLOCATED_LIST" >> $1
+    printf "$TABLE_PRINTF_FORMAT" $DATE $PARTITION $TOTAL_NUMBER_OF_NODES "${USERS_USAGE[@]}" $OTHERS_USAGE $IDLE_NODES $NOT_AVAILABLE "$EXCLUDED_BUT_IDLING $EXCLUDED_BUT_IDLING_LIST $EXCLUDED_BUT_ALLOCATED $EXCLUDED_BUT_ALLOCATED_LIST" >> $1
 }
 
 #--------------------------------------------------------------------------------#
@@ -157,7 +157,6 @@ while [ "$1" != "" ]; do
 done
 
 RSYNC_PATH="${REMOTE_NAME}:${REMOTE_PATH}"
-declare -a USERS_USAGE
 
 while :
 do
@@ -169,8 +168,11 @@ do
         sleep $SLEEP_SECONDS
     fi
     
-    USED_BY_USERS=0
+    RUNNING_BY_USERS=0
+    PENDING_BY_USERS=0
+    OTHER_BY_USERS=0
     STRING_DESCRIPTOR_FOR_USERS=''
+    USERS_USAGE=() #Array with entries that are triplet of numbers corresponding to running/pending/other of first user, same for second, etc. (all in a row)
 
     DATE="$(date +'%d.%m.%Y_%H:%M')"
     ALLOCATED_IDLE_OTHER_TOTAL_NODES=( $(sinfo --noheader -p $PARTITION -o '%F' | sed 's@/@ @g') ) # --format '%F'    Number of nodes by state in the format "allocated/idle/other/total"
@@ -179,12 +181,34 @@ do
     NOT_AVAILABLE=${ALLOCATED_IDLE_OTHER_TOTAL_NODES[2]}
     TOTAL_NUMBER_OF_NODES=${ALLOCATED_IDLE_OTHER_TOTAL_NODES[3]}
     for INDEX in ${!USERS_LIST[@]}; do
-        USERS_USAGE[$INDEX]=$(squeue --noheader -u ${USERS_LIST[$INDEX]} -p $PARTITION -o '%T' | grep -c 'RUNNING')
-        (( USED_BY_USERS += ${USERS_USAGE[$INDEX]} ))
+        declare -A USER_USAGE
+        LIST_STATE_JOBS_USER="$(squeue --noheader -u ${USERS_LIST[$INDEX]} -p $PARTITION -o '%T' | uniq -c)"
+        if [ "$LIST_STATE_JOBS_USER" != "" ]; then
+            COMMAND_FOR_ASSOCIATIVE_ARRAY="USER_USAGE=( $(awk '{printf "[%s]=%d ", $2, $1}END{printf "\n"}' <<< "$LIST_STATE_JOBS_USER") )"
+            eval $COMMAND_FOR_ASSOCIATIVE_ARRAY
+            KeyInArray 'RUNNING' USER_USAGE || USER_USAGE['RUNNING']=0
+            KeyInArray 'PENDING' USER_USAGE || USER_USAGE['PENDING']=0
+            KeyInArray 'COMPLETING' USER_USAGE || USER_USAGE['COMPLETING']=0
+            OTHER_BY_USER=$(( ( $(awk '{sum+=$1}END{print sum}' <<< "$LIST_STATE_JOBS_USER") - ${USER_USAGE['RUNNING']} - ${USER_USAGE['PENDING']}) ))
+            (( RUNNING_BY_USERS += ${USER_USAGE['RUNNING']} ))
+            (( PENDING_BY_USERS += ${USER_USAGE['PENDING']} ))
+            (( OTHER_BY_USERS +=  $OTHER_BY_USER ))
+        else
+            USER_USAGE['RUNNING']=0; USER_USAGE['PENDING']=0; USER_USAGE['COMPLETING']=0
+        fi
         STRING_DESCRIPTOR_FOR_USERS="${STRING_DESCRIPTOR_FOR_USERS}%-13s"
+        USERS_USAGE+=( "${USER_USAGE['RUNNING']} ${USER_USAGE['PENDING']} $OTHER_BY_USER" )
+        unset -v 'USER_USAGE'
     done
+    #Calculate information about users not in the list
+    RUNNING_IN_TOTAL=$(squeue -h -p $PARTITION -t RUNNING -o %D | awk '{sum+=$1}END{print sum}')
+    PENDING_IN_TOTAL=$(squeue -h -p $PARTITION -t PENDING -o %D | awk '{sum+=$1}END{print sum}')
+    RUNNING_BY_OTHERS=$(( $RUNNING_IN_TOTAL - $RUNNING_BY_USERS))
+    PENDING_BY_OTHERS=$(( $PENDING_IN_TOTAL - $PENDING_BY_USERS))
+    OTHER_BY_OTHERS=$(( $ALLOCATED_NODES - $RUNNING_IN_TOTAL - $OTHER_BY_USERS ))
+    USERS_USAGE+=( "$RUNNING_BY_OTHERS $PENDING_BY_OTHERS $OTHER_BY_OTHERS" )
+    
     #Get excluded nodes from remote file and then parse information into list of numbers
-    OTHERS_USAGE=$(( $ALLOCATED_NODES - $USED_BY_USERS ))
     EXCLUDED_NODES=$(ssh $REMOTE_NAME 'bash -s' << EOF
 grep -oE "\-\-exclude=.*\[.*\]" ${REMOTE_PATH}/${EXCLUDED_NODES_FILENAME} 2>/dev/null
 EOF

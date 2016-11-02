@@ -408,6 +408,8 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         else
             local FOLDER=$(CompleteFolderName $1)
         fi
+        [ ! -d $FOLDER ] && printf "\n\e[0;91m Folder \"$FOLDER\" not found!\n\n\e[0m" && return -1
+        [ $(find $FOLDER -name "?hmc_ref.*.out" | wc -l) -eq 0 ] && printf "\n\e[0;91m No standard output file found in \"$FOLDER\"!\n\n\e[0m" && return -1
         if [ $(grep "[sS]taggered" <<< "$PWD" | wc -l) -gt 0 ]; then
             local FILE="$(ls -rt1 $FOLDER/rhmc_ref.*.out | tail -n1)"
             FILE=${FILE/$FOLDER\//}
@@ -416,7 +418,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
             FILE=${FILE/$FOLDER\//}
         else
             echo "Neither in Staggered nor in Wilson path!"
-        fi
+        fi        
         echo "$FOLDER/$FILE"
     }
 
@@ -462,9 +464,11 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
 
     #Function to estimate time per trajectory giving beta as input
     function TimeTr(){
-        local PATH_TO_BE_USED=$(FindLastStandardOutput $1)
+        local PATH_TO_BE_USED; PATH_TO_BE_USED=$(FindLastStandardOutput $1) #To be able to check error code, local sweeps it away!
+        [ $? -ne 0 ] && printf "$PATH_TO_BE_USED" && return -1
         printf "\e[38;5;129m\n Calling:\e[38;5;199m ${HOME}/Script/TimeTrajectoryCL2QCD.sh $PATH_TO_BE_USED\n\e[0m"
         local OUTPUT_TIME_TR="$(${HOME}/Script/TimeTrajectoryCL2QCD.sh $PATH_TO_BE_USED)"
+        [ $? -ne 0 ] && printf "$OUTPUT_TIME_TR" && return -1
         printf "$OUTPUT_TIME_TR \n\n"
         local TIME_TR="$(grep -oE "[[:digit:]]+[.][[:digit:]]*" <<< "$OUTPUT_TIME_TR")"
         for INDEX in 1000 5000 10000 25000 50000; do
