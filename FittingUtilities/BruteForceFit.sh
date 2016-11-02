@@ -223,7 +223,7 @@ CheckWilsonStaggeredVariables
 if [ $WILSON = 'TRUE' ]; then
     DATA_PATH_PREFIX='/home/phil-configs/wilson_nf2_muipi4/ImagMu'
 elif [ $STAGGERED = 'TRUE' ]; then
-    DATA_PATH_PREFIX='/home/phil-configs/Staggered/Nf2'
+    DATA_PATH_PREFIX='/home/phil-configs/Staggered'
 fi
 #Declare constant variables and check on file existence
 MUTUALLYEXCLUSIVEOPTS=( "--produceOnlyBetaRanges" "--produceOnlyFilteredBetaRanges" "--useRangesToBeFittedFile")
@@ -284,11 +284,11 @@ if ! $(for VOL in "${NSPACE[@]}"; do echo "$VOL"; done | sort -C); then
 fi
 #Set global data paths
 for VOL in ${NSPACE[@]}; do
-    PARAMS_STRING="$(GetParametersString $CHEMPOT_PREFIX $MASS_PREFIX $NTIME_PREFIX)_${NSPACE_PREFIX}${VOL}"
+    PARAMS_STRING="$(GetParametersString $NFLAVOUR_PREFIX $CHEMPOT_PREFIX $MASS_PREFIX $NTIME_PREFIX)_${NSPACE_PREFIX}${VOL}"
     if [ "$USE_RAW_DATA" = "TRUE" ]; then
-        DATA_GLOBALPATH[$VOL]="${DATA_PATH_PREFIX}/${CHEMPOT_PREFIX}${CHEMPOT}/${MASS_PREFIX}${MASS}/${NTIME_PREFIX}${NTIME}/${NSPACE_PREFIX}${VOL}/${PARAMS_STRING}_analysis/${PARAMS_STRING}_observables_${OBSERVABLE_NAME}.dat"
+        DATA_GLOBALPATH[$VOL]="${DATA_PATH_PREFIX}$(GetParametersPath $NFLAVOUR_PREFIX $CHEMPOT_PREFIX $MASS_PREFIX $NTIME_PREFIX)/${NSPACE_PREFIX}${VOL}/${PARAMS_STRING}_analysis/${PARAMS_STRING}_observables_${OBSERVABLE_NAME}.dat"
     else
-        DATA_GLOBALPATH[$VOL]="${DATA_PATH_PREFIX}/${CHEMPOT_PREFIX}${CHEMPOT}/${MASS_PREFIX}${MASS}/${NTIME_PREFIX}${NTIME}/${NSPACE_PREFIX}${VOL}/${PARAMS_STRING}_reweighting/${PARAMS_STRING}_${OBSERVABLE_NAME}_reweighted.dat"
+        DATA_GLOBALPATH[$VOL]="${DATA_PATH_PREFIX}$(GetParametersPath $NFLAVOUR_PREFIX $CHEMPOT_PREFIX $MASS_PREFIX $NTIME_PREFIX)/${NSPACE_PREFIX}${VOL}/${PARAMS_STRING}_reweighting/${PARAMS_STRING}_${OBSERVABLE_NAME}_reweighted.dat"
     fi
     if [ ! -f ${DATA_GLOBALPATH[$VOL]} ]; then
         printf "\n\e[0;31m File \"${DATA_GLOBALPATH[$VOL]}\" not found! Aborting...\n\n\e[0m"

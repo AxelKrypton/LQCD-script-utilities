@@ -181,9 +181,9 @@ function CreateGnuplotTemplateFitScriptWithoutPlotting(){
     echo '#Datafiles with all data' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     for INDEX in ${!NSPACE[@]}; do
         if [ $WILSON = 'TRUE' ]; then
-	        echo 'fn'$INDEX' = "'$DATA_PATH_PREFIX'/muiPiT/k".kappa."/nt".nt."/ns".ns'$INDEX'."/muiPiT_k".kappa."_nt".nt."_ns".ns'$INDEX'."_reweighting/muiPiT_k".kappa."_nt".nt."_ns".ns'$INDEX'."_".obs."_reweighted.dat"' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
+	        echo 'fn'$INDEX' = "'$DATA_PATH_PREFIX'/Nf2/muiPiT/k".kappa."/nt".nt."/ns".ns'$INDEX'."/Nf2_muiPiT_k".kappa."_nt".nt."_ns".ns'$INDEX'."_reweighting/Nf2_muiPiT_k".kappa."_nt".nt."_ns".ns'$INDEX'."_".obs."_reweighted.dat"' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
         elif [ $STAGGERED = 'TRUE' ]; then
-	        echo 'fn'$INDEX' = "'$DATA_PATH_PREFIX'/muiPiT/mass".mass."/nt".nt."/ns".ns'$INDEX'."/muiPiT_mass".mass."_nt".nt."_ns".ns'$INDEX'."_reweighting/muiPiT_mass".mass."_nt".nt."_ns".ns'$INDEX'."_".obs."_reweighted.dat"' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
+	        echo 'fn'$INDEX' = "'$DATA_PATH_PREFIX'/Nf2/muiPiT/mass".mass."/nt".nt."/ns".ns'$INDEX'."/Nf2_muiPiT_mass".mass."_nt".nt."_ns".ns'$INDEX'."_reweighting/Nf2_muiPiT_mass".mass."_nt".nt."_ns".ns'$INDEX'."_".obs."_reweighted.dat"' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
         fi
     done
     echo '#Datafiles with only the data to be fitted: two empty lines are needed to separate the datasets...' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
