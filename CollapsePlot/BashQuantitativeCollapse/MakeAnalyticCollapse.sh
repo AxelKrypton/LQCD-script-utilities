@@ -3,11 +3,11 @@
 #-----------------------------------------------------------------------------------------------------------------#
 # Load auxiliary bash files that will be used.
 source $HOME/Script/UtilityFunctions.sh || exit -2
-source $HOME/Script/CollapsePlot/ParseCommandLineOptions.sh || exit -2
-source $HOME/Script/CollapsePlot/RescaleData.sh || exit -2
-source $HOME/Script/CollapsePlot/PrepareIntegrationData.sh || exit -2
-source $HOME/Script/CollapsePlot/NumericIntegration.sh || exit -2
-source $HOME/Script/CollapsePlot/AuxiliaryPlots.sh || exit -2
+source $HOME/Script/CollapsePlot/BashQuantitativeCollapse/ParseCommandLineOptions.sh || exit -2
+source $HOME/Script/CollapsePlot/BashQuantitativeCollapse/RescaleData.sh || exit -2
+source $HOME/Script/CollapsePlot/BashQuantitativeCollapse/PrepareIntegrationData.sh || exit -2
+source $HOME/Script/CollapsePlot/BashQuantitativeCollapse/NumericIntegration.sh || exit -2
+source $HOME/Script/CollapsePlot/BashQuantitativeCollapse/AuxiliaryPlots.sh || exit -2
 #-----------------------------------------------------------------------------------------------------------------#
 
 function DeleteAuxiliaryFiles(){
