@@ -23,30 +23,31 @@ function SumGivenIntegers(){
 function MakeGnuplotHistogram() {
     rm -f $GNUPLOT_TEMP_SCRIPT
     #Switch between mass and beta overview setting the same quantities to the correct value
-    declare -A ARRAY_FOR_HISTOGRAM_POSITIONING
+    ARRAY_FOR_HISTOGRAM_POSITIONING=()
     if [ $MASS_OVERVIEW = 'TRUE' ]; then
         if [ $MASS_PREFIX = 'mass' ]; then
             local XAXIS_BOTTOM_LABEL='m'
         elif [ $MASS_PREFIX = 'k' ]; then
             local XAXIS_BOTTOM_LABEL='\\kappa'
         fi
-        for INDEX in "${!NUMBER_OF_VOLUMES[@]}"; do
-            ARRAY_FOR_HISTOGRAM_POSITIONING["$INDEX"]=${NUMBER_OF_VOLUMES["$INDEX"]}
+        #The following is to order data that in an associative array are in general not!
+        for INDEX in $(printf "%s\n" ${!NUMBER_OF_VOLUMES[@]} | sort -n | xargs -n1 printf "%s "); do
+            ARRAY_FOR_HISTOGRAM_POSITIONING+=( ${NUMBER_OF_VOLUMES["$INDEX"]} )
         done
         local ARRAY_XAXIS_BOTTOM=( "${MASSES[@]}" )
         #Add 0. in front of masses values for labels in plot
         for INDEX in ${!ARRAY_XAXIS_BOTTOM[@]}; do
-            #ARRAY_FOR_HISTOGRAM_POSITIONING[$INDEX]="0.${ARRAY_FOR_HISTOGRAM_POSITIONING[$INDEX]}"
             ARRAY_XAXIS_BOTTOM[$INDEX]="0.${ARRAY_XAXIS_BOTTOM[$INDEX]}"
         done
-        local XAXIS_UPPERLEFT_LABEL="N_s"
+        local XAXIS_UPPERLEFT_LABEL='N_{\\sigma}'
         local ROTATE='FALSE'
         local XAXIS_UPPERLEFT_LABEL_POSITION_UP="0.03"
         local XAXIS_UPPERLEFT_LABEL_POSITION_DOWN="0.039"
         local FACTOR_TO_DIVIDE_FOR_COLOR=$NTIME
     elif [ $BETA_OVERVIEW = 'TRUE' ]; then
         local XAXIS_BOTTOM_LABEL='\\beta'
-        for INDEX in "${!NUMBER_OF_CHAINS[@]}"; do
+        #The following is to order data that in an associative array are in general not!
+        for INDEX in $(printf "%s\n" ${!NUMBER_OF_CHAINS[@]} | sort -n | xargs -n1 printf "%s "); do
             ARRAY_FOR_HISTOGRAM_POSITIONING["$INDEX"]=${NUMBER_OF_CHAINS["$INDEX"]}
         done
         local ARRAY_XAXIS_BOTTOM=( "${BETAS[@]}" )
@@ -60,15 +61,11 @@ function MakeGnuplotHistogram() {
     #Before preparing the plot calculate some information
     local HISTOGRAM_SHIFTS=([0]=0)
     local HISTOGRAM_XLABEL=()
-    for((INDEX=1; INDEX<=${#ARRAY_FOR_HISTOGRAM_POSITIONING[@]}; INDEX++)); do
+    for((INDEX=1; INDEX<${#ARRAY_FOR_HISTOGRAM_POSITIONING[@]}; INDEX++)); do
         HISTOGRAM_SHIFTS[$INDEX]=$(( $(SumGivenIntegers ${ARRAY_FOR_HISTOGRAM_POSITIONING[@]:0:$INDEX}) + $INDEX ))
     done
-    unset HISTOGRAM_SHIFTS[${#HISTOGRAM_SHIFTS[@]}-1]
     for INDEX in ${!ARRAY_XAXIS_BOTTOM[@]}; do
-        # Here I do a loop over integers because I want to initialize HISTOGRAM_XLABEL but then I have to deal with the associative array 
-        # ARRAY_FOR_HISTOGRAM_POSITIONING whose indeces have no initial 0. while ARRAY_XAXIS_BOTTOM now contains the mass as decimal number
-        # Hence, I use the ${var##0.} expansion that strips the 0. for the masses and leaves the seeds as they are (because the seeds do not contain 0.)
-        HISTOGRAM_XLABEL[$INDEX]="$( bc -l <<< "${HISTOGRAM_SHIFTS[$INDEX]} + (${ARRAY_FOR_HISTOGRAM_POSITIONING[${ARRAY_XAXIS_BOTTOM[$INDEX]##0.}]}-1)/2" )"
+        HISTOGRAM_XLABEL[$INDEX]="$( bc -l <<< "${HISTOGRAM_SHIFTS[$INDEX]} + (${ARRAY_FOR_HISTOGRAM_POSITIONING[$INDEX]}-1)/2" )"
     done
     local MAXIMUM_YVALUE=$(awk 'BEGIN{max=0}$3>max{max=$3}END{print max}' $TEMPORARY_DATA_FILE)
 

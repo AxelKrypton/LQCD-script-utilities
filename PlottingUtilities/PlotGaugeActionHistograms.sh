@@ -12,13 +12,15 @@ add_plot() {
     fi
 }
 
-#Source PathManagement in order to have prefixes
+#Source PathManagement in order to have functionalities
 source ${HOME}/Script/PathManagement.sh || exit -2
 
+ReadParametersFromPath $(pwd) #To set PARAMETERS_STRING
+
 BETA_ARRAY=()
-DIR_WITH_INPUT_FILES=$(ls | grep "^mui.\{1,3\}_${MASS_PREFIX}[[:digit:]]\{4\}_nt[[:digit:]]\{1,2\}_ns[[:digit:]]\{1,2\}_reweighting$")
+DIR_WITH_INPUT_FILES="${PARAMETERS_STRING}_reweighting"
 if [ ! -d "$DIR_WITH_INPUT_FILES" ]; then
-    echo "Couldn't match any directory with mui.\{1,3\}_k[[:digit:]]\{4\}_nt[[:digit:]]\{1,2\}_ns[[:digit:]]\{1,2\}_reweighting...exiting"
+    echo "Directory \"${DIR_WITH_INPUT_FILES}\" not found! ...exiting"
     exit -1
 fi
 

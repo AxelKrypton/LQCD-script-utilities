@@ -16,6 +16,13 @@ MakeScanInBetaCAndNu::usage =
 			[allDataInBeta, bCmin, bCmax, bCres, nuMin, nuMax, nuRes, factorToBeAppliedToXRange]
 		"
 
+FindMinimumVarianceAndPrintCollapseParametersFromDiscreteScan::usage = 
+		"
+		FindMinimumVarianceAndPrintCollapseParametersFromDiscreteScan[collapseQualityScanOutput] is a 
+		function to get the best collapse information. Its input is the output of the function
+		MakeScanInBetaCAndNu.
+		"
+
 MakePlotOfScanSeparatingBlocksOfBetas::usage = 
 		"
 		MakePlotOfScanSeparatingBlocksOfBetas[collapseQualityScanOutput] is a function to get a graphic

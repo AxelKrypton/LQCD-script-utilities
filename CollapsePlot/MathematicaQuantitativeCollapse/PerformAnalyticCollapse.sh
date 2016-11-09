@@ -5,7 +5,7 @@
 #====================================================================================================
 #Global variables
 FLOAT_REGEX='[+-]?[0-9]+[.]?[0-9]*'
-MATHEMATICA_SCRIPT_GLOBALPATH="${HOME}/Script/CollapsePlot/BashMathematica/PerformAnalyticCollapse.wl"
+MATHEMATICA_SCRIPT_GLOBALPATH="${HOME}/Script/CollapsePlot/MathematicaQuantitativeCollapse/PerformAnalyticCollapse.wl"
 PRODUCE_DATA_FILES="FALSE"
 RUN_ANALYTIC_COLLAPSE="TRUE"
 BC_MIN=""
@@ -199,6 +199,10 @@ for FILE in ${FILENAMES[@]}; do
         printf "\n\e[91m File \"$FILE\" not found! Aborting...\e[0m\n\n"
         exit -1
     fi
+    if [ ! -f ${FILE/.dat/_estimators.dat} ]; then
+        printf "\n\e[91m File \"${FILE/.dat/_estimators.dat}\" not found! Aborting...\e[0m\n\n"
+        exit -1
+    fi
 done
 
 if [ $RUN_ANALYTIC_COLLAPSE = "TRUE" ]; then
@@ -235,7 +239,7 @@ if [ $PRODUCE_DATA_FILES = "TRUE" ]; then
         if [ -f $BASEFILENAME ]; then
             printf "\n\e[0;33m \e[1m\e[4mWARNING\e[24m:\e[0;33m File \"$BASEFILENAME\" existing, creating a backup!\e[0m\n\n"
             mv $BASEFILENAME ${BASEFILENAME}_$(date "+%d-%m-%Y_%H%M")
-            mv ${BASEFILENAME/.dat/_estimators.dat} ${BASEFILENAME/.dat/_estimators.dat}_$(date "+%d-%m-%Y_%H%M")
+            [ -f ${BASEFILENAME/.dat/_estimators.dat} ] && mv ${BASEFILENAME/.dat/_estimators.dat} ${BASEFILENAME/.dat/_estimators.dat}_$(date "+%d-%m-%Y_%H%M")
         fi
         awk 'NR>1 {printf "%s %s\n", $1, $8}' $FILE > $BASEFILENAME
         awk 'NR>1 {printf "%s %s %s\n", $1, $2, $9}' ${FILE/.dat/_estimators.dat} > ${BASEFILENAME/.dat/_estimators.dat}

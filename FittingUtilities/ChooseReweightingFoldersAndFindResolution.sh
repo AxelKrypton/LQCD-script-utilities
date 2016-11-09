@@ -45,10 +45,10 @@ function GetNsFolderGlobalpath(){
     echo "${DATA_PATH_PREFIX}$(GetParametersPath $NFLAVOUR_PREFIX $CHEMPOT_PREFIX $MASS_PREFIX $NTIME_PREFIX)/${NSPACE_PREFIX}${1}"
 }
 function GetReweightingFolderGlobalpath(){
-    echo "$(GetNsFolderGlobalpath $1)/$(GetParametersString $CHEMPOT_PREFIX $MASS_PREFIX $NTIME_PREFIX)_${NSPACE_PREFIX}${1}_reweighting"
+    echo "$(GetNsFolderGlobalpath $1)/$(GetParametersString $NFLAVOUR_PREFIX $CHEMPOT_PREFIX $MASS_PREFIX $NTIME_PREFIX)_${NSPACE_PREFIX}${1}_reweighting"
 }
 function GetDatafileGlobalpath(){
-    echo "$(GetReweightingFolderGlobalpath $1)/$(GetParametersString $CHEMPOT_PREFIX $MASS_PREFIX $NTIME_PREFIX)_${NSPACE_PREFIX}${1}_${OBSERVABLE}_reweighted.dat"
+    echo "$(GetReweightingFolderGlobalpath $1)/$(GetParametersString $NFLAVOUR_PREFIX $CHEMPOT_PREFIX $MASS_PREFIX $NTIME_PREFIX)_${NSPACE_PREFIX}${1}_${OBSERVABLE}_reweighted.dat"
 }
 
 if ElementInArray "--help" $@ || ElementInArray "-h" $@; then

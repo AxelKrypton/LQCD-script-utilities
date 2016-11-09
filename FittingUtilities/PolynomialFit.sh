@@ -87,14 +87,14 @@ while [ "$1" != "" ]; do
             shift
             ;;
         -e | --extrapolateTo )
-            while [[ $2 =~ ^[+-]?[[:digit:]]+[.]?[[:digit:]]+$ ]]; do
+            while [[ $2 =~ ^[+-]?[[:digit:]]+[.]?[[:digit:]]*$ ]]; do
                 EXTRAPOLATE_TO+=( $2 )
                 shift
             done
             shift
             ;;
         --xRange )
-            while [[ $2 =~ ^[+-]?[[:digit:]]+[.]?[[:digit:]]+$ ]]; do
+            while [[ $2 =~ ^[+-]?[[:digit:]]+[.]?[[:digit:]]*$ ]]; do
                 XRANGE+=( $2 )
                 shift
             done
@@ -134,6 +134,17 @@ if [ ${#XRANGE[@]} -ne 0 ] && [ ${#XRANGE[@]} -ne 2 ]; then
 fi
 
 #==============================================================================================================
+#Find min and max of x column including extrapolation points (if xrange not given)
+if [ ${#XRANGE[@]} -eq 0 ]; then
+    X_MIN=$(awk '/^($|[#]+)/{next} {if(min==""){min='$COLUMN_X'}else{if('$COLUMN_X'<min){min='$COLUMN_X'}}}END{print min}' $DATA_FILENAME)
+    X_MAX=$(awk '/^($|[#]+)/{next} {if(max==""){max='$COLUMN_X'}else{if('$COLUMN_X'>max){max='$COLUMN_X'}}}END{print max}' $DATA_FILENAME)
+    for NEW_POINT in ${EXTRAPOLATE_TO[@]}; do
+        [ $(awk '{if($1<$2){print 0}else{print 1}}' <<< "$NEW_POINT $X_MIN") -eq 0 ] && X_MIN=$NEW_POINT
+        [ $(awk '{if($1>$2){print 0}else{print 1}}' <<< "$NEW_POINT $X_MAX") -eq 0 ] && X_MAX=$NEW_POINT
+    done
+    X_MIN=$(awk '{print $1-0.03*($2-$1)}' <<< "$X_MIN $X_MAX")
+    X_MAX=$(awk '{print $2+0.03*($2-$1)}' <<< "$X_MIN $X_MAX")
+fi
 #==============================================================================================================
 #Remove temporary file for gnuplot if existing
 rm -f $TMP_FILE_FOR_GNUPLOT_SCRIPT
@@ -168,16 +179,16 @@ for((i=1; i<=$POLYNOMIAL_DEGREE; i++)); do
         echo -n ' + a_'${i}' \\: x^'${i}    >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     fi
 done
-echo -n '$}}\n\n\n".sprintf("$a_0=$%.3f$\\:\\pm\\:$%.3f' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+echo -n '$}}\n\n\n".sprintf("$a_0=$%.6f$\\:\\pm\\:$%.6f' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 for((i=1; i<=$POLYNOMIAL_DEGREE; i++)); do
-    echo -n '$\\quad a_'${i}'=$%.3f$\\:\\pm\\:$%.3f' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+    echo -n '$\\quad a_'${i}'=$%.6f$\\:\\pm\\:$%.6f' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     if [ $(bc <<< "(${i}-1)%2==0") -eq 1 ]; then
         [ $i -ne $POLYNOMIAL_DEGREE ] && echo -n '\n\n' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     fi
 done
-echo -n '", a0, a0_err'  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+echo -n '", a0, a0_err/FIT_STDFIT'  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 for((i=1; i<=$POLYNOMIAL_DEGREE; i++)); do
-    echo -n ', a'${i}', a'${i}'_err' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+    echo -n ', a'${i}', a'${i}'_err/FIT_STDFIT' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 done
 echo ')."\n"' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 # Plot information
@@ -187,22 +198,40 @@ echo 'set key at graph 0.9, graph 0.95 spacing 1.25'    >> $TMP_FILE_FOR_GNUPLOT
 echo 'set title titlePlot'                              >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 if [ ${#XRANGE[@]} -ne 0 ]; then
     echo 'set xrange ['${XRANGE[0]}':'${XRANGE[1]}']'   >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
+else
+    echo 'set xrange ['$X_MIN':'$X_MAX']'   >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
 fi
-#Set output name
-echo 'set output  "'$OUTPUT_FILENAME'.tex"'   >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
-#Actual plot
-echo 'plot "'$DATA_FILENAME'" u '$COLUMN_X':'$COLUMN_Y':'$COLUMN_DY ' notitle, f(x) lc 3 notitle'  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
 #Extrapolate
 if [ ${#EXTRAPOLATE_TO[@]} -ne 0 ]; then
     echo 'set print "-"' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+    echo -n 'f_err(x) = sqrt((a0_err/FIT_STDFIT)**2 ' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+    for((i=1; i<=$POLYNOMIAL_DEGREE; i++)); do
+        echo -n '+ x**(2*'${i}')*(a'${i}'_err/FIT_STDFIT)**2' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+    done
+    echo ')' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     echo 'print "\nExtrapolation to new points:\n\n'$LABEL_X'\t\t'$LABEL_Y'"' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     for NEW_POINT in ${EXTRAPOLATE_TO[@]}; do
-        echo 'print sprintf("%f\t%f", '$NEW_POINT', f('$NEW_POINT'))' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+        echo 'print sprintf("%f\t%f +- %f", '$NEW_POINT', f('$NEW_POINT'), f_err('$NEW_POINT'))' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     done
     echo 'print ""' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     echo 'set print' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 fi
 unset -v 'i' 'NEW_POINT'
+#Set output name
+echo 'set output  "'$OUTPUT_FILENAME'.tex"'   >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
+#Actual plot
+if [ ${#EXTRAPOLATE_TO[@]} -ne 0 ]; then
+    for NEW_POINT in ${EXTRAPOLATE_TO[@]}; do
+        echo 'set arrow from '$NEW_POINT',graph(0,0) to '$NEW_POINT',graph(1,1) nohead lt 0' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+    done
+fi
+echo -n 'plot "'$DATA_FILENAME'" u '$COLUMN_X':'$COLUMN_Y':'$COLUMN_DY ' w e notitle, f(x) lc 3 notitle'  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
+if [ ${#EXTRAPOLATE_TO[@]} -ne 0 ]; then
+    for NEW_POINT in ${EXTRAPOLATE_TO[@]}; do
+        echo -n ', "+" using ('$NEW_POINT'):(f('$NEW_POINT')):(f_err('$NEW_POINT')) w e pt 7 lc rgb "#FF8000" notitle' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+    done
+fi
+echo '' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 
 #==============================================================================================================
 #==============================================================================================================
@@ -215,6 +244,7 @@ function RunGnuplotScriptAndProducePdf(){
 function CleanAuxiliaryFiles(){
     rm ${OUTPUT_FILENAME}{.tex,.log,.aux}
     rm fit.log
+    rm $TMP_FILE_FOR_GNUPLOT_SCRIPT
     rm -f "texput.log"
 }
 

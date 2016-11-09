@@ -40,14 +40,14 @@ if [ $WILSON = 'TRUE' ]; then
     DATA_PATH_PREFIX='/home/phil-configs/wilson_nf2_muipi4/ImagMu'
     MASS_PREFIX='k'
 elif [ $STAGGERED = 'TRUE' ]; then
-    DATA_PATH_PREFIX='/home/phil-configs/Staggered/Nf2'
+    DATA_PATH_PREFIX='/home/phil-configs/Staggered'
     MASS_PREFIX='mass'
 fi
 
 #Function to get the file global path given: mass, nt, ns, observable
 function GetDatafileGlobalpath(){
-    local PARAMS_STRING="$(GetParametersString $CHEMPOT_PREFIX $MASS_PREFIX $NTIME_PREFIX)_${NSPACE_PREFIX}${1}"
-    echo "$DATA_PATH_PREFIX/${CHEMPOT_PREFIX}${CHEMPOT}/${MASS_PREFIX}${MASS}/${NTIME_PREFIX}${NTIME}/${NSPACE_PREFIX}${1}/${PARAMS_STRING}_reweighting/${PARAMS_STRING}_${OBSERVABLE}_reweighted.dat"
+    local PARAMS_STRING="$(GetParametersString $NFLAVOUR_PREFIX $CHEMPOT_PREFIX $MASS_PREFIX $NTIME_PREFIX)_${NSPACE_PREFIX}${1}"
+    echo "$DATA_PATH_PREFIX$(GetParametersPath $NFLAVOUR_PREFIX $CHEMPOT_PREFIX $MASS_PREFIX $NTIME_PREFIX)/${NSPACE_PREFIX}${1}/${PARAMS_STRING}_reweighting/${PARAMS_STRING}_${OBSERVABLE}_reweighted.dat"
 }
 
 #Parse command line parameters
