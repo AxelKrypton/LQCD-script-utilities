@@ -468,7 +468,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         local PATH_TO_BE_USED; PATH_TO_BE_USED=$(FindLastStandardOutput $1) #To be able to check error code, local sweeps it away!
         [ $? -ne 0 ] && printf "$PATH_TO_BE_USED" && return -1
         printf "\e[38;5;129m\n Calling:\e[38;5;199m ${HOME}/Script/TimeTrajectoryCL2QCD.sh $PATH_TO_BE_USED\n\e[0m"
-        local OUTPUT_TIME_TR="$(${HOME}/Script/TimeTrajectoryCL2QCD.sh $PATH_TO_BE_USED)"
+        local OUTPUT_TIME_TR; OUTPUT_TIME_TR="$(${HOME}/Script/TimeTrajectoryCL2QCD.sh $PATH_TO_BE_USED)"
         [ $? -ne 0 ] && printf "$OUTPUT_TIME_TR" && return -1
         printf "$OUTPUT_TIME_TR \n\n"
         local TIME_TR="$(grep -oE "[[:digit:]]+[.][[:digit:]]*" <<< "$OUTPUT_TIME_TR")"
