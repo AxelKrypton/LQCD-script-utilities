@@ -184,7 +184,11 @@ do
         declare -A USER_USAGE
         LIST_STATE_JOBS_USER="$(squeue --noheader -u ${USERS_LIST[$INDEX]} -p $PARTITION -o '%T' | uniq -c)"
         COMMAND_FOR_ASSOCIATIVE_ARRAY="USER_USAGE=( $(awk '{printf "[%s]=%d ", $2, $1}END{printf "\n"}' <<< "$LIST_STATE_JOBS_USER") )"
-        eval $COMMAND_FOR_ASSOCIATIVE_ARRAY
+        if [ "$LIST_STATE_JOBS_USER" = '' ]; then
+            USER_USAGE['RUNNING']=0; USER_USAGE['PENDING']=0; USER_USAGE['COMPLETING']=0
+        else
+            eval $COMMAND_FOR_ASSOCIATIVE_ARRAY
+        fi
         KeyInArray 'RUNNING' USER_USAGE || USER_USAGE['RUNNING']=0
         KeyInArray 'PENDING' USER_USAGE || USER_USAGE['PENDING']=0
         KeyInArray 'COMPLETING' USER_USAGE || USER_USAGE['COMPLETING']=0
