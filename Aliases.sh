@@ -275,7 +275,8 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
     alias HandlerJobs='bash ${HOME}/Script/JobScriptAutomation/JobHandler.sh'
 	alias FillInMissingLines='bash ${HOME}/Script/FillInMissingLinesOutputFile.sh'
 	alias ClusterUsage='bash ${HOME}/Script/ClusterUsage.sh --doNotUpdateFiles'
-    alias ReportOnCorrelatorFiles='echo; for b in b?.????_s*Chain; do printf "%+50s: %3d correlator files\n" $b $(ls $b/conf.*corr 2>>/dev/null| wc -l); done; echo'
+    alias ReportOnCorrelatorFiles='echo; for b in b?.????_s*Chain; do printf "%+38s: %3d correlator files\n" $b $(ls $b/conf.*corr 2>>/dev/null| wc -l); done; echo'
+    alias ReportOnScaleSettingFiles='echo; for b in b?.????_s*Chain; do printf "%+38s: %3d nersc confs, %3d flow files\n" $b $(ls $b/conf.*.nersc 2>>/dev/null| wc -l) $(ls $b/flow.conf.*.nersc 2>>/dev/null| wc -l); done; echo'
     
     #Function to count own jobs according to part of string in job name
     function CountJobs(){
