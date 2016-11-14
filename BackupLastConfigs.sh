@@ -140,14 +140,6 @@ if [[ \$BETA =~ ^${REMOTE_PREFIX[$(whoami)]}${RESULTING_REGEX//\\/}$ ]]; then
 fi
 done
 EOF
-    
-    #Remove empty line
-    sed -i '/^$/d' $CONF_LIST_FILE
-    #Remove lines for which either conf or prng has not been found
-    for FILE in $(grep -v "\(conf\|prng\)" $CONF_LIST_FILE); do
-        >&2 printf "\e[0;91m   Either last conf or prng not found at \"\e[38;5;202m$FILE\e[0;91m\"!\n\e[0m"
-    done
-    grep "\(conf\|prng\)" $CONF_LIST_FILE > TemporaryFileThatShouldNotExists && mv TemporaryFileThatShouldNotExists $CONF_LIST_FILE
     printf "\e[38;5;39m obtained $(wc -l < $CONF_LIST_FILE) files in \e[38;5;48m$(SecondsToTimeString $(( $(date +%s) - $START_TIME )) )\e[38;5;39m!\n\n\e[0m"
 
     #Remove remote prefix from file lines because it will be put in rsync command in order to get
