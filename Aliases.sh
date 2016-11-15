@@ -205,7 +205,7 @@ if [ $LOAD_PYTHON_ALIASES = "TRUE" ]; then
         echo "PyFindBetaC --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivateMean --deactivateSkew"
     }
     function GetFindBetaCPolySqSkewCommand(){
-        echo "PyFindBetaC --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_withZeroMean --deactivatePoly_im_abs --deactivateMean --deactivateSusc"
+        echo "PyFindBetaC --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_withZeroMean --deactivatePoly_im_abs --deactivateMean --deactivateSusc --doNotExtractFromRawData"
     }
     function GetPlotScalingPolySqCommand(){
         echo "PyPlotScaling --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_im_withZeroMean --nsArray $@ --doNotPlotRawData --doNotMakeCombinedPlots --deactivateMean --deactivateSkew --deactivateBinder"
@@ -565,8 +565,12 @@ if [ $LOAD_ROOTHIST_ALIASES = "TRUE" ]; then
         while [ $# -gt 0 ];do
             case $1 in
                 -b) 
-                    while [[ $2 =~ ^[[:digit:]]\.[[:digit:]]{4}$ ]];do
-                        BETA_ARRAY+=( $2 )
+                    while [[ $2 =~ ^[[:digit:]]\.[[:digit:]]{4}$ ]] || [[ $2 =~ ^b[[:digit:]]\.[[:digit:]]{4}_s[[:digit:]]{4}_continueWithNewChain$ ]];do
+                        BETA_ARG=$2
+                        if [[ $2 =~ ^b[[:digit:]]\.[[:digit:]]{4}_s[[:digit:]]{4}_continueWithNewChain$ ]]; then
+                            BETA_ARG=${BETA_ARG#b}
+                        fi
+                        BETA_ARRAY+=( $BETA_ARG )
                         shift
                     done
                     ;;
@@ -595,8 +599,15 @@ if [ $LOAD_ROOTHIST_ALIASES = "TRUE" ]; then
         #Create tmpfile for Root
         local BETA_PATH_ARRAY=()
         for BETA in ${BETA_ARRAY[@]}; do
-            BETA_PATH_ARRAY+=( "$BETA	$CURRENT_PATH/b$BETA/$ROOT_INPUT_FILE" )  
+            BETA_ARG=$BETA
+            if [[ $BETA_ARG =~ ^[[:digit:]]\.[[:digit:]]{4}_s[[:digit:]]{4}_continueWithNewChain$ ]]; then
+                BETA_ARG=ss${BETA_ARG#*_s}
+                BETA_ARG=${BETA_ARG%_*}
+            fi
+            BETA_PATH_ARRAY+=( "$BETA_ARG	$CURRENT_PATH/b$BETA/$ROOT_INPUT_FILE" )  
+            echo "$BETA_ARG	$CURRENT_PATH/b$BETA/$ROOT_INPUT_FILE"
         done
+        
         for ((i = 0; i < ${#BETA_PATH_ARRAY[@]}; i++)); do
             echo ${BETA_PATH_ARRAY[i]} >> $TMP_ROOT_PATH_INPUT_FILE
         done
