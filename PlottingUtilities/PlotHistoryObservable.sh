@@ -74,12 +74,19 @@ while [ "$1" != "" ]; do
 	  printf "\n\e[0m"
 	  exit
 	  shift;;
-      -x=* | --columnXaxis=* )         COLUMN_X_AXIS=${1#*=}; shift ;;
-      -y=* | --columnYaxis=* )         COLUMN_Y_AXIS=${1#*=}; shift ;;
-      -b=\[*\] | --betaValues=\(*\) )  BETAVALUES=${1#*"["}; BETAVALUES=${BETAVALUES%"]"}; BETAVALUES=( $(echo $BETAVALUES | sed 's/,/ /g') ); shift ;;
+      -x | --columnXaxis )         COLUMN_X_AXIS=$2; shift ;;
+      -y | --columnYaxis )         COLUMN_Y_AXIS=$2; shift ;;
+      -b | --betaValues )  
+          while [[ $2 =~ [[:digit:]]\.[[:digit:]]{4} ]]
+          do
+            BETAVALUES+=( $2 )
+            shift
+          done
+          ;;
   	  -a | --useAbsoluteValue )  		   USE_ABSVALUES="TRUE";   shift;;
       * ) printf "\n\e[0;31mError parsing the options! Aborting...\n\n\e[0m" ; exit -1 ;;
     esac
+    shift
 done
 
 if [ ${#BETAVALUES[@]} -eq 0 ]; then
