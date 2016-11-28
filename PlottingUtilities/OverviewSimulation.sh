@@ -238,6 +238,7 @@ if [ $MASS_OVERVIEW = 'TRUE' ]; then
         for VOLUME in $(ls -d ${MASS_PREFIX}${VALUE}/${NTIME_PREFIX}${NTIME}/${NSPACE_PREFIX}*/); do
             EXTRACTED_NSPACE=${VOLUME%?}
             EXTRACTED_NSPACE=${EXTRACTED_NSPACE##*/ns}
+            [ $(ls -d ${VOLUME}/b?.????*Chain/ 2>/dev/null | wc -l) -eq 0 ] && continue
             LIST_BETA_WITH_CHAINS=( $(ls -d ${VOLUME}/b?.????*Chain/ | grep -Eo "b.[.]...." | sort -u | awk -v vol="${VOLUME}" -v file="$DATAFILE_NAME" '{print vol""$1"/"file}') )
             printf "$VALUE\t$EXTRACTED_NSPACE\t$(wc -l ${LIST_BETA_WITH_CHAINS[@]} | awk 'END{print $1}')\t${#LIST_BETA_WITH_CHAINS[@]}\n" >> $TEMPORARY_DATA_FILE
             (( NUMBER_OF_VOLUMES["$VALUE"]++ ))
