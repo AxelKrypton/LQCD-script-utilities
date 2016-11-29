@@ -74,29 +74,20 @@ fi
 #Actual syncronization
 while :
 do
-#<<<<<<< Updated upstream
-#    if [ $SYNC_NOW = "FALSE" ]; then
-#        #Just to wait time for backup
-#        TIME_FOR_BACKUP='22'
-#        CURRENT_EPOCH=$(date +%s)
-#        TARGET_EPOCH=$(date -d $TIME_FOR_BACKUP +%s)
-#        SLEEP_SECONDS=$(awk 'BEGIN{secInDay=3600*24}{print (($1-$2)+secInDay)%(secInDay)}' <<< "$TARGET_EPOCH $CURRENT_EPOCH" )
-#        printf "\n\t\e[38;5;147mEntering sleeping mode. Performing next backup on \e[38;5;86m$(date -d @$(( $CURRENT_EPOCH + $SLEEP_SECONDS)) +"%d.%m.%Y \e[38;5;147mat\e[38;5;86m %H:%M")\e[0m\n\n"
-#        sleep $SLEEP_SECONDS
-#======= The following code should be the to be used, right?
-    if [ $SYNC_NOW = "FALSE" ] && [ $CUSTOM_SLEEP_TIME = "FALSE" ]; then
-        #Just to wait time for backup
-        TIME_FOR_BACKUP='22'
-        CURRENT_EPOCH=$(date +%s)
-        TARGET_EPOCH=$(date -d $TIME_FOR_BACKUP +%s)
-        SLEEP_SECONDS=$(awk 'BEGIN{secInDay=3600*24}{print (($1-$2)+secInDay)%(secInDay)}' <<< "$TARGET_EPOCH $CURRENT_EPOCH" )
-        printf "\n\t\e[38;5;147mEntering sleeping mode. Performing next backup on \e[38;5;86m$(date -d @$(( $CURRENT_EPOCH + $SLEEP_SECONDS)) +"%d.%m.%Y \e[38;5;147mat\e[38;5;86m %H:%M")\e[0m\n\n"
-        sleep $SLEEP_SECONDS
-    elif [ $SYNC_NOW = "FALSE" ] && [ $CUSTOM_SLEEP_TIME = "TRUE" ]; then	
-        sleep $SLEEP_TIME
-#>>>>>>> Stashed changes
-    fi
-    
+    if [ $SYNC_NOW = "FALSE" ]
+    then
+        if [ $CUSTOM_SLEEP_TIME = "FALSE" ]; then
+            #Just to wait time for backup
+            TIME_FOR_BACKUP='22'
+            CURRENT_EPOCH=$(date +%s)
+            TARGET_EPOCH=$(date -d $TIME_FOR_BACKUP +%s)
+            SLEEP_SECONDS=$(awk 'BEGIN{secInDay=3600*24}{print (($1-$2)+secInDay)%(secInDay)}' <<< "$TARGET_EPOCH $CURRENT_EPOCH" )
+            printf "\n\t\e[38;5;147mEntering sleeping mode. Performing next backup on \e[38;5;86m$(date -d @$(( $CURRENT_EPOCH + $SLEEP_SECONDS)) +"%d.%m.%Y \e[38;5;147mat\e[38;5;86m %H:%M")\e[0m\n\n"
+            sleep $SLEEP_SECONDS
+        elif [ $CUSTOM_SLEEP_TIME = "TRUE" ]; then	
+            sleep $SLEEP_TIME
+        fi
+    fi 
     declare -A RUN_NAMES
     while read SYNC_FOLDER_GLOBAL_PATH REMOTE_NAME; do
         RUN_NAMES[$REMOTE_NAME]="${RUN_NAMES[$REMOTE_NAME]} $SYNC_FOLDER_GLOBAL_PATH"
