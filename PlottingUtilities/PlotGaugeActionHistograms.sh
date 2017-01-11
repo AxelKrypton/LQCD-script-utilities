@@ -49,7 +49,7 @@ while [ "$#" -gt 0 ]; do
         -h)
             printf '\n\e[32m'
             echo " Possible options:"
-            echo "   -b (Specify beta value, e.g. -b x.xxxx y.yyyy. If -b is not given the script will take alle availible files."
+            echo "   -b (Specify beta value, e.g. -b x.xxxx y.yyyy. If -b is not given the script will take alle available files."
             echo "   -w (Specifiy boxwidth for the histograms, default is 10.)"
             echo "   -c (Provide if the bins should be centered.)"
             printf '\n\e[0m'

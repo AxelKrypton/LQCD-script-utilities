@@ -16,6 +16,7 @@
 #                               --a1 | --linearCoefficient (starting value for fit) 
 #                               --dataFilename | -f
 #                               --doNotFixB4 (in this case also B4 should be fitted)
+#                               --fixNu
 #                               --outputFilename | -o
 #      3) adjust code accordingly (basically only CreateGnuplotFit function)
 #         NOTE: the fit with B4 not fixed is commented below, just add if cases also
@@ -36,6 +37,7 @@ FIT_UPPER_BOUND=""
 
 #FIT OPTIONS
 FIXB4="TRUE"
+FIXNU="FALSE"
 QUIET_MODE="FALSE"
 
 
@@ -90,6 +92,9 @@ while [ $# -gt 0 ]; do
         --doNotFixB4)
             FIXB4="FALSE"
             ;;
+        --fixNu)
+            FIXNU="TRUE"
+            ;;
         -o | --outputFilename) 
             OUTPUT_FILENAME=$2
             shift
@@ -105,6 +110,7 @@ while [ $# -gt 0 ]; do
             echo "--a1 | --linearCoefficient"
             echo "--dataFilename | -f               -> Mandatory option - Specify the name of the file containing the data to be fitted."
             echo "--doNotFixB4"
+            echo "--fixNu"
             echo "--outputFilename | -o"
             echo "-l | --fitLowerBound              -> If not given, the lower bound will be determined to be 95% of the minimal kappa."
             echo "-u | --fitUpperBound              -> If not given, the upper bound will be determined to be 1.05% of the maximal kappa."
@@ -116,6 +122,7 @@ while [ $# -gt 0 ]; do
             echo "--tfn | --texFileName"
             exit
             ;;
+	        * ) printf "\n\e[0;31m Invalid option \e[1m$1\e[0;31m (see help for further information)! Aborting...\n\n\e[0m" ; exit -1 ;;
     esac
     shift
 done
@@ -171,12 +178,20 @@ function CreateGnuplotFit(){
 
     # Actual fit
     [ "$QUIET_MODE" = "TRUE" ] && echo 'set fit quiet' >> $TMP_FILE_FOR_GNUPLOT
-    if [ "$FIXB4" = "FALSE" ]; then 
+
+    if [ "$FIXB4" = "FALSE" ] && [ "$FIXNU" = "FALSE" ]; then 
         echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 via  a, mc, b, nu' >> $TMP_FILE_FOR_GNUPLOT
-    elif [ "$FIXB4" = "TRUE" ]; then
+    elif [ "$FIXB4" = "TRUE" ] && [ "$FIXNU" = "FALSE" ]; then
     # Fit with B4 fixed to true value
         echo 'a_err=0' >> $TMP_FILE_FOR_GNUPLOT
         echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 via  mc, b, nu' >> $TMP_FILE_FOR_GNUPLOT
+    elif [ "$FIXB4" = "FALSE" ] && [ "$FIXNU" = "TRUE" ]; then
+        echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 via  a, mc, b' >> $TMP_FILE_FOR_GNUPLOT
+        echo 'nu_err=0' >> $TMP_FILE_FOR_GNUPLOT
+    elif [ "$FIXB4" = "TRUE" ] && [ "$FIXNU" = "TRUE" ]; then
+        echo 'a_err=0' >> $TMP_FILE_FOR_GNUPLOT
+        echo 'nu_err=0' >> $TMP_FILE_FOR_GNUPLOT
+        echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 via  mc, b' >> $TMP_FILE_FOR_GNUPLOT
     fi
     #--------------------------------------------------------------------------------------------------------#
     # Prepare the plot surrounding information and save it as pdf
@@ -198,10 +213,15 @@ function CreateGnuplotFit(){
     echo 'set mxtics'                                       >> $TMP_FILE_FOR_GNUPLOT
     [ "$OBSERVABLE" = "Pbp" ] && echo 'fit_title = "Fit to $B_4( \\langle\\bar\\Psi\\Psi\\rangle )$ of form $\\to B_4(\\infty) + a(m - m_c)\\cdot N_{s}^{(1/\\nu)}$\n\n with "\'         >> $TMP_FILE_FOR_GNUPLOT
     [ "$OBSERVABLE" = "poly_sq" ] && echo 'fit_title = "Fit to $B_4( \\langle L_{sq}\\rangle )$ of form $\\to B_4(\\infty) + a(m - m_c)\\cdot N_{s}^{(1/\\nu)}$\n\n with "\'             >> $TMP_FILE_FOR_GNUPLOT
-    [ "$FIXB4" = "TRUE" ] && echo '            .sprintf("$B_4(\\infty)=%.3f\\; fixed\\quad a=%.4f\\pm%.4f\\quad \\nu=%.4f\\pm%.4f$\n\n$m_c=%.4f\\pm%.4f\\quad \\chi^2_{ndf=%d} = %f\\quad Q=%5.2f\\%$"\'          >> $TMP_FILE_FOR_GNUPLOT
-    [ "$FIXB4" = "FALSE" ] && echo '            .sprintf("$B_4(\\infty)=%.4f\\pm%.4f\\quad a=%.4f\\pm%.4f\\quad \\nu=%.4f\\pm%.4f$\n\n$m_c=%.4f\\pm%.4f\\quad \\chi^2_{ndf=%d} = %f\\quad Q=%5.2f\\%$"\'          >> $TMP_FILE_FOR_GNUPLOT
-    [ "$FIXB4" = "FALSE" ] && echo '            , a, a_err/FIT_STDFIT, b, b_err/FIT_STDFIT, nu, nu_err/FIT_STDFIT, mc, mc_err/FIT_STDFIT, FIT_NDF, FIT_STDFIT**2., Q*100)\'                                       >> $TMP_FILE_FOR_GNUPLOT
-    [ "$FIXB4" = "TRUE" ] && echo '            , a, b, b_err/FIT_STDFIT, nu, nu_err/FIT_STDFIT, mc, mc_err/FIT_STDFIT, FIT_NDF, FIT_STDFIT**2., Q*100)\'                              >> $TMP_FILE_FOR_GNUPLOT
+    [ "$FIXB4" = "TRUE" ] && [ "$FIXNU" = "FALSE" ] && echo '            .sprintf("$B_4(\\infty)=%.3f\\; fixed\\quad a=%.4f\\pm%.4f\\quad \\nu=%.4f\\pm%.4f$\n\n$m_c=%.4f\\pm%.4f\\quad \\chi^2_{ndf=%d} = %f\\quad Q=%5.2f\\%$"\'          >> $TMP_FILE_FOR_GNUPLOT
+    [ "$FIXB4" = "FALSE" ] && [ "$FIXNU" = "FALSE" ] && echo '            .sprintf("$B_4(\\infty)=%.4f\\pm%.4f\\quad a=%.4f\\pm%.4f\\quad \\nu=%.4f\\pm%.4f$\n\n$m_c=%.4f\\pm%.4f\\quad \\chi^2_{ndf=%d} = %f\\quad Q=%5.2f\\%$"\'          >> $TMP_FILE_FOR_GNUPLOT
+    [ "$FIXB4" = "FALSE" ] && [ "$FIXNU" = "FALSE" ] && echo '            , a, a_err/FIT_STDFIT, b, b_err/FIT_STDFIT, nu, nu_err/FIT_STDFIT, mc, mc_err/FIT_STDFIT, FIT_NDF, FIT_STDFIT**2., Q*100)\'                                       >> $TMP_FILE_FOR_GNUPLOT
+    [ "$FIXB4" = "TRUE" ] && [ "$FIXNU" = "FALSE" ] && echo '            , a, b, b_err/FIT_STDFIT, nu, nu_err/FIT_STDFIT, mc, mc_err/FIT_STDFIT, FIT_NDF, FIT_STDFIT**2., Q*100)\'                              >> $TMP_FILE_FOR_GNUPLOT
+
+    [ "$FIXB4" = "TRUE" ] && [ "$FIXNU" = "TRUE" ] && echo '            .sprintf("$B_4(\\infty)=%.3f\\; fixed\\quad a=%.4f\\pm%.4f\\quad \\nu=%.4f$\n\n$m_c=%.4f\\pm%.4f\\quad \\chi^2_{ndf=%d} = %f\\quad Q=%5.2f\\%$"\'          >> $TMP_FILE_FOR_GNUPLOT
+    [ "$FIXB4" = "FALSE" ] && [ "$FIXNU" = "TRUE" ] && echo '            .sprintf("$B_4(\\infty)=%.4f\\pm%.4f\\quad a=%.4f\\pm%.4f\\quad \\nu=%.4f$\n\n$m_c=%.4f\\pm%.4f\\quad \\chi^2_{ndf=%d} = %f\\quad Q=%5.2f\\%$"\'          >> $TMP_FILE_FOR_GNUPLOT
+    [ "$FIXB4" = "FALSE" ] && [ "$FIXNU" = "TRUE" ] && echo '            , a, a_err/FIT_STDFIT, b, b_err/FIT_STDFIT, nu, mc, mc_err/FIT_STDFIT, FIT_NDF, FIT_STDFIT**2., Q*100)\'                                       >> $TMP_FILE_FOR_GNUPLOT
+    [ "$FIXB4" = "TRUE" ] && [ "$FIXNU" = "TRUE" ] && echo '            , a, b, b_err/FIT_STDFIT, nu, mc, mc_err/FIT_STDFIT, FIT_NDF, FIT_STDFIT**2., Q*100)\'                              >> $TMP_FILE_FOR_GNUPLOT
     echo '            .sprintf("\n\n%s", commit)'                                                                                                                                  >> $TMP_FILE_FOR_GNUPLOT
     echo 'set title fit_title'                                        >> $TMP_FILE_FOR_GNUPLOT
     echo 'set output "'$OUTPUT_FILENAME'"'                              >> $TMP_FILE_FOR_GNUPLOT 

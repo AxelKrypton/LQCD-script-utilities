@@ -69,6 +69,7 @@ elif [ $WILSON = "TRUE" ]; then
     #Each user can put here the remote prefix if she/he does not want to give it via command line
     REMOTE_PREFIX["sciarra"]="/scratch/hfftheo/sciarra/WilsonProject/muiPiT"
     REMOTE_PREFIX["czaban"]="/scratch/hfftheo/czaban/WilsonProject/Nf2/mui0"
+    EXPECTED_POSITION["czaban"]="/home/phil-configs/wilson_nf2_muipi4/ImagMu/Nf2/mui0/LastConfigurations"
     REMOTE_PREFIX["cuteri"]="/scratch/hfftheo/cuteri/ImagMu/muiPiT"
 fi
 
