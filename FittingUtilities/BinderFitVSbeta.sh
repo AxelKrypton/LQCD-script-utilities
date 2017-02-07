@@ -44,6 +44,14 @@ elif [ $STAGGERED = 'TRUE' ]; then
     MASS_PREFIX='mass'
 fi
 
+#Since the gnuplot fit syntax changed from version 4 to version 5, let's define here some handy variables
+GNUPLOT_VERSION=$(gnuplot -V | awk '{print int($2)}')
+if [ $GNUPLOT_VERSION -le 4 ]; then
+    FIT_ERRORS_STRING=''
+else
+    FIT_ERRORS_STRING='zerrors'
+fi
+
 #Function to get the file global path given: mass, nt, ns, observable
 function GetDatafileGlobalpath(){
     local PARAMS_STRING="$(GetParametersString $NFLAVOUR_PREFIX $CHEMPOT_PREFIX $MASS_PREFIX $NTIME_PREFIX)_${NSPACE_PREFIX}${1}"
@@ -209,5 +217,8 @@ if [ $TEX_PLOT = 'TRUE' ]; then
 fi
 
 OUTPUT_FILENAME=${OUTPUT_FILENAME/$OBSERVABLE/all_$OBSERVABLE}
-evince ${OUTPUT_FILENAME/.tex/.pdf} &
+#If variable DISPLAY is set and not empty (e.g. we are not in ssh without -X) open result
+if [ ! -z ${DISPLAY:+x} ]; then
+    evince ${OUTPUT_FILENAME/.tex/.pdf} &
+fi
 exit 0

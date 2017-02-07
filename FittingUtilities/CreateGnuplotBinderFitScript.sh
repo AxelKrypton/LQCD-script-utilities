@@ -47,9 +47,9 @@ function CreateGnuplotFitWithHardCodedParameters(){
     # Actual fit
     # ATTENTION: Here 'set yrange' fixes which data blocks to fit, since y is the index of the data block in the fit!! 
     if [ $FIT_TYPE = 'linear' ]; then
-        echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$TMP_FILE_FOR_DATA_TO_BE_FITTED'" u 1:-2:8:9 via  B4, bc, a1, nu' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+        echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$TMP_FILE_FOR_DATA_TO_BE_FITTED'" u 1:-2:8:9 '$FIT_ERRORS_STRING' via B4, bc, a1, nu' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     elif [ $FIT_TYPE = 'quadratic' ]; then
-        echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$TMP_FILE_FOR_DATA_TO_BE_FITTED'" u 1:-2:8:9 via  B4, bc, a1, a2, nu' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+        echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$TMP_FILE_FOR_DATA_TO_BE_FITTED'" u 1:-2:8:9 '$FIT_ERRORS_STRING' via B4, bc, a1, a2, nu' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     fi
     #--------------------------------------------------------------------------------------------------------#
     # Prepare the plot surrounding information and save it as pdf
@@ -256,9 +256,9 @@ function CreateGnuplotTemplateFitScriptWithoutPlotting(){
     # Actual fit
     # ATTENTION: Here 'set yrange' fixes which data blocks to fit, since y is the index of the data block in the fit!! 
     if [ $FIT_TYPE = 'linear' ]; then
-        echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) data_all u 1:-2:8:9 via  B4, bc, a1, nu' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
+        echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) data_all u 1:-2:8:9 '$FIT_ERRORS_STRING' via B4, bc, a1, nu' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     elif [ $FIT_TYPE = 'quadratic' ]; then
-        echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) data_all u 1:-2:8:9 via  B4, bc, a1, a2, nu' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
+        echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) data_all u 1:-2:8:9 '$FIT_ERRORS_STRING' via B4, bc, a1, a2, nu' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     fi
     #--------------------------------------------------------------------------------------------------------#
     # Evaluate the goodness of the fit: probability that, given the fit, the data could have occurred with a chisquare greater than or equal to the value found
