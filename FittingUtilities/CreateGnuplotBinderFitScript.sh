@@ -1,4 +1,11 @@
 function CreateGnuplotFitWithHardCodedParameters(){
+    #Since the gnuplot fit syntax changed from version 4 to version 5, let's define here some handy variables
+    local GNUPLOT_VERSION=$(gnuplot -V | awk '{print int($2)}')
+    if [ $GNUPLOT_VERSION -le 4 ]; then
+        local FIT_ERRORS_STRING=''
+    else
+        local FIT_ERRORS_STRING='zerrors'
+    fi
     #Remove temporary file for gnuplot if existing
     rm -f $TMP_FILE_FOR_GNUPLOT_SCRIPT
     # Values of volumes
@@ -144,6 +151,13 @@ function CreateGnuplotFitWithHardCodedParameters(){
 #=====================================================================================================================================================================================#
 
 function CreateGnuplotTemplateFitScriptWithoutPlotting(){
+    #Since the gnuplot fit syntax changed from version 4 to version 5, let's define here some handy variables
+    local GNUPLOT_VERSION=$(gnuplot -V | awk '{print int($2)}')
+    if [ $GNUPLOT_VERSION -le 4 ]; then
+        local FIT_ERRORS_STRING=''
+    else
+        local FIT_ERRORS_STRING='zerrors'
+    fi
     #Remove temporary file for gnuplot if existing
     rm -f $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     #Checks on mandatory variables for the template
