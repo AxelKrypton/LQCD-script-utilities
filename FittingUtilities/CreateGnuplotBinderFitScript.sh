@@ -1,4 +1,11 @@
 function CreateGnuplotFitWithHardCodedParameters(){
+    #Since the gnuplot fit syntax changed from version 4 to version 5, let's define here some handy variables
+    local GNUPLOT_VERSION=$(gnuplot -V | awk '{print int($2)}')
+    if [ $GNUPLOT_VERSION -le 4 ]; then
+        local FIT_ERRORS_STRING=''
+    else
+        local FIT_ERRORS_STRING='zerrors'
+    fi
     #Remove temporary file for gnuplot if existing
     rm -f $TMP_FILE_FOR_GNUPLOT_SCRIPT
     # Values of volumes
@@ -47,9 +54,9 @@ function CreateGnuplotFitWithHardCodedParameters(){
     # Actual fit
     # ATTENTION: Here 'set yrange' fixes which data blocks to fit, since y is the index of the data block in the fit!! 
     if [ $FIT_TYPE = 'linear' ]; then
-        echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$TMP_FILE_FOR_DATA_TO_BE_FITTED'" u 1:-2:8:9 via  B4, bc, a1, nu' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+        echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$TMP_FILE_FOR_DATA_TO_BE_FITTED'" u 1:-2:8:9 '$FIT_ERRORS_STRING' via B4, bc, a1, nu' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     elif [ $FIT_TYPE = 'quadratic' ]; then
-        echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$TMP_FILE_FOR_DATA_TO_BE_FITTED'" u 1:-2:8:9 via  B4, bc, a1, a2, nu' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+        echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$TMP_FILE_FOR_DATA_TO_BE_FITTED'" u 1:-2:8:9 '$FIT_ERRORS_STRING' via B4, bc, a1, a2, nu' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     fi
     #--------------------------------------------------------------------------------------------------------#
     # Prepare the plot surrounding information and save it as pdf
@@ -144,6 +151,13 @@ function CreateGnuplotFitWithHardCodedParameters(){
 #=====================================================================================================================================================================================#
 
 function CreateGnuplotTemplateFitScriptWithoutPlotting(){
+    #Since the gnuplot fit syntax changed from version 4 to version 5, let's define here some handy variables
+    local GNUPLOT_VERSION=$(gnuplot -V | awk '{print int($2)}')
+    if [ $GNUPLOT_VERSION -le 4 ]; then
+        local FIT_ERRORS_STRING=''
+    else
+        local FIT_ERRORS_STRING='zerrors'
+    fi
     #Remove temporary file for gnuplot if existing
     rm -f $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     #Checks on mandatory variables for the template
@@ -256,9 +270,9 @@ function CreateGnuplotTemplateFitScriptWithoutPlotting(){
     # Actual fit
     # ATTENTION: Here 'set yrange' fixes which data blocks to fit, since y is the index of the data block in the fit!! 
     if [ $FIT_TYPE = 'linear' ]; then
-        echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) data_all u 1:-2:8:9 via  B4, bc, a1, nu' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
+        echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) data_all u 1:-2:8:9 '$FIT_ERRORS_STRING' via B4, bc, a1, nu' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     elif [ $FIT_TYPE = 'quadratic' ]; then
-        echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) data_all u 1:-2:8:9 via  B4, bc, a1, a2, nu' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
+        echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) data_all u 1:-2:8:9 '$FIT_ERRORS_STRING' via B4, bc, a1, a2, nu' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     fi
     #--------------------------------------------------------------------------------------------------------#
     # Evaluate the goodness of the fit: probability that, given the fit, the data could have occurred with a chisquare greater than or equal to the value found
