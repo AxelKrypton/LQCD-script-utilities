@@ -82,7 +82,7 @@ fi
 #Gather information
 START_TIME=`date +%s`
 printf "\n\e[38;5;69m Extracting trajectories numbers... \e[0m"
-PBP_FILENAMES=( $(ls ${FOLDER_WITH_PBP_FILES}/${PREFIX}*${POSTFIX} 2>/dev/null) )
+PBP_FILENAMES=( $(find ${FOLDER_WITH_PBP_FILES} -name "${PREFIX}*${POSTFIX}" -type f 2>/dev/null) )
 NUMBER_PBP_FILES=${#PBP_FILENAMES[@]}
 LINES_MERGED_FILE=$(wc -l < ${MERGED_FILENAME})
 TRAJECTORY_IN_PBP_FILES=( $(grep -o "[[:digit:]]*" <<< "${PBP_FILENAMES[@]}" | awk '{printf "%d ", $1}') ) #Awk will strip leading zeros
