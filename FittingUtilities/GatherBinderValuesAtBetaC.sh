@@ -95,14 +95,14 @@ function ExtractAvailableVolumes(){
 }
 
 function GetBetaCFolderName(){
-    echo "$PATH_TO_DATA/$MASS_PREFIX${1}/$NTIME_PREFIX$NTIME/$NSPACE_PREFIX${2}/$CHEMPOT_PREFIX${CHEMPOT}_$MASS_PREFIX${1}_$NTIME_PREFIX${NTIME}_$NSPACE_PREFIX${2}_betacEstimates"
+    echo "$PATH_TO_DATA/$MASS_PREFIX${1}/$NTIME_PREFIX$NTIME/$NSPACE_PREFIX${2}/$NFLAVOUR_PREFIX${NFLAVOUR}_$CHEMPOT_PREFIX${CHEMPOT}_$MASS_PREFIX${1}_$NTIME_PREFIX${NTIME}_$NSPACE_PREFIX${2}_betacEstimates"
 }
 
 function GetBetaCFileName(){
     if [ "$EXTRACT_BETAC_FROM_BINDER" = "TRUE" ]; then
-        echo "$CHEMPOT_PREFIX${CHEMPOT}_$MASS_PREFIX${1}_$NTIME_PREFIX${NTIME}_$NSPACE_PREFIX${2}_betaC_${OBSERVABLE}_from_binder_reweightedData.dat"
+        echo "$NFLAVOUR_PREFIX${NFLAVOUR}_$CHEMPOT_PREFIX${CHEMPOT}_$MASS_PREFIX${1}_$NTIME_PREFIX${NTIME}_$NSPACE_PREFIX${2}_betaC_${OBSERVABLE}_from_kurtosis_reweightedData.dat"
     else
-        echo "$CHEMPOT_PREFIX${CHEMPOT}_$MASS_PREFIX${1}_$NTIME_PREFIX${NTIME}_$NSPACE_PREFIX${2}_betaC_${OBSERVABLE}_from_skew_reweightedData.dat"
+        echo "$NFLAVOUR_PREFIX${NFLAVOUR}_$CHEMPOT_PREFIX${CHEMPOT}_$MASS_PREFIX${1}_$NTIME_PREFIX${NTIME}_$NSPACE_PREFIX${2}_betaC_${OBSERVABLE}_from_skewness_reweightedData.dat"
     fi
 }
 
