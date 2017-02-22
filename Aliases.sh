@@ -383,6 +383,35 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         echo ''
     }
 
+    #Function to get a list of "Trash*" folders down from the actual position where the function is called
+    function ListOfTrashFolders(){
+        find . -name "Trash*" -type d
+    }
+    function ListOfTrashFoldersWithSizes(){
+        ListOfTrashFolders | xargs du -sh --apparent-size | awk '{print $2 "      " $1}'
+    }
+    
+    #Function to calculate size of "Trash*" folders down from the actual position where the function is called
+    function SizeOfTrashFolders(){
+        local LIST_OF_TRASH_FOLDERS=( $(ListOfTrashFolders) )
+        if [ ${#LIST_OF_TRASH_FOLDERS[@]} -eq 0 ]; then
+            printf "\n\e[92m No \"Trash*\" folder has been found down in the tree from \"$PWD\".\e[0m\n\n"
+        else
+            local SIZE_ARRAY_IN_BYTES=()
+            for FOLDER in ${LIST_OF_TRASH_FOLDERS[@]}; do
+                SIZE_ARRAY_IN_BYTES+=( $(du --apparent-size -B1 $FOLDER | cut -f1) )
+            done && unset -v 'FOLDER'
+            local TOTAL_SIZE=$(echo ${SIZE_ARRAY_IN_BYTES[@]} | tr ' ' '\n' | awk '{sum+=$1}END{print $1}')
+            (
+				#Start a subshell in order to source "locally"
+                source ~/Script/UtilityFunctions.sh
+                TOTAL_SIZE=$(ConvertFromBytesToHumanReadable $TOTAL_SIZE)
+                TOTAL_SIZE=$(sed 's/\([[:alpha:]]\)/ \1/' <<< "$TOTAL_SIZE") #Put space before unit
+                printf "\n\e[91m Found ${#LIST_OF_TRASH_FOLDERS[@]} \"Trash\*\" folders. Total size: ${TOTAL_SIZE}.\e[0m\n\n"
+            )
+        fi
+    }
+    
     #Functions useful later
     function CompleteFolderName(){
         local FOLDERS_ARRAY=()
