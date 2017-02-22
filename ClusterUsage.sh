@@ -229,8 +229,8 @@ EOF
         done
         ARRAY_OF_EXCLUDED_NODES=( ${ARRAY_OF_EXCLUDED_NODES[@]} ) #To separate all entries in single ones
         #Get allocated and idling nodes and parse into list of numbers
-        ARRAY_OF_IDLING_NODES=( $(sinfo -h -p lcsc -t IDLE -o "%N" | sed -n 's/.*\[\(.*\)\]/\1/p' | sed 's/,/ /g') )
-        ARRAY_OF_ALLOCATED_NODES=( $(sinfo -h -p lcsc -t ALLOCATED -o "%N" | sed -n 's/.*\[\(.*\)\]/\1/p' | sed 's/,/ /g') )
+        ARRAY_OF_IDLING_NODES=( $(sinfo -h -p $PARTITION -t IDLE -o "%N" | sed -n 's/.*\[\(.*\)\]/\1/p' | sed 's/,/ /g') )
+        ARRAY_OF_ALLOCATED_NODES=( $(sinfo -h -p $PARTITION -t ALLOCATED -o "%N" | sed -n 's/.*\[\(.*\)\]/\1/p' | sed 's/,/ /g') )
         for INDEX in ${!ARRAY_OF_IDLING_NODES[@]}; do
             if [[ ${ARRAY_OF_IDLING_NODES[$INDEX]} =~ - ]]; then
                 ARRAY_OF_IDLING_NODES[$INDEX]=$(awk 'BEGIN{FS="-"}{num=length($1); for(i=$1; i<=$2; i++){printf "%0"num"d ", i}}' <<< "${ARRAY_OF_IDLING_NODES[$INDEX]}")

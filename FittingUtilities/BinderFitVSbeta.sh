@@ -209,5 +209,8 @@ if [ $TEX_PLOT = 'TRUE' ]; then
 fi
 
 OUTPUT_FILENAME=${OUTPUT_FILENAME/$OBSERVABLE/all_$OBSERVABLE}
-evince ${OUTPUT_FILENAME/.tex/.pdf} &
+#If variable DISPLAY is set and not empty (e.g. we are not in ssh without -X) open result
+if [ ! -z ${DISPLAY:+x} ]; then
+    evince ${OUTPUT_FILENAME/.tex/.pdf} &
+fi
 exit 0
