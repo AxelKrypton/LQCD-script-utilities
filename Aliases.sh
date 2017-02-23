@@ -401,7 +401,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
             for FOLDER in ${LIST_OF_TRASH_FOLDERS[@]}; do
                 SIZE_ARRAY_IN_BYTES+=( $(du --apparent-size -B1 $FOLDER | cut -f1) )
             done && unset -v 'FOLDER'
-            local TOTAL_SIZE=$(echo ${SIZE_ARRAY_IN_BYTES[@]} | tr ' ' '\n' | awk '{sum+=$1}END{print $1}')
+            local TOTAL_SIZE=$(echo ${SIZE_ARRAY_IN_BYTES[@]} | tr ' ' '\n' | awk '{sum+=$1}END{print sum}')
             (
 				#Start a subshell in order to source "locally"
                 source ~/Script/UtilityFunctions.sh
