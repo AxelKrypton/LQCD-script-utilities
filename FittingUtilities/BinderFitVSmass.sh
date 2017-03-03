@@ -172,13 +172,25 @@ function CreateGnuplotFit(){
         echo ns$INDEX=${VOLUMES[$INDEX]} >> $TMP_FILE_FOR_GNUPLOT
     done
     # Starting values for fit params
-    echo "set fit errorscaling" >> $TMP_FILE_FOR_GNUPLOT
+    #echo "set fit noerrorscaling" >> $TMP_FILE_FOR_GNUPLOT # From version 5.0 to get the errors correct and not to divide them by the sqrt of chi2. See https://sourceforge.net/p/gnuplot/bugs/1511/
     echo "mc=$CRITICAL_MASS" >> $TMP_FILE_FOR_GNUPLOT
     echo "nu=$CRITICAL_EXPONENT"  >> $TMP_FILE_FOR_GNUPLOT
     echo "a=$B4INFINITY"  >> $TMP_FILE_FOR_GNUPLOT
     echo "b=$LINEAR_COEFFICIENT"      >> $TMP_FILE_FOR_GNUPLOT
     # Terminal get the fit in .tex
-    echo 'set terminal lua tikz standalone solid preamble '"'"'\usepackage{amsmath, mathabx}'"'" >> $TMP_FILE_FOR_GNUPLOT
+    #
+    # ATTENTION: Gnuplot has some support files for the lua tikz terminal that should be installed
+    #            somewhere in the tex distribution when gnuplot gets installed. If these are missing
+    #            or present but produced with a different version of gnuplot than that in use, there
+    #            could be problems in the later compilation of the .tex file. This happens, for example,
+    #            using gnuplot 5.0 and having the support files of gnuplot 4.6. 
+    #            Reading http://tex.stackexchange.com/questions/267031/tikz-problem-since-texlive-2015-update
+    #            and in particular the comment of Akira Kakuto to the answer of egreg, it is possible to
+    #            create the support files locally from where the gnuplot script is run and be sure that
+    #            the latex compilations finds the correct support files. That is what we do here!
+    #
+    echo 'set term lua tikz latex createstyle' >> $TMP_FILE_FOR_GNUPLOT #Creates support files locally
+    echo 'set terminal lua tikz standalone preamble '"'"'\usepackage{amsmath, mathabx}'"'" >> $TMP_FILE_FOR_GNUPLOT
     echo 'set fit errorvariables  # to get the errors' >> $TMP_FILE_FOR_GNUPLOT
     # Fit function
     # linear model: f(x) = a + b*(x-mc)*Ns**1/nu     with variables a,b,mc,nu independent of Ns
@@ -217,15 +229,16 @@ function CreateGnuplotFit(){
     fi
     #--------------------------------------------------------------------------------------------------------#
     # Prepare the plot surrounding information and save it as pdf
-    # Just uncomment the desired of the following two lines
-
-    ###############################################################################################################################################################################TO-DO: Generalize the following line to staggered and wilson!
-    #echo 'commit=system('"'"'printf "\n\ncommit $(git log --pretty=format:"%H" -n 1 -- ${PWD%%StaggeredNf3Test/*}/fitPbpBinder.plt)"'"'"')' >> $TMP_FILE_FOR_GNUPLOT
-    echo 'commit="commit msg"' >> $TMP_FILE_FOR_GNUPLOT
+    #TODO: Generalize the following line to staggered and wilson!
+    local ABSOLUTE_PATH_TO_DIR_OF_THIS_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    local THIS_FILENAME=$(basename "${BASH_SOURCE[0]}")
+    local GIT_COMMIT_OF_LAST_MODIFICATION_TO_THIS_FILE=$(git -C $ABSOLUTE_PATH_TO_DIR_OF_THIS_FILE log --pretty=format:"%H" -n 1 -- $THIS_FILENAME)
+    echo 'commit="\ncommit '$GIT_COMMIT_OF_LAST_MODIFICATION_TO_THIS_FILE'"' >> $TMP_FILE_FOR_GNUPLOT
+    #echo 'commit="commit msg"' >> $TMP_FILE_FOR_GNUPLOT
     # Evaluate the goodness of the fit: probability that, given the fit, the data could have occurred with a chisquare greater than or equal to the value found
     echo 'ndf = FIT_NDF'                          >> $TMP_FILE_FOR_GNUPLOT  # Number of degrees of freedom
     echo 'chisq = FIT_STDFIT**2 * ndf'            >> $TMP_FILE_FOR_GNUPLOT  # chi-squared
-    echo 'Q = FIT_P' >> $TMP_FILE_FOR_GNUPLOT  
+    echo 'Q = 1 - igamma(0.5 * ndf, 0.5 * chisq)' >> $TMP_FILE_FOR_GNUPLOT  # the quality of fit Q -> NOTE: From version 5.0 this is in the variable FIT_P (and the option "set fit noerrorscaling" gives correct errors!)
     # Plot information
     [ "$STAGGERED" = "TRUE" ] && echo 'set xlabel "$m$"'    >> $TMP_FILE_FOR_GNUPLOT 
     [ "$WILSON" = "TRUE" ] && echo 'set xlabel "$\\kappa$"'    >> $TMP_FILE_FOR_GNUPLOT
@@ -246,18 +259,18 @@ function CreateGnuplotFit(){
     [ "$FIXB4" = "FALSE" ] && [ "$FIXNU" = "TRUE" ] && echo '            .sprintf("$B_4(\\infty)=%.4f\\pm%.4f\\quad a=%.4f\\pm%.4f\\quad \\nu=%.4f\\; fixed$\n\n$m_c=%.4f\\pm%.4f\\quad \\chi^2_{ndf=%d} = %f\\quad Q=%5.2f\\%$"\'          >> $TMP_FILE_FOR_GNUPLOT
     [ "$FIXB4" = "FALSE" ] && [ "$FIXNU" = "TRUE" ] && echo '            , a, a_err/FIT_STDFIT, b, b_err/FIT_STDFIT, nu, mc, mc_err/FIT_STDFIT, FIT_NDF, FIT_STDFIT**2., Q*100)\'                                       >> $TMP_FILE_FOR_GNUPLOT
     [ "$FIXB4" = "TRUE" ] && [ "$FIXNU" = "TRUE" ] && echo '            , a, b, b_err/FIT_STDFIT, nu, mc, mc_err/FIT_STDFIT, FIT_NDF, FIT_STDFIT**2., Q*100)\'                              >> $TMP_FILE_FOR_GNUPLOT
-    echo '            .sprintf("\n\n%s", commit)'                                                                                                                                  >> $TMP_FILE_FOR_GNUPLOT
+    echo '            .sprintf("\n%s", commit)'                                                                                                                                  >> $TMP_FILE_FOR_GNUPLOT
     echo 'set title fit_title'                                        >> $TMP_FILE_FOR_GNUPLOT
     echo 'set output "'$OUTPUT_FILENAME'"'                              >> $TMP_FILE_FOR_GNUPLOT 
     echo 'set style arrow 1 filled head lt 0 lc -1 lw .5'             >> $TMP_FILE_FOR_GNUPLOT
-    #TO-DO: GENERALIZE THE FOLLOWING LINE
+    #TODO: GENERALIZE THE FOLLOWING LINE
     # echo 'set arrow from mc,fns1(mc) to mc,graph(0,0) arrowstyle 1'   >> $TMP_FILE_FOR_GNUPLOT
     echo -n 'plot   '                                                  >> $TMP_FILE_FOR_GNUPLOT
     for INDEX in ${!VOLUMES[@]}; do
-        echo '"'$FILE_WITH_DATA_TO_BE_PLOTTED'"' index $INDEX u 1:6:7 pt 1 lc $(($INDEX+1)) w e title '"$N_\\sigma=$ "'.ns$INDEX '\' >> $TMP_FILE_FOR_GNUPLOT   #pt = pointtype
-        echo -n ', fns'$INDEX'(x) notitle lt 1 lc '$(($INDEX+1))                                                     >> $TMP_FILE_FOR_GNUPLOT  #lt = linetype; lc = linecolor
-       [ $INDEX -lt $((${#VOLUMES[@]}-1)) ] && echo -n ' ,'                                                          >> $TMP_FILE_FOR_GNUPLOT
-       [ $INDEX -lt $((${#VOLUMES[@]}-1)) ] && echo ' \'                                                          >> $TMP_FILE_FOR_GNUPLOT
+        echo '"'$FILE_WITH_DATA_TO_BE_PLOTTED'"' index $INDEX u 1:6:7 pt 1 lt 1 lc $(($INDEX+1)) w e title '"$N_\\sigma=$ "'.ns$INDEX '\' >> $TMP_FILE_FOR_GNUPLOT   #pt = pointtype
+        echo -n ', fns'$INDEX'(x) notitle lt 1 lc '$(($INDEX+1))                                                                          >> $TMP_FILE_FOR_GNUPLOT   #lt = linetype; lc = linecolor
+       [ $INDEX -lt $((${#VOLUMES[@]}-1)) ] && echo -n ' ,'                                                                               >> $TMP_FILE_FOR_GNUPLOT
+       [ $INDEX -lt $((${#VOLUMES[@]}-1)) ] && echo ' \'                                                                                  >> $TMP_FILE_FOR_GNUPLOT
     done
     echo >> $TMP_FILE_FOR_GNUPLOT
     echo 'unset arrow' >> $TMP_FILE_FOR_GNUPLOT
@@ -273,7 +286,9 @@ function CleanAuxiliaryFiles(){
     rm $OUTPUT_FILENAME
     rm fit.log
     rm ${OUTPUT_FILENAME/.tex/.log}
-    rm ${OUTPUT_FILENAME/.tex/.aux}    
+    rm ${OUTPUT_FILENAME/.tex/.aux}
+    local SUPPORT_GNUPLOT_LUATEX_FILES=("gnuplot-lua-tikz-common.tex"  "gnuplot-lua-tikz.sty"  "gnuplot-lua-tikz.tex"  "t-gnuplot-lua-tikz.tex")
+    rm ${SUPPORT_GNUPLOT_LUATEX_FILES[@]}
 }
 
 function ReplaceMassValueInFile(){
