@@ -8,22 +8,10 @@
 #
 # It is quite general, due to the command line parameters.
 
-
-#TODO: 1) write command line parser
-#      2) command line options: --mc | --criticalMass      (starting value for fit)
-#                               --nu | --criticalExponent  (starting value for fit) 
-#                               --a0 | --B4infinity        (starting value for fit) 
-#                               --a1 | --linearCoefficient (starting value for fit) 
-#                               --dataFilename | -f
-#                               --doNotFixB4 (in this case also B4 should be fitted)
-#                               --fixNu
-#                               --outputFilename | -o
-#      3) adjust code accordingly (basically only CreateGnuplotFit function)
-#         NOTE: the fit with B4 not fixed is commented below, just add if cases also
-#               in the printing information in fit_title
-
-
-source $HOME/Script/PathManagement.sh || exit -2
+#--------------------------------------------------------------------------------#
+# Load auxiliary bash files that will be used.
+source "${HOME}/Script/PathManagement.sh" || exit -2
+#--------------------------------------------------------------------------------#
 
 rm -f $NAME_OF_TMP_FILE
 
@@ -49,9 +37,46 @@ MIN_SHIFT="0.0001"
 OBSERVABLE=""
 NFLAVOUR=""
 
+
+#Parse command line parameters
+function ElementInArray() {
+    local ELEMENT
+    for ELEMENT in "${@:2}"; do [[ "$ELEMENT" == "$1" ]] && return 0; done
+    return 1
+}
+
+if ElementInArray "--help" $@ || ElementInArray "-h" $@; then
+    #TODO: Write short description of script
+    #printf "\n\t\e[38;5;202m"
+    #printf "\n\t"
+    #printf "\n\t"
+    #printf "\n\t"
+    printf "\n\t\e[38;5;13m\e[1m\e[4m"
+    printf "Further option to the script\e[24m:\e[21m\n\n\t\e[38;5;4m"
+    printf "   --nf  | --numberOfFlavours                                                                                                  \n\t"
+    printf "   --mc  | --criticalMass                                                                                                      \n\t"
+    printf "   --nu  | --criticalExponent                                                                                                  \n\t"
+    printf "   --a0  | --B4infinity                                                                                                        \n\t"
+    printf "   --a1  | --linearCoefficient                                                                                                 \n\t"
+    printf "    -f   | --dataFilename            -> Mandatory option - Specify the name of the file containing the data to be fitted.      \n\t"
+    printf "    -o   | --outputFilename                                                                                                    \n\t"
+    printf "    -l   | --fitLowerBound           -> If not given, the lower bound will be determined to be 95% of the minimal kappa.       \n\t"
+    printf "    -u   | --fitUpperBound           -> If not given, the upper bound will be determined to be 1.05% of the maximal kappa.     \n\t"
+    printf "    -q   | --quietMode                                                                                                         \n\t"
+    printf "   --obs | --observable              -> default: poly_sq                                                                       \n\t"
+    printf "   --tfn | --texFileName                                                                                                       \n\t"
+    printf "    -s   | --seperateMassValues      -> Specify a value by which the points of the mass values will be shifted such that       \n\t"
+    printf "                                     -> their error bars do not overlap. E.g. \"-s 0.05\" for 5% of the whole fitting range.   \n\t"
+    printf "                                     -> This is just for readability and the shifted mass values will not be used for the fit. \n\t"
+    printf "   --doNotFixB4                                                                                                                \n\t"
+    printf "   --fixNu                                                                                                                     \n\t"
+    printf "\n\e[0m"
+    exit 3
+fi
+
 while [ $# -gt 0 ]; do
     case $1 in
-        --nf)
+        --nf | --numberOfFlavours)
             NFLAVOUR=$2
             shift
             ;;
@@ -106,27 +131,7 @@ while [ $# -gt 0 ]; do
             OBSERVABLE=$2
             shift
             ;;
-        -h)
-            echo "--nf "
-            echo "--mc | --criticalMass"
-            echo "--nu | --criticalExponent"
-            echo "--a0 | --B4infinity"
-            echo "--a1 | --linearCoefficient"
-            echo "--dataFilename | -f               -> Mandatory option - Specify the name of the file containing the data to be fitted."
-            echo "--doNotFixB4"
-            echo "--fixNu"
-            echo "--outputFilename | -o"
-            echo "-l | --fitLowerBound              -> If not given, the lower bound will be determined to be 95% of the minimal kappa."
-            echo "-u | --fitUpperBound              -> If not given, the upper bound will be determined to be 1.05% of the maximal kappa."
-            echo "-s | --seperateMassValues         -> Specify a value by which the points of the mass values will be shifted such that their error bars do not overlap."
-            echo "                                  -> E.g. -s 0.05 for 5% of the whole fitting range."
-            echo "                                  -> This is just for readability of the plot and the shifted mass values will not be used for the fit."
-            echo "-q | --quietMode"
-            echo "--obs | --observable              -> default: poly_sq"
-            echo "--tfn | --texFileName"
-            exit
-            ;;
-	        * ) printf "\n\e[0;31m Invalid option \e[1m$1\e[0;31m (see help for further information)! Aborting...\n\n\e[0m" ; exit -1 ;;
+	    * ) printf "\n\e[0;31m Invalid option \e[1m$1\e[0;31m (see help for further information)! Aborting...\n\n\e[0m" ; exit -1 ;;
     esac
     shift
 done

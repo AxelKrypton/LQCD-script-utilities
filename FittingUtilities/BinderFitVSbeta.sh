@@ -17,7 +17,7 @@
 
 #--------------------------------------------------------------------------------#
 # Load auxiliary bash files that will be used.
-source "$HOME/Script/PathManagement.sh" || exit -2
+source "${HOME}/Script/PathManagement.sh" || exit -2
 source "${HOME}/Script/FittingUtilities/CreateGnuplotBinderFitScript.sh" || exit -2
 #--------------------------------------------------------------------------------#
 
