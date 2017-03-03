@@ -17,7 +17,7 @@ rm -f $NAME_OF_TMP_FILE
 
 #FIT PARAMETERS
 CRITICAL_MASS="0.1"
-CRITICAL_EXPONENT="0.5"
+CRITICAL_EXPONENT="0.6301"
 B4INFINITY="1.604"
 LINEAR_COEFFICIENT="1"
 FIT_LOWER_BOUND="" 
@@ -25,7 +25,7 @@ FIT_UPPER_BOUND=""
 
 #FIT OPTIONS
 FIXB4="TRUE"
-FIXNU="FALSE"
+FIXNU="TRUE"
 QUIET_MODE="FALSE"
 
 
@@ -46,30 +46,35 @@ function ElementInArray() {
 }
 
 if ElementInArray "--help" $@ || ElementInArray "-h" $@; then
-    #TODO: Write short description of script
-    #printf "\n\t\e[38;5;202m"
-    #printf "\n\t"
-    #printf "\n\t"
-    #printf "\n\t"
+    printf "\n\t\e[38;5;202m"
+    printf "This fit script is suited to perform a multi-branch LINEAR fit of the kurtosis vs mass.\n\t"
+    printf "The finite size scaling form used in the fit for the Binder Cumulant reads\n\t"
+    printf "B4(m,ns) = B4(m,ns=inf) + a*(m-mc)*ns^(1/nu) + ...  :=  a0 + a1*x + ...\n\t"
+    printf "Initial values for the fit can be provided for all fit parameters.\n\t"
+    printf "By default B4(m,ns=inf) and nu are fixed to their expected values of 1.604 and 0.6301 respectively.\n\t"
+    printf "The user can use the options --nu and --a0 to fix them at different values or a combination of the\n\t"
+    printf "options --doNotFixB4, --doNotfixNu (and --nu, --a0) to extract also B4(m,ns=inf) and/or nu as fit\n\t"
+    printf "parameters (and specify different starting values for them).\n\t"
     printf "\n\t\e[38;5;13m\e[1m\e[4m"
     printf "Further option to the script\e[24m:\e[21m\n\n\t\e[38;5;4m"
-    printf "   --nf  | --numberOfFlavours                                                                                                  \n\t"
-    printf "   --mc  | --criticalMass                                                                                                      \n\t"
-    printf "   --nu  | --criticalExponent                                                                                                  \n\t"
-    printf "   --a0  | --B4infinity                                                                                                        \n\t"
-    printf "   --a1  | --linearCoefficient                                                                                                 \n\t"
-    printf "    -f   | --dataFilename            -> Mandatory option - Specify the name of the file containing the data to be fitted.      \n\t"
-    printf "    -o   | --outputFilename                                                                                                    \n\t"
-    printf "    -l   | --fitLowerBound           -> If not given, the lower bound will be determined to be 95% of the minimal kappa.       \n\t"
-    printf "    -u   | --fitUpperBound           -> If not given, the upper bound will be determined to be 1.05% of the maximal kappa.     \n\t"
     printf "    -q   | --quietMode                                                                                                         \n\t"
+    printf "   --nf  | --numberOfFlavours        -> If given, an N_f label is added to the plot                                            \n\t"
+    printf "   --mc  | --criticalMass            -> default: 0.1                                                                           \n\t"
+    printf "   --nu  | --criticalExponent        -> default: 0.6301                                                                        \n\t"
+    printf "   --a0  | --B4infinity              -> default: 1.604                                                                         \n\t"
+    printf "   --a1  | --linearCoefficient       -> default: 1                                                                             \n\t"
+    printf "    -f   | --dataFilename            -> default: poly_sq_BinderCumulantAtBetaC.dat                                             \n\t"
+    printf "    -o   | --outputFilename          -> default: BinderCumulant_poly_sq_Fit.pdf                                                \n\t"
+    printf "    -l   | --fitLowerBound           -> If not given, the lower bound will be determined to be 95%% of the minimal kappa.      \n\t"
+    printf "    -u   | --fitUpperBound           -> If not given, the upper bound will be determined to be 105%% of the maximal kappa.     \n\t"
     printf "   --obs | --observable              -> default: poly_sq                                                                       \n\t"
-    printf "   --tfn | --texFileName                                                                                                       \n\t"
     printf "    -s   | --seperateMassValues      -> Specify a value by which the points of the mass values will be shifted such that       \n\t"
-    printf "                                     -> their error bars do not overlap. E.g. \"-s 0.05\" for 5% of the whole fitting range.   \n\t"
+    printf "                                     -> their error bars do not overlap. E.g. \"-s 0.05\" for 5%% of the whole fitting range.  \n\t"
     printf "                                     -> This is just for readability and the shifted mass values will not be used for the fit. \n\t"
-    printf "   --doNotFixB4                                                                                                                \n\t"
-    printf "   --fixNu                                                                                                                     \n\t"
+    printf "   --doNotFixB4                      -> If given, B4(m,ns=inf) is extracted as fit parameters.                                 \n\t"
+    printf "                                        The initial value for the fit is set by --a0.                                          \n\t"
+    printf "   --doNotfixNu                      -> If given, nu is extracted as fit parameters.                                           \n\t"
+    printf "                                        The initial value for the fit is set by --nu.                                          \n\t"
     printf "\n\e[0m"
     exit 3
 fi
@@ -120,8 +125,8 @@ while [ $# -gt 0 ]; do
         --doNotFixB4)
             FIXB4="FALSE"
             ;;
-        --fixNu)
-            FIXNU="TRUE"
+        --doNotfixNu)
+            FIXNU="FALSE"
             ;;
         -o | --outputFilename) 
             OUTPUT_FILENAME=$2
@@ -140,6 +145,7 @@ done
 OBSERVABLE=${OBSERVABLE:-"poly_sq"}
 OUTPUT_FILENAME="BinderCumulant_${OBSERVABLE}_Fit.tex"
 
+echo $FILE_WITH_DATA_TO_BE_FITTED
 [ "$FILE_WITH_DATA_TO_BE_FITTED" = "" ] && echo "No data filename specified - using ${OBSERVABLE}_BinderCumulantAtBetaC.dat"
 FILE_WITH_DATA_TO_BE_FITTED=${FILE_WITH_DATA_TO_BE_FITTED:-"${OBSERVABLE}_BinderCumulantAtBetaC.dat"}
 
