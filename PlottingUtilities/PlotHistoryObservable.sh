@@ -57,8 +57,8 @@ else
     DATAFILE_NAME="hmc_output"
 fi
 BETAVALUES=()
+FOLDER_SUFFIX=""
 USE_ABSVALUES="FALSE"
-SHOW_THERMALIZATION_CHAINS="FALSE"
 
 # extract options and their arguments into variables.
 while [ "$1" != "" ]; do
@@ -67,29 +67,35 @@ while [ "$1" != "" ]; do
 	  printf "\n\e[0;32m"
 	  echo "Call the script $0 with the following optional arguments:"
 	  echo "  -h | --help"
-	  echo "  -a | --useAbsoluteValue  ->    plot absolute value of y-column"
-	  echo "  -x | --columnXaxis       ->    default value = $COLUMN_X_AXIS"
-	  echo "  -y | --columnYaxis       ->    default value = $COLUMN_Y_AXIS"
-	  echo "  -b | --betaValues        ->    default value = []"
-      echo "--ShowThermalizationChains ->    Show also thermalization chains."
-	  echo -e "\n\e[0;35mNOTE: The beta values have to be specified in \e[1msquare brackets\e[0;35m separated by a comma \e[1m\e[4mWITH NO SPACES\e[0;35m!"
+	  echo "  -a | --useAbsoluteValue ->    plot absolute value of y-column"
+	  echo "  -x | --columnXaxis      ->    default value = $COLUMN_X_AXIS"
+	  echo "  -y | --columnYaxis      ->    default value = $COLUMN_Y_AXIS"
+	  echo "  -b | --betaValues       ->    Space-separated list of beta values"
+	  echo "  -s | --suffix           ->    Beta folder ending string (default = \"${FOLDER_SUFFIX}\")"
+	  echo -e "\n\e[0;35mNOTE: The values given to each option has to be put after the option separated by a space."
 	  printf "\n\e[0m"
 	  exit
 	  shift;;
-      -x | --columnXaxis )         COLUMN_X_AXIS=$2; shift ;;
-      -y | --columnYaxis )         COLUMN_Y_AXIS=$2; shift ;;
+      -x | --columnXaxis )
+          COLUMN_X_AXIS=$2
+          shift ;;
+      -y | --columnYaxis )
+          COLUMN_Y_AXIS=$2
+          shift ;;
       -b | --betaValues )  
-          while [[ $2 =~ [[:digit:]]\.[[:digit:]]{4} ]]
-          do
-            BETAVALUES+=( $2 )
-            shift
+          while [[ $2 =~ [[:digit:]]\.[[:digit:]]+ ]]; do
+              BETAVALUES+=( $2 )
+              shift
           done
           ;;
-      --ShowThermalizationChains )
-          SHOW_THERMALIZATION_CHAINS="TRUE"
-          ;;
-  	  -a | --useAbsoluteValue )  		   USE_ABSVALUES="TRUE";   shift;;
-      * ) printf "\n\e[0;31mError parsing the options! Aborting...\n\n\e[0m" ; exit -1 ;;
+  	  -a | --useAbsoluteValue )
+  		  USE_ABSVALUES="TRUE"
+          shift ;;
+      -s |--suffix )
+          FOLDER_SUFFIX=$2
+          shift ;;
+      * )
+          printf "\n\e[0;31mError parsing the options! Aborting...\n\n\e[0m" ; exit -1 ;;
     esac
     shift
 done
@@ -106,12 +112,7 @@ echo ""
 for BETA in ${BETAVALUES[@]}; do
     BETA=$(echo $BETA | awk '{printf "%5.4f", $1}')
     #Gather folder names in an array and check for data file inside
-    if [ $SHOW_THERMALIZATION_CHAINS = "TRUE" ];
-    then
-        BETA_FOLDERS=( $(ls | grep "b${BETA}_s") )
-    else
-        BETA_FOLDERS=( $(ls | grep "b${BETA}_s.*_continueWithNewChain") )
-    fi
+    BETA_FOLDERS=( $(ls | grep "b${BETA}_s.*${FOLDER_SUFFIX}\$") )
     for INDEX in "${!BETA_FOLDERS[@]}"; do
 	if [ ! -d ${BETA_FOLDERS[$INDEX]} ] || [ ! -f ${BETA_FOLDERS[$INDEX]}/$DATAFILE_NAME ]; then
 	    unset -v 'BETA_FOLDERS[$INDEX]'
@@ -120,7 +121,7 @@ for BETA in ${BETAVALUES[@]}; do
     done
     if [ ${#BETA_FOLDERS[@]} -eq 0 ]; then
 	printf "\e[0;33m Any multiple chain found for beta = $BETA - looking for single chain...\e[0m"
-	BETA_FOLDERS=( $(ls | grep "b${BETA}") )
+	BETA_FOLDERS=( $(ls | grep "^b${BETA}\$") )
 	if [ ! -d ${BETA_FOLDERS[$INDEX]} ] || [ ! -f ${BETA_FOLDERS[$INDEX]}/$DATAFILE_NAME ]; then
             unset -v 'BETA_FOLDERS[$INDEX]'
             BETA_FOLDERS=(${BETA_FOLDERS[@]}) #Make BETA_FOLDERS not sparse

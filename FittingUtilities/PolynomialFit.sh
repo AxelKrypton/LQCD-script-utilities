@@ -136,8 +136,8 @@ fi
 #==============================================================================================================
 #Find min and max of x column including extrapolation points (if xrange not given)
 if [ ${#XRANGE[@]} -eq 0 ]; then
-    X_MIN=$(awk '/^($|[#]+)/{next} {if(min==""){min='$COLUMN_X'}else{if('$COLUMN_X'<min){min='$COLUMN_X'}}}END{print min}' $DATA_FILENAME)
-    X_MAX=$(awk '/^($|[#]+)/{next} {if(max==""){max='$COLUMN_X'}else{if('$COLUMN_X'>max){max='$COLUMN_X'}}}END{print max}' $DATA_FILENAME)
+    X_MIN=$(awk '/^($|[#]+)/{next} {if(min==""){min=$'$COLUMN_X'}else{if($'$COLUMN_X'<min){min=$'$COLUMN_X'}}}END{print min}' $DATA_FILENAME)
+    X_MAX=$(awk '/^($|[#]+)/{next} {if(max==""){max=$'$COLUMN_X'}else{if($'$COLUMN_X'>max){max=$'$COLUMN_X'}}}END{print max}' $DATA_FILENAME)
     for NEW_POINT in ${EXTRAPOLATE_TO[@]}; do
         [ $(awk '{if($1<$2){print 0}else{print 1}}' <<< "$NEW_POINT $X_MIN") -eq 0 ] && X_MIN=$NEW_POINT
         [ $(awk '{if($1>$2){print 0}else{print 1}}' <<< "$NEW_POINT $X_MAX") -eq 0 ] && X_MAX=$NEW_POINT
@@ -148,12 +148,33 @@ fi
 #==============================================================================================================
 #Remove temporary file for gnuplot if existing
 rm -f $TMP_FILE_FOR_GNUPLOT_SCRIPT
+#Since the gnuplot fit syntax changed from version 4 to version 5, let's define here some handy variables
+GNUPLOT_VERSION=$(gnuplot -V | awk '{print int($2)}')
+if [ $GNUPLOT_VERSION -le 4 ]; then
+    FIT_ERRORS_STRING=''
+else
+    FIT_ERRORS_STRING='zerrors'
+fi
 # Starting values for fit params
+#echo "set fit noerrorscaling" >> $TMP_FILE_FOR_GNUPLOT # From version 5.0 to get the errors correct and not to divide them by the sqrt of chi2. See https://sourceforge.net/p/gnuplot/bugs/1511/
 for((i=0; i<=$POLYNOMIAL_DEGREE; i++)); do
     echo "a${i}=1"    >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 done
 # Terminal get the fit in pdf via latex
-echo 'set terminal lua tikz standalone solid preamble '"'"'\usepackage{amsmath, mathabx}'"'" >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+#
+# ATTENTION: Gnuplot has some support files for the lua tikz terminal that should be installed
+#            somewhere in the tex distribution when gnuplot gets installed. If these are missing
+#            or present but produced with a different version of gnuplot than that in use, there
+#            could be problems in the later compilation of the .tex file. This happens, for example,
+#            using gnuplot 5.0 and having the support files of gnuplot 4.6. 
+#            Reading http://tex.stackexchange.com/questions/267031/tikz-problem-since-texlive-2015-update
+#            and in particular the comment of Akira Kakuto to the answer of egreg, it is possible to
+#            create the support files locally from where the gnuplot script is run and be sure that
+#            the latex compilations finds the correct support files. That is what we do here!
+#
+echo 'set term lua tikz latex createstyle' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT #Creates support files locally
+echo 'set terminal lua tikz standalone preamble '"'"'\usepackage{amsmath, mathabx}'"'" >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+
 echo 'set fit errorvariables  # to get the errors' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 if [ $QUIET_MODE = 'TRUE' ]; then
     echo 'set fit quiet' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
@@ -165,7 +186,7 @@ for((i=1; i<=$POLYNOMIAL_DEGREE; i++)); do
 done
 echo ''  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 # Actual fit
-echo -n 'fit f(x) "'$DATA_FILENAME'" u '$COLUMN_X':'$COLUMN_Y':'$COLUMN_DY ' via  a0' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+echo -n 'fit f(x) "'$DATA_FILENAME'" u '$COLUMN_X':'$COLUMN_Y':'$COLUMN_DY ' '$FIT_ERRORS_STRING' via  a0' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 for((i=1; i<=$POLYNOMIAL_DEGREE; i++)); do
     echo -n ", a${i}" >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 done
@@ -243,6 +264,8 @@ function RunGnuplotScriptAndProducePdf(){
 
 function CleanAuxiliaryFiles(){
     rm ${OUTPUT_FILENAME}{.tex,.log,.aux}
+    local SUPPORT_GNUPLOT_LUATEX_FILES=("gnuplot-lua-tikz-common.tex"  "gnuplot-lua-tikz.sty"  "gnuplot-lua-tikz.tex"  "t-gnuplot-lua-tikz.tex")
+    rm ${SUPPORT_GNUPLOT_LUATEX_FILES[@]}
     rm fit.log
     rm $TMP_FILE_FOR_GNUPLOT_SCRIPT
     rm -f "texput.log"
