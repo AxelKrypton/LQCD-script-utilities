@@ -322,10 +322,13 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
     #Function to know gaps on saved functions
     function CalculateGapsInTrajectoriesBetweenStoredConfigurations(){
         local BETA_ARRAY=( $@ )
+        for INDEX in ${!BETA_ARRAY[@]}; do [ ! -d ${BETA_ARRAY[$INDEX]} ] && unset -v "BETA_ARRAY[$INDEX]"; done && unset -v 'INDEX'
+        local LONGEST_BETA_STRING=$(echo ${BETA_ARRAY[@]} | tr ' ' '\n' | awk '{print length}' | sort -n | tail -n1)
+        printf "\n"; printf "%0.s " $(seq 1 $LONGEST_BETA_STRING); printf "      \e[1;38;5;129mGap [nr. of times]\n" 
         for BETA in ${BETA_ARRAY[@]}; do
-            printf "\n  \e[38;5;129m\e[1m\e[4m$BETA\e[0m\n\e[38;5;199m"
+            printf "\n  \e[38;5;129m\e[1m%${LONGEST_BETA_STRING}s\e[0m\e[38;5;199m" "$BETA"
             ls $BETA | grep "conf.[[:digit:]]\+" | grep -o "[[:digit:]]\+" | sort -n | \
-                awk 'NR==1{tr=$1}NR>1{countGaps[$1-tr]++; tr=$1}END{for(i in countGaps){printf "    Gap %d present %d times\n", i, countGaps[i]}}'
+                awk 'BEGIN{printf "    "}NR==1{tr=$1}NR>1{countGaps[$1-tr]++; tr=$1}END{for(i in countGaps){printf "%d [%d]   ", i, countGaps[i]}; printf"\n"}'
         done && unset -v 'BETA'
         echo ''
     }
@@ -436,6 +439,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
     function FindLastStandardOutput(){
         if [ -d $1 ]; then
             local FOLDER="$1"
+            
         else
             local FOLDER=$(CompleteFolderName $1)
         fi
