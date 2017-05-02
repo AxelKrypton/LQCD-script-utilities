@@ -440,7 +440,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
             local FOLDER=$(CompleteFolderName $1)
         fi
         [ ! -d $FOLDER ] && printf "\n\e[0;91m Folder \"$FOLDER\" not found!\n\n\e[0m" && return -1
-        [ $(find $FOLDER -name "?hmc_ref.*.out" | wc -l) -eq 0 ] && printf "\n\e[0;91m No standard output file found in \"$FOLDER\"!\n\n\e[0m" && return -1
+        [ $(find $FOLDER -regex ".*/?hmc_ref.*.out" | wc -l) -eq 0 ] && printf "\n\e[0;91m No standard output file found in \"$FOLDER\"!\n\n\e[0m" && return -1
         if [ $(grep "[sS]taggered" <<< "$PWD" | wc -l) -gt 0 ]; then
             local FILE="$(ls -rt1 $FOLDER/rhmc_ref.*.out | tail -n1)"
             FILE=${FILE/$FOLDER\//}
