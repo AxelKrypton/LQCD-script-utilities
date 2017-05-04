@@ -163,9 +163,9 @@ do
     if [ $SYNC_NOW = 'FALSE' ]; then
         #Just to wait 2 a.m.
         CURRENT_EPOCH=$(date +%s)
-        TARGET_EPOCH=$(date -d '02 + 1 days' +%s)
+        TARGET_EPOCH=$(date -d '04 + 1 days' +%s)
         SLEEP_SECONDS=$(( $TARGET_EPOCH - $CURRENT_EPOCH ))
-        sleep $SLEEP_SECONDS
+        sleep $SLEEP_SECONDS || { echo "Sleep $SLEEP_SECONDS failed!"; exit -1; }
     fi
     
     RUNNING_BY_USERS=0
