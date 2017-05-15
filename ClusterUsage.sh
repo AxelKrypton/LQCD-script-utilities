@@ -57,7 +57,7 @@ function PrintClusterUsageInformation(){
 #--------------------------------------------------------------------------------#
 
 #Variables to be changed, hardcoded for the moment
-USERS_LIST=( "czaban" "cuteri" "sciarra" )
+USERS_LIST=( "czaban" "cuteri" "sciarra" "witham" )
 CLUSTER_NAME='LOEWE'
 PARTITION='gpu'
 REMOTE_NAME='uni'
@@ -67,7 +67,7 @@ PRINT_ONLY_TO_SHELL='FALSE'
 if [ "$(hostname)" = "lxlcsc0001" ]; then
     CLUSTER_NAME='LCSC'
     PARTITION='lcsc'
-    USERS_LIST=( "cczaban" "fcuteri" "asciarra" )
+    USERS_LIST=( "cczaban" "fcuteri" "asciarra" "owitham" )
 fi    
 OUTPUT_FILE="${CLUSTER_NAME}_usage"
 EXCLUDED_NODES_FILENAME="${CLUSTER_NAME}_excludedNodes"
