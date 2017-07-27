@@ -31,6 +31,8 @@ FIXNU="TRUE"
 USECORRECTIONTERM="FALSE"
 QUIET_MODE="FALSE"
 
+SUPPRESS_TITLE="FALSE"
+
 PRINTCOMMIT="FALSE"
 
 #VARIABLES FOR THE SCRIPT
@@ -62,7 +64,9 @@ if ElementInArray "--help" $@ || ElementInArray "-h" $@; then
     printf "\n\t\e[38;5;13m\e[1m\e[4m"
     printf "Further option to the script\e[24m:\e[21m\n\n\t\e[38;5;4m"
     printf "    -q   | --quietMode                                                                                                         \n\t"
-    printf "    --printCommitID                                                                                                            \n\t"
+    printf "   --st  | --suppressTitle           -> Suppresses title of the fit in case the plot is needed for a publication.              \n\t"
+    printf "   -p    | --postfix                 -> Appends the specified postfix to the title.                                             \n\t"
+    printf "   --printCommitID                                                                                                            \n\t"
     printf "   --nf  | --numberOfFlavours        -> If given, an N_f label is added to the plot                                            \n\t"
     printf "   --mc  | --criticalMass            -> default: 0.1                                                                           \n\t"
     printf "   --nu  | --criticalExponent        -> default: 0.6301                                                                        \n\t"
@@ -125,6 +129,9 @@ while [ $# -gt 0 ]; do
         -q | --quietMode)
             QUIET_MODE="TRUE"
             ;;
+        --st | --suppressTitle)
+            SUPPRESS_TITLE="TRUE"
+            ;;
         --printCommitID)
             PRINTCOMMIT="TRUE"
             ;;
@@ -145,6 +152,10 @@ while [ $# -gt 0 ]; do
             OUTPUT_FILENAME=$2
             shift
             ;;
+        -p | --prefix) 
+            PREFIX=$2
+            shift
+            ;;
         --obs | --observable)
             OBSERVABLE=$2
             shift
@@ -156,7 +167,23 @@ done
 
 [ "$OBSERVABLE" = "" ] && echo "No observable specified - using poly_sq..."
 OBSERVABLE=${OBSERVABLE:-"poly_sq"}
-OUTPUT_FILENAME="BinderCumulant_${OBSERVABLE}_Fit.tex"
+
+if [ "$USECORRECTIONTERM" = "TRUE" ]; then
+    OUTPUT_FILENAME="BinderCumulant_${OBSERVABLE}_Fit_correction"
+else
+    OUTPUT_FILENAME="BinderCumulant_${OBSERVABLE}_Fit"
+fi
+
+if [ "$SUPPRESS_TITLE" = "TRUE" ]; then
+    OUTPUT_FILENAME="${OUTPUT_FILENAME}_notitle"
+fi
+
+if [ "$PREFIX" = "" ]; then
+    OUTPUT_FILENAME="${OUTPUT_FILENAME}.tex"
+else
+    OUTPUT_FILENAME="${OUTPUT_FILENAME}$PREFIX.tex"
+fi
+
 
 echo $FILE_WITH_DATA_TO_BE_FITTED
 [ "$FILE_WITH_DATA_TO_BE_FITTED" = "" ] && echo "No data filename specified - using ${OBSERVABLE}_BinderCumulantAtBetaC.dat"
@@ -297,7 +324,7 @@ function CreateGnuplotFit(){
     [ "$OBSERVABLE" = "pbp" ] && echo 'fit_title = "Fit to $B_4( \\langle\\bar\\Psi\\Psi\\rangle )$ of form $\\to B_4(\\infty) + a(m - m_c)\\cdot N_{s}^{(1/\\nu)}$\n\n with "\'         >> $TMP_FILE_FOR_GNUPLOT
     if [ "$USECORRECTIONTERM" = "TRUE" ]
     then
-        [ "$OBSERVABLE" = "poly_sq" ] && echo 'fit_title = "Fit to $B_4( \\langle L_{sq}\\rangle )$ of form $(\\to B_4(\\infty) + a(\\kappa - \\kappa_{c})\\cdot N_{s}^{(1/\\nu)})(1+BN_{s}^{y_{t}-y_{h}})$\n\n with $y_{t}-y_{h}='$ytminusyh'\\quad$ "\'             >> $TMP_FILE_FOR_GNUPLOT
+        [ "$OBSERVABLE" = "poly_sq" ] && echo 'fit_title = "Fit to $B_4( \\langle L_{sq}\\rangle )$ of form $\\to (B_4(\\infty) + a(\\kappa - \\kappa_{c})\\cdot N_{s}^{(1/\\nu)})(1+BN_{s}^{y_{t}-y_{h}})$\n\n with $y_{t}-y_{h}='$ytminusyh'\\quad$ "\'             >> $TMP_FILE_FOR_GNUPLOT
     else
         [ "$OBSERVABLE" = "poly_sq" ] && echo 'fit_title = "Fit to $B_4( \\langle L_{sq}\\rangle )$ of form $\\to B_4(\\infty) + a(\\kappa - \\kappa_{c})\\cdot N_{s}^{(1/\\nu)}$\n\n with "\'             >> $TMP_FILE_FOR_GNUPLOT
     fi
@@ -310,13 +337,20 @@ function CreateGnuplotFit(){
     [ "$FIXB4" = "FALSE" ] && [ "$FIXNU" = "TRUE" ] && echo '            .sprintf("$B_4(\\infty)=%.4f\\pm%.4f\\quad a=%.4f\\pm%.4f$\n\n $\\nu=%.4f\\; \\text{(fixed)}\\quad m_c=%.4f\\pm%.4f\\quad \\chi^2_{ndf=%d} = %f\\quad Q=%5.2f\\%$"\'          >> $TMP_FILE_FOR_GNUPLOT
     [ "$FIXB4" = "FALSE" ] && [ "$FIXNU" = "TRUE" ] && echo '            , a, a_err/FIT_STDFIT, b, b_err/FIT_STDFIT, nu, mc, mc_err/FIT_STDFIT, FIT_NDF, FIT_STDFIT**2., Q*100)\'                                       >> $TMP_FILE_FOR_GNUPLOT
     [ "$FIXB4" = "TRUE" ] && [ "$FIXNU" = "TRUE" ] && echo '            , a, b, b_err/FIT_STDFIT, nu, mc, mc_err/FIT_STDFIT, FIT_NDF, FIT_STDFIT**2., Q*100)\'                              >> $TMP_FILE_FOR_GNUPLOT
+    if [ "$USECORRECTIONTERM" = "TRUE" ]
+    then
+        echo '      .sprintf("\n\n $B=%.2f\\pm%.2f$",bfactor,bfactor_err)\' >> $TMP_FILE_FOR_GNUPLOT
+        for VOLUME in ${VOLUMES[@]}; do
+            echo '.sprintf("$\\quad C(%d)=%.2f\\pm%.2f$",'$VOLUME',bfactor*'$VOLUME'**ny,bfactor_err*'$VOLUME'**ny)\'  >> $TMP_FILE_FOR_GNUPLOT
+        done
+    fi
     if [ "$PRINTCOMMIT" = "TRUE" ]
     then
         echo '            .sprintf("\n%s", commit)'                                                                                                                                  >> $TMP_FILE_FOR_GNUPLOT
     else
         echo '            .sprintf("\n")'                                                                                                                                  >> $TMP_FILE_FOR_GNUPLOT
     fi
-    echo 'set title fit_title'                                        >> $TMP_FILE_FOR_GNUPLOT
+    [ "$SUPPRESS_TITLE" = "FALSE" ] && echo 'set title fit_title'                                        >> $TMP_FILE_FOR_GNUPLOT
     echo 'set output "'$OUTPUT_FILENAME'"'                              >> $TMP_FILE_FOR_GNUPLOT 
     echo 'set style arrow 1 filled head lt 0 lc -1 lw .5'             >> $TMP_FILE_FOR_GNUPLOT
     #TODO: GENERALIZE THE FOLLOWING LINE
