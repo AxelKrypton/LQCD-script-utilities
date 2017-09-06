@@ -204,6 +204,9 @@ do
     RUNNING_IN_TOTAL=$(squeue -h -p $PARTITION -t RUNNING -o %D | awk '{sum+=$1}END{print sum}')
     PENDING_IN_TOTAL=$(squeue -h -p $PARTITION -t PENDING -o %D | awk '{sum+=$1}END{print sum}')
     QUEUED_IN_TOTAL=$(squeue -h -p $PARTITION -o %D | awk '{sum+=$1}END{print sum}')
+    [ "$RUNNING_IN_TOTAL" = '' ] && RUNNING_IN_TOTAL=0
+    [ "$PENDING_IN_TOTAL" = '' ] && PENDING_IN_TOTAL=0
+    [ "$QUEUED_IN_TOTAL"  = '' ] && QUEUED_IN_TOTAL=0
     RUNNING_BY_OTHERS=$(( $RUNNING_IN_TOTAL - $RUNNING_BY_USERS))
     PENDING_BY_OTHERS=$(( $PENDING_IN_TOTAL - $PENDING_BY_USERS))
     OTHER_BY_OTHERS=$(( $QUEUED_IN_TOTAL - $RUNNING_IN_TOTAL - $PENDING_IN_TOTAL - $OTHER_BY_USERS ))
