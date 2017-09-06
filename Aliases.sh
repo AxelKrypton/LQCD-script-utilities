@@ -272,7 +272,6 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
     alias JobInfo='${HOME}/Script/MonitorSlurmJobs.sh'
     alias Acceptance="awk '{ sum+=\$11} END {printf \"Accepted %d over %d (%lf%%)\n\", sum, NR, 100*sum/(NR)}'"
     alias LastAcceptance='bash ${HOME}/Script/AcceptanceLastTrajectories.sh'
-    alias HandlerJobs='bash ${HOME}/Script/JobScriptAutomation/JobHandler.sh'
 	alias FillInMissingLines='bash ${HOME}/Script/FillInMissingLinesOutputFile.sh'
 	alias ClusterUsage='bash ${HOME}/Script/ClusterUsage.sh --doNotUpdateFiles'
     alias ReportOnCorrelatorFiles='echo; for b in b?.????_s*Chain; do printf "%+38s: %3d correlator files\n" $b $(ls $b/conf.*corr 2>>/dev/null| wc -l); done; echo'
@@ -439,17 +438,16 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
     function FindLastStandardOutput(){
         if [ -d $1 ]; then
             local FOLDER="$1"
-            
         else
             local FOLDER=$(CompleteFolderName $1)
         fi
         [ ! -d $FOLDER ] && printf "\n\e[0;91m Folder \"$FOLDER\" not found!\n\n\e[0m" && return -1
-        [ $(find $FOLDER -regex ".*/?hmc_ref.*.out" | wc -l) -eq 0 ] && printf "\n\e[0;91m No standard output file found in \"$FOLDER\"!\n\n\e[0m" && return -1
+        [ $(find $FOLDER -regex ".*/?hmc.*[.]out" | wc -l) -eq 0 ] && printf "\n\e[0;91m No standard output file found in \"$FOLDER\"!\n\n\e[0m" && return -1
         if [ $(grep "[sS]taggered" <<< "$PWD" | wc -l) -gt 0 ]; then
-            local FILE="$(ls -rt1 $FOLDER/rhmc_ref.*.out | tail -n1)"
+            local FILE="$(ls -rt1 $FOLDER/rhmc*.*.out | tail -n1)"
             FILE=${FILE/$FOLDER\//}
         elif [ $(grep "[wW]ilson" <<< "$PWD" | wc -l) -gt 0 ]; then
-            local FILE="$(ls -rt1 $FOLDER/hmc_ref.*.out | tail -n1)"
+            local FILE="$(ls -rt1 $FOLDER/hmc*.*.out | tail -n1)"
             FILE=${FILE/$FOLDER\//}
         else
             echo "Neither in Staggered nor in Wilson path!"
@@ -502,7 +500,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         local PATH_TO_BE_USED; PATH_TO_BE_USED=$(FindLastStandardOutput $1) #To be able to check error code, local sweeps it away!
         [ $? -ne 0 ] && printf "$PATH_TO_BE_USED" && return -1
         printf "\e[38;5;129m\n Calling:\e[38;5;199m ${HOME}/Script/TimeTrajectoryCL2QCD.sh $PATH_TO_BE_USED\n\e[0m"
-        local OUTPUT_TIME_TR; OUTPUT_TIME_TR="$(${HOME}/Script/TimeTrajectoryCL2QCD.sh $PATH_TO_BE_USED)"
+        local OUTPUT_TIME_TR; OUTPUT_TIME_TR="$(${HOME}/Script/TimeTrajectoryCL2QCD.sh $PATH_TO_BE_USED $2)"
         [ $? -ne 0 ] && printf "$OUTPUT_TIME_TR" && return -1
         printf "$OUTPUT_TIME_TR \n\n"
         local TIME_TR="$(grep -oE "[[:digit:]]+[.][[:digit:]]*" <<< "$OUTPUT_TIME_TR")"
@@ -519,9 +517,9 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
             local FILE_NAME=$(FindLastStandardOutput $1)
         elif [[ $1 =~ ^[[:digit:]]+$ ]]; then
             if [ $(grep "[sS]taggered" <<< "$PWD" | wc -l) -gt 0 ]; then
-                local FILE_NAME="JobScripts/rhmc_ref.$1.out"
+                local FILE_NAME="JobScripts/rhmc*.$1.out"
             elif [ $(grep "[wW]ilson" <<< "$PWD" | wc -l) -gt 0 ]; then
-                local FILE_NAME="JobScripts/hmc_ref.$1.out"
+                local FILE_NAME="JobScripts/hmc*.$1.out"
             else
                 echo "Neither in Staggered nor in Wilson path!"
             fi
@@ -538,9 +536,25 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         #Print jobid and node to screen
         local JOBID=$(grep -o "[[:digit:]]\+" <<< ${FILE_NAME##*hmc})
         printf "\n\e[0;36m Job ID: ${JOBID}   "
-        printf "$(grep "Host" JobScripts/?hmc_ref.${JOBID}.out)\n\n\e[0m"
+        printf "$(grep "Host" JobScripts/*hmc*.${JOBID}.out)\n\n\e[0m"
     }
 
+    #Function to find trajectories with high DS
+    function FindHighestDS(){
+        if [ -d $1 ]; then
+            local FOLDER="$1"
+        else
+            local FOLDER=$(CompleteFolderName $1)
+        fi
+        local PATH_TO_OUTPUT_FILE="${FOLDER}/?hmc_output"
+        if [[ $2 =~ ^[0-9]+$ ]]; then 
+            awk '{print $1 "   " sqrt($8*$8)}' $PATH_TO_OUTPUT_FILE | sort -n -k2g | tail -n $2 | sort -k1n
+        else
+            awk '{print $1 "   " sqrt($8*$8)}' $PATH_TO_OUTPUT_FILE | sort -n -k2g | tail -n 30 | sort -k1n
+        fi
+        echo ''
+    }
+    
     #Function to eliminate conf.save* and prng.save*
     function rmSave(){
         if [ -d $1 ]; then
