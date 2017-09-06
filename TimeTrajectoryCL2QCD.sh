@@ -62,6 +62,10 @@ else
     if [ $STRATEGY = 'START-END' ]; then
         TIMES=( `grep -E "(${START_STRING_TO_GREP_FOR}|${END_STRING_TO_GREP_FOR})" $1 | awk '{print substr($1,2,8)}'` )
         NUMBER_OF_BLOCKS=$(( ${#TIMES[@]}/2 ))
+        if [ ${#TIMES[@]} -eq 0 ]; then
+            printf "\n\e[0;33m Operation grepped for seems not to have been found!\e[0m\n\n"
+            exit 0
+        fi
         #The array TIMES is not sparse, then the following code work
         TOTAL_TIME_SEC=0
         for((INDEX=1; INDEX<${#TIMES[@]}; INDEX+=2)); do
