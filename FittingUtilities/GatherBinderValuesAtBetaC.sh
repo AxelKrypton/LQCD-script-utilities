@@ -44,13 +44,15 @@ do
             EXTRACT_BETAC_FROM_BINDER="TRUE"
             ;;
         -h)
-            echo "availble options:"
-            echo "--nf (specify the number of flavours)"
-            echo "--mui (specify chemical potential value, e.g. 0 or PiT )"
-            echo "--nt (specify time value)"
-            echo "--mp | --massParameter (specify mass parameter values - either kappa value for wilson or mass value for staggered)"
-            echo "--obs | --observable (specify observable, e.g. poly_sq, poly_im, ...)"
-            echo "--betaCFromBinder (extract beta_c from reweighted binder cumulant)"
+            printf '\n  \e[4;36mAvailble options:\n'
+            printf '\n\e[24m'
+            echo "    --nf (specify the number of flavours)"
+            echo "    --mui (specify chemical potential value, e.g. 0 or PiT )"
+            echo "    --nt (specify time value)"
+            echo "    --mp | --massParameter (specify mass parameter values - either kappa value for wilson or mass value for staggered)"
+            echo "    --obs | --observable (specify observable, e.g. poly_sq, poly_im, ...)"
+            echo "    --betaCFromBinder (extract beta_c from reweighted binder cumulant)"
+            printf '\n\e[0m'
             exit
             ;;
         *)
