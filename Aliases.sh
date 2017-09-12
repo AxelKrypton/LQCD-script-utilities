@@ -156,7 +156,7 @@ if [ $LOAD_PYTHON_ALIASES = "TRUE" ]; then
         echo "PySynchronization --betasFile=betasSync --remote=$1"
     }
     function GetAnalysisPbpCommand(){
-        echo "PyAnalysis --deactivatePlaq --deactivatePoly --activatePbp"
+        echo "PyAnalysis --deactivatePlaq --deactivatePoly --activatePbp --inversionsPerConfig 8"
     }
     function GetAnalysisPolyImWithZeroMeanCommand(){
         echo "PyAnalysis --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_sq"
@@ -164,28 +164,40 @@ if [ $LOAD_PYTHON_ALIASES = "TRUE" ]; then
     function GetAnalysisPolySqCommand(){
         echo "PyAnalysis --deactivatePlaq --deactivatePoly_re --deactivatePoly_im_withZeroMean --deactivatePoly_im --deactivatePoly_im_abs --deactivateSusc"
     }
-    function GetReweightingPbpCommand(){
-        [ $# -eq 3 ] && local NUM_POINTS=$(bc <<< "($2-$1)/$3+1")
-        echo "time PyReweighting --deactivatePlaq --deactivatePoly --activatePbp --deactivateMean --deactivateSusc -za --doNotUseSimulatedPointsAsNewPoints -r $1 $2 -p $NUM_POINTS"
-    }
-    function GetReweightingPolyImWithZeroMeanCommand(){
+    function __static__DefineBetaMinMaxResAndCheck(){
         if [ $# -eq 1 ]; then
-            local BETA_MIN=$(head -n1 betas | cut -f1)
-            local BETA_MAX=$(tail -n1 betas | cut -f1)
-            local RESOLUTION=$1
+            BETA_MIN=$(head -n1 betas | cut -f1)
+            BETA_MAX=$(tail -n1 betas | cut -f1)
+            RESOLUTION=$1
         elif [ $# -eq 3 ]; then
-            local BETA_MIN=$1
-            local BETA_MAX=$2
-            local RESOLUTION=$3
+            BETA_MIN=$1
+            BETA_MAX=$2
+            RESOLUTION=$3
         else
             printf "\n\e[91m One or three arguments needed to \"GetReweightingPolyImWithZeroMeanCommand\" alias!\e[0m\n\n"
-            return
+            return 1
         fi
         if [[ ! $BETA_MIN =~ [0-9][.][0-9]+ ]] || [[ ! $BETA_MAX =~ [0-9][.][0-9]+ ]]; then 
             printf "\n\e[91m Wrong format of beta min and beta max!\e[0m\n\n"
-            return            
+            return 1
         fi
-        local NUM_POINTS=$(bc <<< "($BETA_MAX-$BETA_MIN)/$RESOLUTION+1")
+        NUM_POINTS=$(bc <<< "($BETA_MAX-$BETA_MIN)/$RESOLUTION+1")
+        return 0
+    }
+    function GetReweightingPbpCommand(){
+        local BETA_MIN BETA_MAX RESOLUTION NUM_POINTS
+        __static__DefineBetaMinMaxResAndCheck "$@" || return
+        echo -n '[ $(ls Nf?_mui*_nt?_ns??_reweighting 2>/dev/null | wc -l) -eq 0 ]'
+        echo -n ' && [ $(ls -d -1 Nf?_mui*_nt?_ns??_reweighting_pbp/ | wc -l) -eq 0 ]'
+        echo -n " && time PyReweighting --deactivatePlaq --deactivatePoly --activatePbp --inversionsPerConfig 8 --deactivateMean --deactivateSusc --doNotUseSimulatedPointsAsNewPoints -r $BETA_MIN $BETA_MAX -p $NUM_POINTS"
+        echo -n ' && [ $(ls -d -1 Nf?_mui*_nt?_ns??_reweighting/ | wc -l) -eq 1 ]'
+        echo -n ' && FOLDER="$(ls -d -1 Nf?_mui*_nt?_ns??_reweighting/)"'
+        echo -n ' && mv ${FOLDER%?} ${FOLDER%?}_pbp'
+        echo    ' && unset -v '"'FOLDER'"
+    }
+    function GetReweightingPolyImWithZeroMeanCommand(){
+        local BETA_MIN BETA_MAX RESOLUTION NUM_POINTS
+        __static__DefineBetaMinMaxResAndCheck "$@" || return
         echo -n '[ $(ls Nf?_mui*_nt?_ns??_reweighting 2>/dev/null | wc -l) -eq 0 ]'
         echo -n ' && time PyReweighting --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_sq --deactivateMean --deactivateSusc --deactivateSkew --printEstimatorsToFile'
         echo -n " --doNotUseSimulatedPointsAsNewPoints -r $BETA_MIN $BETA_MAX -p $NUM_POINTS"
@@ -195,8 +207,15 @@ if [ $LOAD_PYTHON_ALIASES = "TRUE" ]; then
         echo    ' && unset -v '"'FOLDER'"
     }
     function GetReweightingPolySqSkewCommand(){
-        [ $# -eq 3 ] && local NUM_POINTS=$(bc <<< "($2-$1)/$3+1")
-        echo "time PyReweighting --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_im_withZeroMean --deactivateMean --deactivateSusc --doNotUseSimulatedPointsAsNewPoints -r $1 $2 -p $NUM_POINTS"
+        local BETA_MIN BETA_MAX RESOLUTION NUM_POINTS
+        __static__DefineBetaMinMaxResAndCheck "$@" || return
+        echo -n '[ $(ls Nf?_mui*_nt?_ns??_reweighting 2>/dev/null | wc -l) -eq 0 ]'
+        echo -n ' && time PyReweighting --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_im_withZeroMean --deactivateMean --deactivateSusc'
+        echo -n " --doNotUseSimulatedPointsAsNewPoints -r $BETA_MIN $BETA_MAX -p $NUM_POINTS"
+        echo -n ' && [ $(ls -d -1 Nf?_mui*_nt?_ns??_reweighting/ | wc -l) -eq 1 ]'
+        echo -n ' && FOLDER="$(ls -d -1 Nf?_mui*_nt?_ns??_reweighting/)"'
+        echo -n ' && mv ${FOLDER%?} ${FOLDER%?}_poly_sq'
+        echo    ' && unset -v '"'FOLDER'"
     }
     function GetFindBetaCPbpCommand(){
         echo "PyFindBetaC --deactivatePlaq --deactivatePoly --activatePbp --deactivateMean --deactivateSusc --deactivateBinder"
@@ -210,10 +229,51 @@ if [ $LOAD_PYTHON_ALIASES = "TRUE" ]; then
     function GetPlotScalingPolySqCommand(){
         echo "PyPlotScaling --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_im_withZeroMean --nsArray $@ --doNotPlotRawData --doNotMakeCombinedPlots --deactivateMean --deactivateSkew --deactivateBinder"
     }
+    function GetPlotScalingPbpCommand(){
+        echo "PyPlotScaling --deactivatePlaq --deactivatePoly --activatePbp --nsArray $@ --doNotPlotRawData --doNotMakeCombinedPlots --deactivateMean --deactivateSusc"
+    }
     function GetPlotScalingPolyImWithZeroMeanCommand(){
         local BETAC="$1"
         shift
         echo "PyPlotScaling --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_sq --nsArray $@ --doNotPlotRawData --deactivateMean --deactivateSusc --deactivateSkew --betaCForCollapsePlots $BETAC"
+    }
+
+    #Tools to check pbp file with respect to number of estimate
+    function HasFileDifferentNumberOfEntriesPerLine(){
+        local filename
+        filename="$1"
+        if [ $(awk '{print NF}' "$filename" | sort | uniq | wc -l) -eq 1 ]; then
+            return 1
+        else
+            return 0
+        fi
+    }
+    function CheckNumberOfEntriesPerLine(){
+        local filename expectedEntries frequencyNumberOfEntries pair numberOfEntries
+        filename="$1"; expectedEntries="$2"
+        frequencyNumberOfEntries=()
+        while read pair; do
+            frequencyNumberOfEntries[$(awk '{print $2}' <<< "$pair")]=$(awk '{print $1}' <<< "$pair")
+        done < <(awk '{print NF}' $filename | sort | uniq -c)
+        echo ''
+        for numberOfEntries in "${!frequencyNumberOfEntries[@]}"; do
+            if [ "$expectedEntries" != '' ]; then
+                if [ $numberOfEntries -eq $expectedEntries ]; then
+                    printf "\e[92m"
+                else
+                    printf "\e[93m"
+                fi
+            fi
+            printf " Found  %2d  pbp estimators on %6d lines\n\e[0m" "$numberOfEntries" "${frequencyNumberOfEntries[$numberOfEntries]}"
+        done
+        echo ''
+    }
+    function RemoveLinesWithNumberOfColumnsDifferentFrom(){
+        local filename expectedEntries
+        filename="$2"; expectedEntries="$1"
+        [ -f "${filename}_original" ] && printf "\e[91m\n File \"${filename}_original\" already existing!\e[0m\n\n" && return
+        mv -i "$filename" "${filename}_original"
+        awk -v "numberToMatch=$expectedEntries" 'NF==numberToMatch{print $0}' "${filename}_original" > "$filename"
     }
 fi
 
