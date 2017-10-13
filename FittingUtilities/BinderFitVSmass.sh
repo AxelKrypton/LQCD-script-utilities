@@ -13,24 +13,28 @@
 source "${HOME}/Script/PathManagement.sh" || exit -2
 #--------------------------------------------------------------------------------#
 
-rm -f $NAME_OF_TMP_FILE
 
 #FIT PARAMETERS
 CRITICAL_MASS="0.1"
 CRITICAL_EXPONENT="0.6301"
 B4INFINITY="1.604"
 LINEAR_COEFFICIENT="1"
+QUADRATIC_COEFFICIENT="1"
 CUBIC_COEFFICIENT="1"
 ytminusyh="-0.894"
 bfactor="-1"
+bfactor2="-1"
 FIT_LOWER_BOUND="" 
 FIT_UPPER_BOUND=""
 SET_Y_RANGE="FALSE"
+FIT_Y_RANGE_LOW="1"
+FIT_Y_RANGE_HIGH="3"
 
 #FIT OPTIONS
 FIT_TYPE="linear"
 FIXB4="TRUE"
 FIXNU="TRUE"
+FIXY="TRUE"
 USECORRECTIONTERM="FALSE"
 QUIET_MODE="FALSE"
 
@@ -77,6 +81,8 @@ if ElementInArray "--help" $@ || ElementInArray "-h" $@; then
     printf "   --a1  | --linearCoefficient       -> default: 1                                                                             \n\t"
     printf "   --a2  | --cubicCoefficient        -> default: 1                                                                             \n\t"
     printf "   --cubic                           -> Produces cubic fit                                                                     \n\t"
+    printf "   --quadratic                       -> Produces quadratic fit                                                                 \n\t"
+    printf "   --cubicQuadratic                  -> Produces quadratic + cubic fit                                                         \n\t"
     printf "    -f   | --dataFilename            -> default: poly_sq_BinderCumulantAtBetaC.dat                                             \n\t"
     printf "    -o   | --outputFilename          -> default: BinderCumulant_poly_sq_Fit.pdf                                                \n\t"
     printf "    -l   | --fitLowerBound           -> If not given, the lower bound will be determined to be 95%% of the minimal kappa.      \n\t"
@@ -90,6 +96,7 @@ if ElementInArray "--help" $@ || ElementInArray "-h" $@; then
     printf "                                        The initial value for the fit is set by --a0.                                          \n\t"
     printf "   --doNotfixNu                      -> If given, nu is extracted as fit parameters.                                           \n\t"
     printf "                                        The initial value for the fit is set by --nu.                                          \n\t"
+    printf "   --doNotfixY                       -> If given, y_t-y_h is extracted as fit parameters.                                      \n\t"
     printf "   -c | --useCorrectionTerm)         -> If given, the correction term (1+BN^(yt-yh)) is multiplied to correct for              \n\t"
     printf "                                        finite volume effects at large N_tau.                                                  \n\t"
     printf "\n\e[0m"
@@ -118,12 +125,22 @@ while [ $# -gt 0 ]; do
             LINEAR_COEFFICIENT=$2
             shift
             ;;
-        --a2 | --linearCoefficient)
+        --a2 | --quadraticCoefficient)
+            QUADRATIC_COEFFICIENT=$2
+            shift
+            ;;
+        --a3 | --cubicCoefficient)
             CUBIC_COEFFICIENT=$2
             shift
             ;;
         --cubic)
             FIT_TYPE="cubic"
+            ;;
+        --quadratic)
+            FIT_TYPE="quadratic"
+            ;;
+        --quadraticCubic)
+            FIT_TYPE="quadraticCubic"
             ;;
         -l | --fitLowerBound)
             FIT_LOWER_BOUND=$2
@@ -165,6 +182,9 @@ while [ $# -gt 0 ]; do
         --doNotfixNu)
             FIXNU="FALSE"
             ;;
+        --doNotfixY)
+            FIXY="FALSE"
+            ;;
         -c | --useCorrectionTerm)
             USECORRECTIONTERM="TRUE"
             ;;
@@ -188,11 +208,7 @@ done
 [ "$OBSERVABLE" = "" ] && echo "No observable specified - using poly_sq..."
 OBSERVABLE=${OBSERVABLE:-"poly_sq"}
 
-if [ "$FIT_TYPE" = "linear" ]; then
-    OUTPUT_FILENAME="BinderCumulant_${OBSERVABLE}_Fit"
-elif [ "$FIT_TYPE" = "cubic" ]; then
-    OUTPUT_FILENAME="BinderCumulant_${OBSERVABLE}_cubic_Fit"
-fi
+OUTPUT_FILENAME="BinderCumulant_${OBSERVABLE}_$FIT_TYPE"
 
 if [ "$USECORRECTIONTERM" = "TRUE" ]; then
     OUTPUT_FILENAME="${OUTPUT_FILENAME}_correction"
@@ -203,9 +219,9 @@ if [ "$SUPPRESS_TITLE" = "TRUE" ]; then
 fi
 
 if [ "$PREFIX" = "" ]; then
-    OUTPUT_FILENAME="${OUTPUT_FILENAME}.tex"
+    OUTPUT_FILENAME="${OUTPUT_FILENAME}"
 else
-    OUTPUT_FILENAME="${OUTPUT_FILENAME}$PREFIX.tex"
+    OUTPUT_FILENAME="${OUTPUT_FILENAME}$PREFIX"
 fi
 
 
@@ -219,10 +235,31 @@ if [ $SEPERATE_MASS_VALUES = "FALSE" ]; then
     FILE_WITH_DATA_TO_BE_PLOTTED=$FILE_WITH_DATA_TO_BE_FITTED
 fi
 
+function join { local IFS="$1"; shift; echo "$*"; }
+
+declare -A volume_kappa_range_array
+declare -A volume_kappa_low_array
+declare -A volume_kappa_high_array
 function ReadDataFile(){
     VOLUMES=( $(awk '$0 !~ /^([[:space:]]*#|$)/ {print $2}' $FILE_WITH_DATA_TO_BE_FITTED | sort -un) ) 
     MASS_PARAMETER_VALUES=( $(awk '$0 !~ /^([[:space:]]*#|$)/ {print $1}' $FILE_WITH_DATA_TO_BE_FITTED | sort -un) ) 
+    for i in ${VOLUMES[@]}; do
+        my_array=($(awk -v volume=$i '$0 !~ /^([[:space:]]*#|$)/ {if($2==volume)print $1}' $FILE_WITH_DATA_TO_BE_FITTED))
+        volume_kappa_low_array[$i]="${my_array[0]}"
+        volume_kappa_high_array[$i]="${my_array[-1]}"
+        my_array[0]=$(tr '.' 'd' <<< "${my_array[0]}")
+        my_array[-1]=$(tr '.' 'd' <<< "${my_array[-1]}")
+        #volume_kappa_range_array1[$i]=$(join "_" ${my_array[*]})
+        volume_kappa_range_array[$i]="${my_array[0]}_${my_array[-1]}"
+    done
 }
+
+ReadDataFile
+
+for i in ${VOLUMES[@]};do
+    OUTPUT_FILENAME=${OUTPUT_FILENAME}__ns${i}_k_${volume_kappa_range_array[$i]}
+done
+OUTPUT_FILENAME="${OUTPUT_FILENAME}.tex"
 
 function CreateGnuplotFit(){
     if [ -f $TMP_FILE_FOR_GNUPLOT ]; then
@@ -247,14 +284,39 @@ function CreateGnuplotFit(){
     echo "nu=$CRITICAL_EXPONENT"  >> $TMP_FILE_FOR_GNUPLOT
     echo "a=$B4INFINITY"  >> $TMP_FILE_FOR_GNUPLOT
     echo "b=$LINEAR_COEFFICIENT"      >> $TMP_FILE_FOR_GNUPLOT
+    echo "ny=$ytminusyh"      >> $TMP_FILE_FOR_GNUPLOT
+    echo "bfactor=$bfactor"      >> $TMP_FILE_FOR_GNUPLOT
+    if [ $USECORRECTIONTERM = "FALSE" ]; then
+        echo "bfactor=0"      >> $TMP_FILE_FOR_GNUPLOT
+        echo "bfactor_err=0"      >> $TMP_FILE_FOR_GNUPLOT
+        echo "ny_err=0"      >> $TMP_FILE_FOR_GNUPLOT
+    fi
+    if [ $USECORRECTIONTERM = "TRUE" ] && [ $FIXY = "TRUE" ]; then
+        echo "ny_err=0"      >> $TMP_FILE_FOR_GNUPLOT
+    fi
     if [ "$FIT_TYPE" = "linear" ]; then
         echo "b2=0"      >> $TMP_FILE_FOR_GNUPLOT
         echo "b2_err=0"      >> $TMP_FILE_FOR_GNUPLOT
+        echo "b3=0"      >> $TMP_FILE_FOR_GNUPLOT
+        echo "b3_err=0"      >> $TMP_FILE_FOR_GNUPLOT
+    elif [ "$FIT_TYPE" = "quadratic" ]; then
+        echo "b2=$QUADRATIC_COEFFICIENT"      >> $TMP_FILE_FOR_GNUPLOT
+        echo "b3=0"      >> $TMP_FILE_FOR_GNUPLOT
+        echo "b3_err=0"      >> $TMP_FILE_FOR_GNUPLOT
     elif [ "$FIT_TYPE" = "cubic" ]; then
-        echo "b2=$CUBIC_COEFFICIENT"      >> $TMP_FILE_FOR_GNUPLOT
+        echo "b3=$CUBIC_COEFFICIENT"      >> $TMP_FILE_FOR_GNUPLOT
+        echo "b2=0"      >> $TMP_FILE_FOR_GNUPLOT
+        echo "b2_err=0"      >> $TMP_FILE_FOR_GNUPLOT
+    elif [ "$FIT_TYPE" = "quadraticCubic" ]; then
+        echo "b2=$QUADRATIC_COEFFICIENT"      >> $TMP_FILE_FOR_GNUPLOT
+        echo "b3=$CUBIC_COEFFICIENT"      >> $TMP_FILE_FOR_GNUPLOT
     fi
-    echo "ny=$ytminusyh"      >> $TMP_FILE_FOR_GNUPLOT
-    echo "bfactor=$bfactor"      >> $TMP_FILE_FOR_GNUPLOT
+
+    #echo "bfactor2=$bfactor2"      >> $TMP_FILE_FOR_GNUPLOT
+    #echo "ny2=0.6926"      >> $TMP_FILE_FOR_GNUPLOT
+    #echo "bfactor3=1"      >> $TMP_FILE_FOR_GNUPLOT
+
+    
 
     # Terminal get the fit in .tex
     #
@@ -278,14 +340,22 @@ function CreateGnuplotFit(){
         then
             if [ "$FIT_TYPE" = "linear" ]; then
                 echo "fns${INDEX}(x) = (a  + b*(x-mc)*ns${INDEX}**(1./nu))*(1+bfactor*ns${INDEX}**(ny))" >> $TMP_FILE_FOR_GNUPLOT
+            elif [ "$FIT_TYPE" = "quadratic" ]; then
+                echo "fns${INDEX}(x) = (a  + b*(x-mc)*ns${INDEX}**(1./nu) + b2*(x-mc)**2*ns${INDEX}**(2./nu))*(1+bfactor*ns${INDEX}**(ny))" >> $TMP_FILE_FOR_GNUPLOT
             elif [ "$FIT_TYPE" = "cubic" ]; then
-                echo "fns${INDEX}(x) = (a  + b*(x-mc)*ns${INDEX}**(1./nu) + b2*(x-mc)*ns${INDEX}**(3./nu))*(1+bfactor*ns${INDEX}**(ny))" >> $TMP_FILE_FOR_GNUPLOT
+                echo "fns${INDEX}(x) = (a  + b*(x-mc)*ns${INDEX}**(1./nu) + b3*(x-mc)**3*ns${INDEX}**(3./nu))*(1+bfactor*ns${INDEX}**(ny))" >> $TMP_FILE_FOR_GNUPLOT
+            elif [ "$FIT_TYPE" = "quadraticCubic" ]; then
+                echo "fns${INDEX}(x) = (a  + b*(x-mc)*ns${INDEX}**(1./nu) + b2*(x-mc)**2*ns${INDEX}**(2./nu) + b3*(x-mc)**3*ns${INDEX}**(3./nu))*(1+bfactor*ns${INDEX}**(ny))" >> $TMP_FILE_FOR_GNUPLOT
             fi
         else
             if [ "$FIT_TYPE" = "linear" ]; then
-                echo "fns${INDEX}(x) = a  + b*(x-mc)*ns${INDEX}**(1./nu)" >> $TMP_FILE_FOR_GNUPLOT
+                echo "fns${INDEX}(x) = (a  + b*(x-mc)*ns${INDEX}**(1./nu))" >> $TMP_FILE_FOR_GNUPLOT
+            elif [ "$FIT_TYPE" = "quadratic" ]; then
+                echo "fns${INDEX}(x) = (a  + b*(x-mc)*ns${INDEX}**(1./nu) + b2*(x-mc)**2*ns${INDEX}**(2./nu))" >> $TMP_FILE_FOR_GNUPLOT
             elif [ "$FIT_TYPE" = "cubic" ]; then
-                echo "fns${INDEX}(x) = a  + b*(x-mc)*ns${INDEX}**(1./nu) + b2*(x-mc)*ns${INDEX}**(3./nu)" >> $TMP_FILE_FOR_GNUPLOT
+                echo "fns${INDEX}(x) = (a  + b*(x-mc)*ns${INDEX}**(1./nu) + b3*(x-mc)**3*ns${INDEX}**(3./nu))" >> $TMP_FILE_FOR_GNUPLOT
+            elif [ "$FIT_TYPE" = "quadraticCubic" ]; then
+                echo "fns${INDEX}(x) = (a  + b*(x-mc)*ns${INDEX}**(1./nu) + b2*(x-mc)**2*ns${INDEX}**(2./nu) + b3*(x-mc)**3*ns${INDEX}**(3./nu))" >> $TMP_FILE_FOR_GNUPLOT
             fi
         fi
     done
@@ -308,16 +378,33 @@ function CreateGnuplotFit(){
     if [ "$FIXB4" = "FALSE" ] && [ "$FIXNU" = "FALSE" ]; then 
         if [ "$USECORRECTIONTERM" = "TRUE" ]
         then
-            if [ "$FIT_TYPE" = "linear" ]; then
-                echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  a, mc, b, nu, bfactor' >> $TMP_FILE_FOR_GNUPLOT
-            elif [ "$FIT_TYPE" = "cubic" ]; then
-                echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  a, mc, b, b2, nu, bfactor' >> $TMP_FILE_FOR_GNUPLOT
+            if [ $FIXY = "TRUE" ]; then
+                if [ "$FIT_TYPE" = "linear" ]; then
+                    echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  a, mc, b, nu, bfactor' >> $TMP_FILE_FOR_GNUPLOT
+                elif [ "$FIT_TYPE" = "cubic" ]; then
+                    echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  a, mc, b, ,b3, nu, bfactor' >> $TMP_FILE_FOR_GNUPLOT
+                elif [ "$FIT_TYPE" = "quadratic" ]; then
+                    echo "Fit of quadratic coefficient not yet properly defined when B4 and nu are free parameters...exiting" 
+                    exit
+                elif [ "$FIT_TYPE" = "quadraticCubic" ]; then
+                    echo "Fit of quadratic + cubic coefficient not yet properly defined when B4 and nu are free parameters...exiting" 
+                    exit
+                fi
+            elif [ $FIXY = "FALSE" ]; then
+                    echo "Fit with ny as free parameter only allowed for fixed B4 and nu...exiting" 
+                    exit
             fi
         else
             if [ "$FIT_TYPE" = "linear" ]; then
                 echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  a, mc, b, nu' >> $TMP_FILE_FOR_GNUPLOT
             elif [ "$FIT_TYPE" = "cubic" ]; then
-                echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  a, mc, b, b2, nu' >> $TMP_FILE_FOR_GNUPLOT
+                echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  a, mc, b, b3, nu' >> $TMP_FILE_FOR_GNUPLOT
+            elif [ "$FIT_TYPE" = "quadratic" ]; then
+                echo "Fit of quadratic coefficient not yet properly defined when B4 and nu are free parameters...exiting" 
+                exit
+            elif [ "$FIT_TYPE" = "quadraticCubic" ]; then
+                echo "Fit of quadratic + cubic coefficient not yet properly defined when B4 and nu are free parameters...exiting" 
+                exit
             fi
         fi
     elif [ "$FIXB4" = "TRUE" ] && [ "$FIXNU" = "FALSE" ]; then
@@ -325,31 +412,65 @@ function CreateGnuplotFit(){
         echo 'a_err=0' >> $TMP_FILE_FOR_GNUPLOT
         if [ "$USECORRECTIONTERM" = "TRUE" ]
         then
-            if [ "$FIT_TYPE" = "linear" ]; then
-                echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  mc, b, nu, bfactor' >> $TMP_FILE_FOR_GNUPLOT
-            elif [ "$FIT_TYPE" = "cubic" ]; then
-                echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  mc, b, b2, nu, bfactor' >> $TMP_FILE_FOR_GNUPLOT
+            if [ $FIXY = "TRUE" ]; then
+                if [ "$FIT_TYPE" = "linear" ]; then
+                    echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  mc, b, nu, bfactor' >> $TMP_FILE_FOR_GNUPLOT
+                elif [ "$FIT_TYPE" = "cubic" ]; then
+                    echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  mc, b, b3, nu, bfactor' >> $TMP_FILE_FOR_GNUPLOT
+                elif [ "$FIT_TYPE" = "quadratic" ]; then
+                    echo "Fit of quadratic coefficient not yet properly defined when B4 is a free parameters...exiting" 
+                    exit
+                elif [ "$FIT_TYPE" = "quadraticCubic" ]; then
+                    echo "Fit of quadratic + cubic coefficient not yet properly defined when B4 is a free parameters...exiting" 
+                    exit
+                fi
+            elif [ $FIXY = "FALSE" ]; then
+                    echo "Fit with ny as free parameter only allowed for fixed B4 and nu...exiting" 
+                    exit
             fi
         else
             if [ "$FIT_TYPE" = "linear" ]; then
                 echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  mc, b, nu' >> $TMP_FILE_FOR_GNUPLOT
             elif [ "$FIT_TYPE" = "cubic" ]; then
-                echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  mc, b, b2, nu' >> $TMP_FILE_FOR_GNUPLOT
+                echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  mc, b, b3, nu' >> $TMP_FILE_FOR_GNUPLOT
+            elif [ "$FIT_TYPE" = "quadratic" ]; then
+                echo "Fit of quadratic coefficient not yet properly defined when B4 is a free parameters...exiting" 
+                exit
+            elif [ "$FIT_TYPE" = "quadraticCubic" ]; then
+                echo "Fit of quadratic + cubic coefficient not yet properly defined when B4 is a free parameters...exiting" 
+                exit
             fi
         fi
     elif [ "$FIXB4" = "FALSE" ] && [ "$FIXNU" = "TRUE" ]; then
         if [ "$USECORRECTIONTERM" = "TRUE" ]
         then
-            if [ "$FIT_TYPE" = "linear" ]; then
-                echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  a, mc, b, bfactor' >> $TMP_FILE_FOR_GNUPLOT
-            elif [ "$FIT_TYPE" = "cubic" ]; then
-                echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  a, mc, b, b2, bfactor' >> $TMP_FILE_FOR_GNUPLOT
+            if [ $FIXY = "TRUE" ]; then
+                if [ "$FIT_TYPE" = "linear" ]; then
+                    echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  a, mc, b, bfactor' >> $TMP_FILE_FOR_GNUPLOT
+                elif [ "$FIT_TYPE" = "cubic" ]; then
+                    echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  a, mc, b, b3, bfactor' >> $TMP_FILE_FOR_GNUPLOT
+                elif [ "$FIT_TYPE" = "quadratic" ]; then
+                    echo "Fit of quadratic coefficient not yet properly defined when nu is a free parameters...exiting" 
+                    exit
+                elif [ "$FIT_TYPE" = "quadraticCubic" ]; then
+                    echo "Fit of quadratic + cubic coefficient not yet properly defined when nu is a free parameters...exiting" 
+                    exit
+                fi
+            elif [ $FIXY = "FALSE" ]; then
+                    echo "Fit with ny as free parameter only allowed for fixed B4 and nu...exiting" 
+                    exit
             fi
         else
             if [ "$FIT_TYPE" = "linear" ]; then
                 echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  a, mc, b' >> $TMP_FILE_FOR_GNUPLOT
             elif [ "$FIT_TYPE" = "cubic" ]; then
-                echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  a, mc, b, b2' >> $TMP_FILE_FOR_GNUPLOT
+                echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  a, mc, b, b3' >> $TMP_FILE_FOR_GNUPLOT
+            elif [ "$FIT_TYPE" = "quadratic" ]; then
+                echo "Fit of quadratic coefficient not yet properly defined when nu is a free parameters...exiting" 
+                exit
+            elif [ "$FIT_TYPE" = "quadraticCubic" ]; then
+                echo "Fit of quadratic + cubic coefficient not yet properly defined when nu is a free parameters...exiting" 
+                exit
             fi
         fi
         echo 'nu_err=0' >> $TMP_FILE_FOR_GNUPLOT
@@ -358,19 +479,73 @@ function CreateGnuplotFit(){
         echo 'nu_err=0' >> $TMP_FILE_FOR_GNUPLOT
         if [ "$USECORRECTIONTERM" = "TRUE" ]
         then
-            if [ "$FIT_TYPE" = "linear" ]; then
-                echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  mc, b, bfactor' >> $TMP_FILE_FOR_GNUPLOT
-            elif [ "$FIT_TYPE" = "cubic" ]; then
-                echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  mc, b, b2, bfactor' >> $TMP_FILE_FOR_GNUPLOT
+            if [ $FIXY = "TRUE" ]; then
+                if [ "$FIT_TYPE" = "linear" ]; then
+                    echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  mc, b, bfactor' >> $TMP_FILE_FOR_GNUPLOT
+                elif [ "$FIT_TYPE" = "quadratic" ]; then
+                    echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  mc, b, b2, bfactor' >> $TMP_FILE_FOR_GNUPLOT
+                elif [ "$FIT_TYPE" = "cubic" ]; then
+                    echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  mc, b, b3, bfactor' >> $TMP_FILE_FOR_GNUPLOT
+                elif [ "$FIT_TYPE" = "quadraticCubic" ]; then
+                    echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  mc, b, b2, b3, bfactor' >> $TMP_FILE_FOR_GNUPLOT
+                fi
+            elif [ $FIXY = "FALSE" ]; then
+                if [ "$FIT_TYPE" = "linear" ]; then
+                    echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  mc, b, bfactor, ny' >> $TMP_FILE_FOR_GNUPLOT
+                elif [ "$FIT_TYPE" = "quadratic" ]; then
+                    echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  mc, b, b2, bfactor, ny' >> $TMP_FILE_FOR_GNUPLOT
+                elif [ "$FIT_TYPE" = "cubic" ]; then
+                    echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  mc, b, b3, bfactor, ny' >> $TMP_FILE_FOR_GNUPLOT
+                elif [ "$FIT_TYPE" = "quadraticCubic" ]; then
+                    echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  mc, b, b2, b3, bfactor, ny' >> $TMP_FILE_FOR_GNUPLOT
+                fi
             fi
         else
             if [ "$FIT_TYPE" = "linear" ]; then
                 echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  mc, b' >> $TMP_FILE_FOR_GNUPLOT
-            elif [ "$FIT_TYPE" = "cubic" ]; then
+            elif [ "$FIT_TYPE" = "quadratic" ]; then
                 echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  mc, b, b2' >> $TMP_FILE_FOR_GNUPLOT
+            elif [ "$FIT_TYPE" = "cubic" ]; then
+                echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  mc, b, b3' >> $TMP_FILE_FOR_GNUPLOT
+            elif [ "$FIT_TYPE" = "quadraticCubic" ]; then
+                echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  mc, b, b2, b3' >> $TMP_FILE_FOR_GNUPLOT
             fi
         fi
     fi
+
+    #Compute Symmetry and Overlap
+    for i in ${VOLUMES[@]}
+    do
+        echo ${volume_kappa_low_array[$i]} ${volume_kappa_high_array[$i]}
+        echo 'symmNs'$i'=100*(1-abs((2*abs('${volume_kappa_low_array[$i]}'-mc))/(abs('${volume_kappa_low_array[$i]}'-mc)+('${volume_kappa_high_array[$i]}'-mc))-1))' >> $TMP_FILE_FOR_GNUPLOT
+        echo '' >> $TMP_FILE_FOR_GNUPLOT
+    done
+
+    for((i=0;i<$((${#VOLUMES[@]}-1));i++))
+    do
+        for((j=$(($i+1));j<${#VOLUMES[@]};j++))
+        do
+            #echo ${VOLUMES[$i]} ${VOLUMES[$j]}
+
+            if [ $USECORRECTIONTERM = FALSE ]; then
+                echo 'a1_ns'${VOLUMES[$j]}'=('${volume_kappa_low_array[${VOLUMES[$j]}]}'-mc)*'${VOLUMES[$j]}'**(1./nu)' >> $TMP_FILE_FOR_GNUPLOT
+                echo 'a2_ns'${VOLUMES[$j]}'=('${volume_kappa_high_array[${VOLUMES[$j]}]}'-mc)*'${VOLUMES[$j]}'**(1./nu)' >> $TMP_FILE_FOR_GNUPLOT
+                echo 'b1_ns'${VOLUMES[$i]}'=('${volume_kappa_low_array[${VOLUMES[$i]}]}'-mc)*'${VOLUMES[$i]}'**(1./nu)' >> $TMP_FILE_FOR_GNUPLOT
+                echo 'b2_ns'${VOLUMES[$i]}'=('${volume_kappa_high_array[${VOLUMES[$i]}]}'-mc)*'${VOLUMES[$i]}'**(1./nu)' >> $TMP_FILE_FOR_GNUPLOT
+            else
+                echo 'a1_ns'${VOLUMES[$j]}'=('${volume_kappa_low_array[${VOLUMES[$j]}]}'-mc)*'${VOLUMES[$j]}'**(1./nu)*(1+bfactor*'${VOLUMES[$j]}'**(ny))' >> $TMP_FILE_FOR_GNUPLOT
+                echo 'a2_ns'${VOLUMES[$j]}'=('${volume_kappa_high_array[${VOLUMES[$j]}]}'-mc)*'${VOLUMES[$j]}'**(1./nu)*(1+bfactor*'${VOLUMES[$j]}'**(ny))' >> $TMP_FILE_FOR_GNUPLOT
+                echo 'b1_ns'${VOLUMES[$i]}'=('${volume_kappa_low_array[${VOLUMES[$i]}]}'-mc)*'${VOLUMES[$i]}'**(1./nu)*(1+bfactor*'${VOLUMES[$i]}'**(ny))' >> $TMP_FILE_FOR_GNUPLOT
+                echo 'b2_ns'${VOLUMES[$i]}'=('${volume_kappa_high_array[${VOLUMES[$i]}]}'-mc)*'${VOLUMES[$i]}'**(1./nu)*(1+bfactor*'${VOLUMES[$i]}'**(ny))' >> $TMP_FILE_FOR_GNUPLOT
+            fi
+
+
+            #echo 'print sprintf("Ov: %d",100*(1-(abs(b1_ns'${VOLUMES[$i]}'-a1_ns'${VOLUMES[$j]}')+abs(b2_ns'${VOLUMES[$i]}'-a2_ns'${VOLUMES[$j]}'))/(a2_ns'${VOLUMES[$j]}'-a1_ns'${VOLUMES[$j]}'+b2_ns'${VOLUMES[$i]}'-b1_ns'${VOLUMES[$i]}')))' >> $TMP_FILE_FOR_GNUPLOT
+            echo 'Ov_ns'${VOLUMES[$i]}'_ns'${VOLUMES[$j]}'=100*(1-(abs(b1_ns'${VOLUMES[$i]}'-a1_ns'${VOLUMES[$j]}')+abs(b2_ns'${VOLUMES[$i]}'-a2_ns'${VOLUMES[$j]}'))/(a2_ns'${VOLUMES[$j]}'-a1_ns'${VOLUMES[$j]}'+b2_ns'${VOLUMES[$i]}'-b1_ns'${VOLUMES[$i]}'))' >> $TMP_FILE_FOR_GNUPLOT
+        done
+    done
+
+
     #--------------------------------------------------------------------------------------------------------#
     # Prepare the plot surrounding information and save it as pdf
     #TODO: Generalize the following line to staggered and wilson!
@@ -394,38 +569,82 @@ function CreateGnuplotFit(){
     echo 'set mxtics'                                       >> $TMP_FILE_FOR_GNUPLOT
 
     if [ "$FIT_TYPE" = "linear" ]; then
-        FIT_FORM='B_4(\\infty) + a(\\kappa - \\kappa_{c})\\cdot N_{s}^{(1/\\nu)}'
+        FIT_FORM='B_4(\\infty) + a1(\\kappa - \\kappa_{c})\\cdot N_{s}^{(1/\\nu)}'
+    elif [ "$FIT_TYPE" = "quadratic" ]; then
+        FIT_FORM='B_4(\\infty) + a1(\\kappa - \\kappa_{c})\\cdot N_{s}^{(1/\\nu)} + a2(\\kappa - \\kappa_{c})^{2}\\cdot N_{s}^{(2/\\nu)}'
     elif [ "$FIT_TYPE" = "cubic" ]; then
-        FIT_FORM='B_4(\\infty) + a(\\kappa - \\kappa_{c})\\cdot N_{s}^{(1/\\nu)} + b(\\kappa - \\kappa_{c})\\cdot N_{s}^{(3/\\nu)}'
+        FIT_FORM='B_4(\\infty) + a1(\\kappa - \\kappa_{c})\\cdot N_{s}^{(1/\\nu)} + a3(\\kappa - \\kappa_{c})^{3}\\cdot N_{s}^{(3/\\nu)}'
+    elif [ "$FIT_TYPE" = "quadraticCubic" ]; then
+        FIT_FORM='B_4(\\infty) + a1(\\kappa - \\kappa_{c})\\cdot N_{s}^{(1/\\nu)} + a2(\\kappa - \\kappa_{c})^{2}\\cdot N_{s}^{(2/\\nu)} + a3(\\kappa - \\kappa_{c})^{3}\\cdot N_{s}^{(3/\\nu)}'
     fi
 
     [ "$OBSERVABLE" = "pbp" ] && echo 'fit_title = "Fit to $B_4( \\langle\\bar\\Psi\\Psi\\rangle )$ of form $\\to B_4(\\infty) + a(m - m_c)\\cdot N_{s}^{(1/\\nu)}$\n\n"\'         >> $TMP_FILE_FOR_GNUPLOT
     if [ "$USECORRECTIONTERM" = "TRUE" ]
     then
-        [ "$OBSERVABLE" = "poly_sq" ] && echo 'fit_title = "Fit to $B_4( \\langle L_{sq}\\rangle )$ of form $\\to ('$FIT_FORM')(1+BN_{s}^{y_{t}-y_{h}})$\n\n $y_{t}-y_{h}='$ytminusyh'\\quad$ "\'             >> $TMP_FILE_FOR_GNUPLOT
+        #[ "$OBSERVABLE" = "poly_sq" ] && echo 'fit_title = "$B_4( \\langle L_{sq}\\rangle ) = ('$FIT_FORM')(1+BN_{s}^{y_{t}-y_{h}})$\n\n $y_{t}-y_{h}='$ytminusyh'\\quad$ "\'             >> $TMP_FILE_FOR_GNUPLOT
+        [ "$OBSERVABLE" = "poly_sq" ] && echo 'fit_title = "$B_4( \\langle L_{sq}\\rangle ) = ('$FIT_FORM')(1+BN_{s}^{y_{t}-y_{h}})$\n\n"\'             >> $TMP_FILE_FOR_GNUPLOT
     else
-        [ "$OBSERVABLE" = "poly_sq" ] && echo 'fit_title = "Fit to $B_4( \\langle L_{sq}\\rangle )$ of form $\\to '$FIT_FORM'$\n\n "\'             >> $TMP_FILE_FOR_GNUPLOT
+        [ "$OBSERVABLE" = "poly_sq" ] && echo 'fit_title = "$B_4( \\langle L_{sq}\\rangle ) = '$FIT_FORM'$\n\n "\'             >> $TMP_FILE_FOR_GNUPLOT
     fi
-    [ "$FIXB4" = "TRUE" ] && [ "$FIXNU" = "FALSE" ] && echo '            .sprintf("$B_4(\\infty)=%.3f\\; \\text{(fixed)}\\quad a=%.3f\\pm%.3f\\quad b=%.3f\\pm%.3f$\n\n $\\nu=%.4f\\pm%.4f\\quad m_c=%.4f\\pm%.4f\\quad \\chi^2_{ndf=%d} = %f\\quad Q=%5.2f\\%$"\'          >> $TMP_FILE_FOR_GNUPLOT
-    [ "$FIXB4" = "FALSE" ] && [ "$FIXNU" = "FALSE" ] && echo '            .sprintf("$B_4(\\infty)=%.4f\\pm%.4f\\quad a=%.3f\\pm%.3f\\quad b=%.3f\\pm%.3f$\n\n $\\nu=%.4f\\pm%.4f\\quad m_c=%.4f\\pm%.4f\\quad \\chi^2_{ndf=%d} = %f\\quad Q=%5.2f\\%$"\'          >> $TMP_FILE_FOR_GNUPLOT
-    [ "$FIXB4" = "FALSE" ] && [ "$FIXNU" = "FALSE" ] && echo '            , a, a_err/FIT_STDFIT, b, b_err/FIT_STDFIT, b2, b2_err/FIT_STDFIT, nu, nu_err/FIT_STDFIT, mc, mc_err/FIT_STDFIT, FIT_NDF, FIT_STDFIT**2., Q*100)\'                                       >> $TMP_FILE_FOR_GNUPLOT
-    [ "$FIXB4" = "TRUE" ] && [ "$FIXNU" = "FALSE" ] && echo '            , a, b, b_err/FIT_STDFIT, b2, b2_err/FIT_STDFIT, nu, nu_err/FIT_STDFIT, mc, mc_err/FIT_STDFIT, FIT_NDF, FIT_STDFIT**2., Q*100)\'                              >> $TMP_FILE_FOR_GNUPLOT
 
-    [ "$FIXB4" = "TRUE" ] && [ "$FIXNU" = "TRUE" ] && echo '            .sprintf("$B_4(\\infty)=%.3f\\; \\text{(fixed)}\\quad a=%.3f\\pm%.3f\\quad b=%.3f\\pm%.3f$\n\n $\\nu=%.4f\\; \\text{(fixed)}\\quad m_c=%.4f\\pm%.4f\\quad \\chi^2_{ndf=%d} = %f\\quad Q=%5.2f\\%$"\'          >> $TMP_FILE_FOR_GNUPLOT
-    [ "$FIXB4" = "FALSE" ] && [ "$FIXNU" = "TRUE" ] && echo '            .sprintf("$B_4(\\infty)=%.4f\\pm%.4f\\quad a=%.3f\\pm%.3f\\quad b=%.3f\\pm%.3f$\n\n $\\nu=%.4f\\; \\text{(fixed)}\\quad m_c=%.4f\\pm%.4f\\quad \\chi^2_{ndf=%d} = %f\\quad Q=%5.2f\\%$"\'          >> $TMP_FILE_FOR_GNUPLOT
-    [ "$FIXB4" = "FALSE" ] && [ "$FIXNU" = "TRUE" ] && echo '            , a, a_err/FIT_STDFIT, b, b_err/FIT_STDFIT, b2, b2_err/FIT_STDFIT, nu, mc, mc_err/FIT_STDFIT, FIT_NDF, FIT_STDFIT**2., Q*100)\'                                       >> $TMP_FILE_FOR_GNUPLOT
-    [ "$FIXB4" = "TRUE" ] && [ "$FIXNU" = "TRUE" ] && echo '            , a, b, b_err/FIT_STDFIT, b2, b2_err/FIT_STDFIT, nu, mc, mc_err/FIT_STDFIT, FIT_NDF, FIT_STDFIT**2., Q*100)\'                              >> $TMP_FILE_FOR_GNUPLOT
     if [ "$USECORRECTIONTERM" = "TRUE" ]
     then
-        echo '      .sprintf("\n\n $B=%.2f\\pm%.2f$",bfactor,bfactor_err/FIT_STDFIT)\' >> $TMP_FILE_FOR_GNUPLOT
-        for VOLUME in ${VOLUMES[@]}; do
-            echo '.sprintf("$\\quad C(%d)=%.2f\\pm%.2f$",'$VOLUME',bfactor*'$VOLUME'**ny,(bfactor_err/FIT_STDFIT)*'$VOLUME'**ny)\'  >> $TMP_FILE_FOR_GNUPLOT
-        done
-        echo '.sprintf("\n\n")\'  >> $TMP_FILE_FOR_GNUPLOT
-        for VOLUME in ${VOLUMES[@]}; do
-            echo '.sprintf("$\\quad B_4(\\infty,%d)=%.2f\\pm%.2f$",'$VOLUME',a*(1+bfactor*'$VOLUME'**ny),a*(bfactor_err/FIT_STDFIT)*'$VOLUME'**ny)\'  >> $TMP_FILE_FOR_GNUPLOT
-        done
+        if [ $FIXY = "TRUE" ]; then
+            echo '.sprintf("$B=%.2f\\pm%.2f\\quad y=%.4f\\quad$",bfactor, bfactor_err,ny)\'             >> $TMP_FILE_FOR_GNUPLOT
+        else
+            echo '.sprintf("$B=%.2f\\pm%.2f\\quad y=%.4f\\pm%.4f\\quad$",bfactor, bfactor_err ,ny ,ny_err)\'             >> $TMP_FILE_FOR_GNUPLOT
+        fi
     fi
+
+
+    [ "$FIXB4" = "FALSE" ] && [ "$FIXNU" = "FALSE" ] && echo '.sprintf("$B_4(\\infty)=%.4f\\pm%.4f\\quad \\nu=%.4f\\pm%.4f\\quad m_c=%.4f\\pm%.4f$", a, a_err/FIT_STDFIT, nu, nu_err/FIT_STDFIT, mc, mc_err/FIT_STDFIT)\' >> $TMP_FILE_FOR_GNUPLOT
+
+    [ "$FIXB4" = "TRUE" ] && [ "$FIXNU" = "FALSE" ] && echo '.sprintf("$B_4(\\infty)=%.3f\\quad $\\nu=%.4f\\pm%.4f$\\quad m_c=%.4f\\pm%.4f$", a, nu, nu_err/FIT_STDFIT, mc, mc_err/FIT_STDFIT)\' >> $TMP_FILE_FOR_GNUPLOT
+
+    [ "$FIXB4" = "TRUE" ] && [ "$FIXNU" = "TRUE" ] && echo '.sprintf("$B_4(\\infty)=%.3f \\quad \\nu=%.4f\\quad m_c=%.4f\\pm%.4f$", a, nu, mc, mc_err/FIT_STDFIT)\' >> $TMP_FILE_FOR_GNUPLOT
+
+    [ "$FIXB4" = "FALSE" ] && [ "$FIXNU" = "TRUE" ] && echo '.sprintf("$B_4(\\infty)=%.4f\\pm%.4f\\quad \\nu=%.4f\\quad m_c=%.4f\\pm%.4f$", a, a_err/FIT_STDFIT, nu, mc, mc_err/FIT_STDFIT)\' >> $TMP_FILE_FOR_GNUPLOT
+
+    [ "$FIT_TYPE" = "linear" ] && echo '.sprintf("\n\n$a1=%.3f\\pm%.3f$", b, b_err/FIT_STDFIT)\' >> $TMP_FILE_FOR_GNUPLOT
+    [ "$FIT_TYPE" = "quadratic" ] && echo '.sprintf("\n\n$a1=%.3f\\pm%.3f\\quad a2=%.3f\\pm%.3f$", b, b_err/FIT_STDFIT, b2, b2_err/FIT_STDFIT)\' >> $TMP_FILE_FOR_GNUPLOT
+    [ "$FIT_TYPE" = "cubic" ] && echo '.sprintf("\n\n$a1=%.3f\\pm%.3f\\quad a3=%.3f\\pm%.3f$", b, b_err/FIT_STDFIT, b3, b3_err/FIT_STDFIT)\' >> $TMP_FILE_FOR_GNUPLOT 
+    [ "$FIT_TYPE" = "quadraticCubic" ] && echo '.sprintf("\n\n$a1=%.3f\\pm%.3f\\quad a2=%.3f\\pm%.3f\\quad a3=%.3f\\pm%.3f$", b, b_err/FIT_STDFIT, b2, b2_err/FIT_STDFIT, b3, b3_err/FIT_STDFIT)\' >> $TMP_FILE_FOR_GNUPLOT 
+    echo '.sprintf("\n\n $\\chi^2_{ndf=%d} = %f\\quad Q=%5.2f\\%\\quad$", FIT_NDF, FIT_STDFIT**2., Q*100)\' >> $TMP_FILE_FOR_GNUPLOT
+    
+    #if [ "$USECORRECTIONTERM" = "TRUE" ]
+    #then
+    #    echo '      .sprintf("\n\n $B=%.2f\\pm%.2f\\;y=%.4f\\pm%.4f$",bfactor,bfactor_err/FIT_STDFIT,ny,ny_err/FIT_STDFIT)\' >> $TMP_FILE_FOR_GNUPLOT
+    #    for VOLUME in ${VOLUMES[@]}; do
+    #        echo '.sprintf("$\\quad C(%d)=%.2f\\pm%.2f$",'$VOLUME',bfactor*'$VOLUME'**ny,(bfactor_err/FIT_STDFIT)*'$VOLUME'**ny)\'  >> $TMP_FILE_FOR_GNUPLOT
+    #    done
+    #    #echo '.sprintf("\n\n")\'  >> $TMP_FILE_FOR_GNUPLOT
+    #    #for VOLUME in ${VOLUMES[@]}; do
+    #    #    echo '.sprintf("$\\quad B_4(\\infty,%d)=%.2f\\pm%.2f$",'$VOLUME',a*(1+bfactor*'$VOLUME'**ny),a*(bfactor_err/FIT_STDFIT)*'$VOLUME'**ny)\'  >> $TMP_FILE_FOR_GNUPLOT
+    #    #done
+    #fi
+
+    #echo '.sprintf("\n\n Asym.: %.3f $\\pm$ %.3f, fh=%.3f, fl=%.3f, dmin=%.3f, dmax=%.3f, dmin/dmax=%.3f", 1-(fitrange_high/1.05-mc)/(mc-fitrange_low/0.95), ((fitrange_high/1.05-fitrange_low/0.95)/(fitrange_high/1.05-mc)**2)*mc_err/FIT_STDFIT, fitrange_high/1.05, fitrange_low/0.95, mc-fitrange_low/0.95, fitrange_high/1.05-mc, (mc-fitrange_low/0.95)/(fitrange_high/1.05-mc) )\' >> $TMP_FILE_FOR_GNUPLOT
+    #echo '.sprintf("\n\n errNum=%.6f, errDen=%.6f, kerr=%.3f", (fitrange_high/1.05-fitrange_low/0.95),(fitrange_high/1.05-mc)**2,mc_err/FIT_STDFIT)\' >> $TMP_FILE_FOR_GNUPLOT
+    #echo '.sprintf("\n\n Asym.: %.3f $\\pm$ %.3f", 2*(0.5-(fitrange_high/1.05-mc)/(fitrange_high/1.05-fitrange_low/0.95)), 2*mc_err/FIT_STDFIT)\' >> $TMP_FILE_FOR_GNUPLOT
+    #echo '.sprintf(" Symmetry: %.3f $\\pm$ %.3f", 100*( 1-abs(2*(mc-fitrange_low/0.95)/(fitrange_high/1.05-fitrange_low/0.95)-1) ), 2*100/(fitrange_high/1.05-fitrange_low/0.95)*mc_err/FIT_STDFIT)\' >> $TMP_FILE_FOR_GNUPLOT
+    for((i=0;i<${#VOLUMES[@]};i++))
+    do
+        if [ $i = $((${#VOLUMES[@]}-1)) ]; then
+            echo '.sprintf("S(%d)=%d ", '${VOLUMES[$i]}', symmNs'${VOLUMES[$i]}')\' >> $TMP_FILE_FOR_GNUPLOT
+        else
+            echo '.sprintf("S(%d)=%d, ", '${VOLUMES[$i]}', symmNs'${VOLUMES[$i]}')\' >> $TMP_FILE_FOR_GNUPLOT
+        fi
+    done
+    
+    echo '            .sprintf("\n\n")\' >> $TMP_FILE_FOR_GNUPLOT
+    for((i=0;i<$((${#VOLUMES[@]}-1));i++))
+    do
+        for((j=$(($i+1));j<${#VOLUMES[@]};j++))
+        do
+            echo '.sprintf("O(%d,%d)=%d ",'${VOLUMES[$i]}','${VOLUMES[$j]}',Ov_ns'${VOLUMES[$i]}'_ns'${VOLUMES[$j]}')\' >> $TMP_FILE_FOR_GNUPLOT
+        done
+    done
+
     if [ "$PRINTCOMMIT" = "TRUE" ]
     then
         echo '            .sprintf("\n%s", commit)'                                                                                                                                  >> $TMP_FILE_FOR_GNUPLOT
@@ -437,9 +656,9 @@ function CreateGnuplotFit(){
     echo 'set style arrow 1 filled head lt 0 lc -1 lw .5'             >> $TMP_FILE_FOR_GNUPLOT
     #TODO: GENERALIZE THE FOLLOWING LINE
     # echo 'set arrow from mc,fns1(mc) to mc,graph(0,0) arrowstyle 1'   >> $TMP_FILE_FOR_GNUPLOT
-    if [ "$SET_Y_RANGE" = "TRUE" ]; then
-        echo "set yrange [$FIT_Y_RANGE_LOW:$FIT_Y_RANGE_HIGH]"      >> $TMP_FILE_FOR_GNUPLOT
-    fi
+    #if [ "$SET_Y_RANGE" = "TRUE" ]; then
+    echo "set yrange [$FIT_Y_RANGE_LOW:$FIT_Y_RANGE_HIGH]"      >> $TMP_FILE_FOR_GNUPLOT
+    #fi
     echo -n 'plot   '                                                  >> $TMP_FILE_FOR_GNUPLOT
     for INDEX in ${!VOLUMES[@]}; do
         echo '"'$FILE_WITH_DATA_TO_BE_PLOTTED'"' index $INDEX u 1:6:7 pt 1 lt 1 lc $(($INDEX+1)) w e title '"$N_\\sigma=$ "'.ns$INDEX '\' >> $TMP_FILE_FOR_GNUPLOT   #pt = pointtype
@@ -450,8 +669,27 @@ function CreateGnuplotFit(){
     echo >> $TMP_FILE_FOR_GNUPLOT
     echo 'unset arrow' >> $TMP_FILE_FOR_GNUPLOT
 
+    output_filename_scaling_variable_intervals=${OUTPUT_FILENAME/.tex/_scaling_variables_intervalls.tex}
+    echo 'set output "'$output_filename_scaling_variable_intervals'"' >> $TMP_FILE_FOR_GNUPLOT 
+    echo 'unset title '                                        >> $TMP_FILE_FOR_GNUPLOT
+    echo "set yrange [-1:5]"      >> $TMP_FILE_FOR_GNUPLOT
+    echo "set autoscale x"      >> $TMP_FILE_FOR_GNUPLOT
+    echo 'set xlabel "$(\\kappa-\\kappa_c)N_s^{1/\\nu}$"'    >> $TMP_FILE_FOR_GNUPLOT
+    echo 'set ylabel "Ranges"'    >> $TMP_FILE_FOR_GNUPLOT
+    echo 'set key at graph 0.4, graph 0.95 spacing 1.75'    >> $TMP_FILE_FOR_GNUPLOT 
+    echo -n 'plot   '                                                  >> $TMP_FILE_FOR_GNUPLOT
+    for INDEX in ${!VOLUMES[@]}; do
+        echo '"'$FILE_WITH_DATA_TO_BE_PLOTTED'" index '$INDEX' u (($1-mc)*ns'$INDEX'**(1./nu)):('$INDEX') w linespoints pt 1 lt 1 lc '$(($INDEX+1))' title "$(\\kappa-\\kappa_c)".ns'$INDEX'."^{1/\\nu}$" \' >> $TMP_FILE_FOR_GNUPLOT   #pt = pointtype
+        #echo -n ', fns'$INDEX'(x) notitle lt 1 lc '$(($INDEX+1))                                                                          >> $TMP_FILE_FOR_GNUPLOT   #lt = linetype; lc = linecolor
+       [ $INDEX -lt $((${#VOLUMES[@]}-1)) ] && echo -n ' ,'                                                                               >> $TMP_FILE_FOR_GNUPLOT
+       [ $INDEX -lt $((${#VOLUMES[@]}-1)) ] && echo ' \'                                                                                  >> $TMP_FILE_FOR_GNUPLOT
+    done
+
+
+
     if [ "$USECORRECTIONTERM" = "TRUE" ]
     then
+        echo '' >> $TMP_FILE_FOR_GNUPLOT
         echo 'print " "' >> $TMP_FILE_FOR_GNUPLOT
         for VOLUME in ${VOLUMES[@]}; do
             echo 'print sprintf("%.3f*%d^(%.4f)=%.3f",bfactor,'$VOLUME',ny,bfactor*'$VOLUME'**ny)'  >> $TMP_FILE_FOR_GNUPLOT
@@ -462,14 +700,18 @@ function CreateGnuplotFit(){
 function RunGnuplotScriptAndProducePdf(){
     gnuplot $TMP_FILE_FOR_GNUPLOT 1>> /dev/null
     pdflatex $OUTPUT_FILENAME 1>> /dev/null
+    pdflatex $output_filename_scaling_variable_intervals 1>> /dev/null
 }
 
 function CleanAuxiliaryFiles(){
     rm $TMP_FILE_FOR_GNUPLOT
     rm $OUTPUT_FILENAME
+    rm $output_filename_scaling_variable_intervals
     rm fit.log
     rm ${OUTPUT_FILENAME/.tex/.log}
     rm ${OUTPUT_FILENAME/.tex/.aux}
+    rm ${output_filename_scaling_variable_intervals/.tex/.log}
+    rm ${output_filename_scaling_variable_intervals/.tex/.aux}
     local SUPPORT_GNUPLOT_LUATEX_FILES=("gnuplot-lua-tikz-common.tex"  "gnuplot-lua-tikz.sty"  "gnuplot-lua-tikz.tex"  "t-gnuplot-lua-tikz.tex")
     rm ${SUPPORT_GNUPLOT_LUATEX_FILES[@]}
 }
@@ -488,7 +730,6 @@ function ReplaceMassValueInFile(){
     }' $FILE_WITH_DATA_TO_BE_PLOTTED > AwkFile.tmp && mv AwkFile.tmp $FILE_WITH_DATA_TO_BE_PLOTTED
 }
 
-ReadDataFile
 
 [ "$FIT_LOWER_BOUND" = "" ] && FIT_LOWER_BOUND=$(awk -v value=${MASS_PARAMETER_VALUES[0]} 'BEGIN{print value*0.95}')
 [ "$FIT_UPPER_BOUND" = "" ] && FIT_UPPER_BOUND=$(awk -v value=${MASS_PARAMETER_VALUES[-1]} 'BEGIN{print value*1.05}')
@@ -512,3 +753,5 @@ if [ "$SEPERATE_MASS_VALUES" = "TRUE" ] && [ "$BELOW_MIN_SHIFT" = "TRUE" ]; then
     echo "Warning: Specified relativ shift results in a smaller total shift ($OLD_TOTAL_SHIFT) than then the minimal allowed shift with $MIN_SHIFT. Setting total shift to minimal allowed shift $MIN_SHIFT."
     echo
 fi
+
+rm -f $NAME_OF_TMP_FILE
