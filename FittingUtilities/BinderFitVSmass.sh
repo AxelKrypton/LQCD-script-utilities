@@ -72,32 +72,36 @@ if ElementInArray "--help" $@ || ElementInArray "-h" $@; then
     printf "Further option to the script\e[24m:\e[21m\n\n\t\e[38;5;4m"
     printf "    -q   | --quietMode                                                                                                         \n\t"
     printf "   --st  | --suppressTitle           -> Suppresses title of the fit in case the plot is needed for a publication.              \n\t"
-    printf "   -p    | --postfix                 -> Appends the specified postfix to the title.                                             \n\t"
     printf "   --printCommitID                                                                                                            \n\t"
+    printf "\n\t"
     printf "   --nf  | --numberOfFlavours        -> If given, an N_f label is added to the plot                                            \n\t"
     printf "   --mc  | --criticalMass            -> default: 0.1                                                                           \n\t"
     printf "   --nu  | --criticalExponent        -> default: 0.6301                                                                        \n\t"
     printf "   --a0  | --B4infinity              -> default: 1.604                                                                         \n\t"
     printf "   --a1  | --linearCoefficient       -> default: 1                                                                             \n\t"
     printf "   --a2  | --cubicCoefficient        -> default: 1                                                                             \n\t"
-    printf "   --cubic                           -> Produces cubic fit                                                                     \n\t"
-    printf "   --quadratic                       -> Produces quadratic fit                                                                 \n\t"
-    printf "   --cubicQuadratic                  -> Produces quadratic + cubic fit                                                         \n\t"
+    printf "   --cubic                           -> Produces linear + cubic fit                                                            \n\t"
+    printf "   --quadratic                       -> Produces linear + quadratic fit                                                        \n\t"
+    printf "   --cubicQuadratic                  -> Produces linear quadratic + cubic fit                                                  \n\t"
+    printf "\n\t"
     printf "    -f   | --dataFilename            -> default: poly_sq_BinderCumulantAtBetaC.dat                                             \n\t"
-    printf "    -o   | --outputFilename          -> default: BinderCumulant_poly_sq_Fit.pdf                                                \n\t"
+    printf "    -o   | --outputFilename          -> If an output filename is specified, the default filename will be overriden.            \n\t"
+    printf "    --pr | --prefix                  -> Puts a prefix to the output filename                                                   \n\t"
+    printf "    --po | --postfix                 -> Puts a postfix to the output filename                                                  \n\t"
+    printf "\n\t"
     printf "    -l   | --fitLowerBound           -> If not given, the lower bound will be determined to be 95%% of the minimal kappa.      \n\t"
     printf "    -u   | --fitUpperBound           -> If not given, the upper bound will be determined to be 105%% of the maximal kappa.     \n\t"
-    printf "    --yr | --fityRange)              -> Sets y-range of fit. Option expects two numbers: yrange-low yrange-high                \n\t"
-    printf "   --obs | --observable              -> default: poly_sq                                                                       \n\t"
+    printf "    --yr | --fityRange               -> Sets y-range of fit. Option expects two numbers: yrange-low yrange-high                \n\t"
+    printf "    --obs | --observable             -> default: poly_sq                                                                       \n\t"
     printf "    -s   | --seperateMassValues      -> Specify a value by which the points of the mass values will be shifted such that       \n\t"
     printf "                                     -> their error bars do not overlap. E.g. \"-s 0.05\" for 5%% of the whole fitting range.  \n\t"
     printf "                                     -> This is just for readability and the shifted mass values will not be used for the fit. \n\t"
     printf "   --doNotFixB4                      -> If given, B4(m,ns=inf) is extracted as fit parameters.                                 \n\t"
     printf "                                        The initial value for the fit is set by --a0.                                          \n\t"
-    printf "   --doNotfixNu                      -> If given, nu is extracted as fit parameters.                                           \n\t"
+    printf "   --doNotFixNu                      -> If given, nu is extracted as fit parameters.                                           \n\t"
     printf "                                        The initial value for the fit is set by --nu.                                          \n\t"
     printf "   --doNotfixY                       -> If given, y_t-y_h is extracted as fit parameters.                                      \n\t"
-    printf "   -c | --useCorrectionTerm)         -> If given, the correction term (1+BN^(yt-yh)) is multiplied to correct for              \n\t"
+    printf "   -c    | --useCorrectionTerm          -> If given, the correction term (1+BN^(yt-yh)) is multiplied to correct for              \n\t"
     printf "                                        finite volume effects at large N_tau.                                                  \n\t"
     printf "\n\e[0m"
     exit 3
@@ -179,7 +183,7 @@ while [ $# -gt 0 ]; do
         --doNotFixB4)
             FIXB4="FALSE"
             ;;
-        --doNotfixNu)
+        --doNotFixNu)
             FIXNU="FALSE"
             ;;
         --doNotfixY)
@@ -189,11 +193,15 @@ while [ $# -gt 0 ]; do
             USECORRECTIONTERM="TRUE"
             ;;
         -o | --outputFilename) 
-            OUTPUT_FILENAME=$2
+            CUSTOM_OUTPUT_FILENAME=$2
             shift
             ;;
-        -p | --prefix) 
+        --pr | --prefix) 
             PREFIX=$2
+            shift
+            ;;
+        --po | --postfix) 
+            POSTFIX=$2
             shift
             ;;
         --obs | --observable)
@@ -218,11 +226,6 @@ if [ "$SUPPRESS_TITLE" = "TRUE" ]; then
     OUTPUT_FILENAME="${OUTPUT_FILENAME}_notitle"
 fi
 
-if [ "$PREFIX" = "" ]; then
-    OUTPUT_FILENAME="${OUTPUT_FILENAME}"
-else
-    OUTPUT_FILENAME="${OUTPUT_FILENAME}$PREFIX"
-fi
 
 
 echo $FILE_WITH_DATA_TO_BE_FITTED
@@ -259,6 +262,17 @@ ReadDataFile
 for i in ${VOLUMES[@]};do
     OUTPUT_FILENAME=${OUTPUT_FILENAME}__ns${i}_k_${volume_kappa_range_array[$i]}
 done
+
+if [ "$POSTFIX" != "" ]; then
+    OUTPUT_FILENAME="${OUTPUT_FILENAME}$POSTFIX"
+fi
+if [ "$PREFIX" != "" ]; then
+    OUTPUT_FILENAME="$PREFIX${OUTPUT_FILENAME}"
+fi
+if [ "$CUSTOM_OUTPUT_FILENAME" != "" ]; then
+    OUTPUT_FILENAME=$CUSTOM_OUTPUT_FILENAME
+fi
+
 OUTPUT_FILENAME="${OUTPUT_FILENAME}.tex"
 
 function CreateGnuplotFit(){
@@ -418,10 +432,10 @@ function CreateGnuplotFit(){
                 elif [ "$FIT_TYPE" = "cubic" ]; then
                     echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  mc, b, b3, nu, bfactor' >> $TMP_FILE_FOR_GNUPLOT
                 elif [ "$FIT_TYPE" = "quadratic" ]; then
-                    echo "Fit of quadratic coefficient not yet properly defined when B4 is a free parameters...exiting" 
+                    echo "Fit of quadratic coefficient not yet implemented for the case of B4 as a free parameter...exiting" 
                     exit
                 elif [ "$FIT_TYPE" = "quadraticCubic" ]; then
-                    echo "Fit of quadratic + cubic coefficient not yet properly defined when B4 is a free parameters...exiting" 
+                    echo "Fit of quadratic + cubic coefficient not yet implemented for the case of B4 as a free parameter...exiting" 
                     exit
                 fi
             elif [ $FIXY = "FALSE" ]; then
@@ -434,10 +448,10 @@ function CreateGnuplotFit(){
             elif [ "$FIT_TYPE" = "cubic" ]; then
                 echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  mc, b, b3, nu' >> $TMP_FILE_FOR_GNUPLOT
             elif [ "$FIT_TYPE" = "quadratic" ]; then
-                echo "Fit of quadratic coefficient not yet properly defined when B4 is a free parameters...exiting" 
+                echo "Fit of quadratic coefficient not implemented for the case of B4 as a free parameter...exiting" 
                 exit
             elif [ "$FIT_TYPE" = "quadraticCubic" ]; then
-                echo "Fit of quadratic + cubic coefficient not yet properly defined when B4 is a free parameters...exiting" 
+                echo "Fit of quadratic + cubic coefficient not yet implemented for the case of B4 as a free parameter...exiting" 
                 exit
             fi
         fi
@@ -453,7 +467,7 @@ function CreateGnuplotFit(){
                     echo "Fit of quadratic coefficient not yet properly defined when nu is a free parameters...exiting" 
                     exit
                 elif [ "$FIT_TYPE" = "quadraticCubic" ]; then
-                    echo "Fit of quadratic + cubic coefficient not yet properly defined when nu is a free parameters...exiting" 
+                    echo "Fit of quadratic + cubic coefficient not yet implemented for the case of B4 as a free parameter...exiting" 
                     exit
                 fi
             elif [ $FIXY = "FALSE" ]; then
@@ -466,10 +480,10 @@ function CreateGnuplotFit(){
             elif [ "$FIT_TYPE" = "cubic" ]; then
                 echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$FILE_WITH_DATA_TO_BE_FITTED'" u 1:-2:6:7 '$FIT_ERRORS_STRING' via  a, mc, b, b3' >> $TMP_FILE_FOR_GNUPLOT
             elif [ "$FIT_TYPE" = "quadratic" ]; then
-                echo "Fit of quadratic coefficient not yet properly defined when nu is a free parameters...exiting" 
+                echo "Fit of quadratic coefficient not yet implemented for the case of B4 as a free parameter...exiting" 
                 exit
             elif [ "$FIT_TYPE" = "quadraticCubic" ]; then
-                echo "Fit of quadratic + cubic coefficient not yet properly defined when nu is a free parameters...exiting" 
+                echo "Fit of quadratic + cubic coefficient not yet implemented for the case of B4 as a free parameter...exiting" 
                 exit
             fi
         fi
@@ -599,7 +613,7 @@ function CreateGnuplotFit(){
 
     [ "$FIXB4" = "FALSE" ] && [ "$FIXNU" = "FALSE" ] && echo '.sprintf("$B_4(\\infty)=%.4f\\pm%.4f\\quad \\nu=%.4f\\pm%.4f\\quad m_c=%.4f\\pm%.4f$", a, a_err/FIT_STDFIT, nu, nu_err/FIT_STDFIT, mc, mc_err/FIT_STDFIT)\' >> $TMP_FILE_FOR_GNUPLOT
 
-    [ "$FIXB4" = "TRUE" ] && [ "$FIXNU" = "FALSE" ] && echo '.sprintf("$B_4(\\infty)=%.3f\\quad $\\nu=%.4f\\pm%.4f$\\quad m_c=%.4f\\pm%.4f$", a, nu, nu_err/FIT_STDFIT, mc, mc_err/FIT_STDFIT)\' >> $TMP_FILE_FOR_GNUPLOT
+    [ "$FIXB4" = "TRUE" ] && [ "$FIXNU" = "FALSE" ] && echo '.sprintf("$B_4(\\infty)=%.3f\\quad \\nu=%.4f\\pm%.4f\\quad m_c=%.4f\\pm%.4f$", a, nu, nu_err/FIT_STDFIT, mc, mc_err/FIT_STDFIT)\' >> $TMP_FILE_FOR_GNUPLOT
 
     [ "$FIXB4" = "TRUE" ] && [ "$FIXNU" = "TRUE" ] && echo '.sprintf("$B_4(\\infty)=%.3f \\quad \\nu=%.4f\\quad m_c=%.4f\\pm%.4f$", a, nu, mc, mc_err/FIT_STDFIT)\' >> $TMP_FILE_FOR_GNUPLOT
 
