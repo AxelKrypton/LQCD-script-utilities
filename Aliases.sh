@@ -646,9 +646,9 @@ if [ $LOAD_ROOTHIST_ALIASES = "TRUE" ]; then
         done
 
         #Call Root program
-        $ROOT_PRGOGRAM --pathInputFile=tmpFileForRoot --addProj
+        #$ROOT_PRGOGRAM --pathInputFile=tmpFileForRoot --addProj
 
-        rm $TMP_ROOT_PATH_INPUT_FILE
+        #rm $TMP_ROOT_PATH_INPUT_FILE
     }
 
 fi
