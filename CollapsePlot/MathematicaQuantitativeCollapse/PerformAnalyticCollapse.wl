@@ -1,6 +1,8 @@
-#!/usr/local/bin/MathematicaScript -script
+#!/usr/bin/env wolframscript
 
-AppendTo[$Path, Directory[]];
+(* ::Package:: *)
+
+AppendTo[$Path, FileNameJoin[{$HomeDirectory, "Script", "CollapsePlot", "MathematicaQuantitativeCollapse"}]];
 
 If[FindFile["AnalyticCollapse`"] === $Failed, Print["Package \"AnalyticCollapse\" could not be loaded! Aborting..."]; Abort[], Needs["AnalyticCollapse`"]]
 
@@ -51,17 +53,17 @@ If[
 
 (*----------------------------------------------------------------------------------*)
 (*Import data*)
-Volume[filename_] := 
+LatticeSize[filename_] := 
     Module[{basename},
         basename = StringReplace[filename, RegularExpression[".*/"] -> ""];
         ToExpression[StringCases[StringCases[basename, RegularExpression["ns[[:digit:]]+"]], RegularExpression["[[:digit:]]+"]][[1, 1]]]
     ]
-AllDataInBeta = {Import[#], Volume[#]} & /@ NamesOfFiles;
-AllEstimatorsInBeta = {Import[#], Volume[#]} & /@ NamesOfFilesWithEstimators;
+AllDataInBeta = {Import[#], LatticeSize[#]} & /@ NamesOfFiles;
+AllEstimatorsInBeta = {Import[#], LatticeSize[#]} & /@ NamesOfFilesWithEstimators;
 
 (*Build up name of output file*)
 NameOfOutputFile = StringTake[NamesOfFiles//First, StringPosition[NamesOfFiles//First, "_", 1][[1,1]]-1]
-NameOfOutputFile = Fold[StringJoin, NameOfOutputFile, "_ns" <> ToString[Volume[#]] & /@ NamesOfFiles ]
+NameOfOutputFile = Fold[StringJoin, NameOfOutputFile, "_ns" <> ToString[LatticeSize[#]] & /@ NamesOfFiles ]
 NameOfOutputFile = NameOfOutputFile <> "_analyticCollapse.dat"
 
 (*----------------------------------------------------------------------------------*)

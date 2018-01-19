@@ -26,7 +26,7 @@ function ParseCommandLineOptions(){
                 echo "   -r | --remote         ->    remote name (default = $REMOTE_NAME)"
                 echo "   --remotePrefix        ->    remote prefix (default = ${REMOTE_PREFIX[$(whoami)]})"
                 echo "   --rsyncOptions        ->    options passed to rsync (default = $RSYNC_OPTIONS)"
-                echo "   --now                 ->    if given, start the syncronization immediately and not at 2a.m."
+                echo "   --now                 ->    if given, start the syncronization immediately and not at 21"
                 echo "   --doNotRemoveFiles    ->    if given, only the backup is done and no older checkpoint is deleted"
                 echo "   --doNotRedirect       ->    if given, no redirection of standard output and error is done"
                 echo " "

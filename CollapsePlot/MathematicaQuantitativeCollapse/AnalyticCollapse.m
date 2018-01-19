@@ -195,7 +195,7 @@ MakePlotOfScanSeparatingBlocksOfBetas[collapseQualityScan_]:=
 		numberOfNu=Count[collapseQualityScan[[All,1]],collapseQualityScan[[1,1]]];
 		dataToPlot=GetQualitiesInNu[collapseQualityScan];
 		legendLabels=Table["\[Beta]=" <> ToString[label],{label,DeleteDuplicates[collapseQualityScan[[All,1]]]}];
-		ListLinePlot[Partition[dataToPlot,numberOfNu], PlotRange->{Automatic}, PlotLegends->legendLabels]
+		ListLinePlot[Partition[dataToPlot,numberOfNu], PlotRange->Automatic, PlotLegends->legendLabels]
 	]
 
 (*From here on modules to make bootstrap on each data point*)

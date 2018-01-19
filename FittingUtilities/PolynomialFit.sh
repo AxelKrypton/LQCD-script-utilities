@@ -136,8 +136,13 @@ fi
 #==============================================================================================================
 #Find min and max of x column including extrapolation points (if xrange not given)
 if [ ${#XRANGE[@]} -eq 0 ]; then
-    X_MIN=$(awk '/^($|[#]+)/{next} {if(min==""){min=$'$COLUMN_X'}else{if($'$COLUMN_X'<min){min=$'$COLUMN_X'}}}END{print min}' $DATA_FILENAME)
-    X_MAX=$(awk '/^($|[#]+)/{next} {if(max==""){max=$'$COLUMN_X'}else{if($'$COLUMN_X'>max){max=$'$COLUMN_X'}}}END{print max}' $DATA_FILENAME)
+    if [ $(grep -c '\$' <<< "$COLUMN_X $COLUMN_Y") -eq 0 ]; then
+        X_MIN=$(awk '/^($|[#]+)/{next} {if(min==""){min=$'$COLUMN_X'}else{if($'$COLUMN_X'<min){min=$'$COLUMN_X'}}}END{print min}' $DATA_FILENAME)
+        X_MAX=$(awk '/^($|[#]+)/{next} {if(max==""){max=$'$COLUMN_X'}else{if($'$COLUMN_X'>max){max=$'$COLUMN_X'}}}END{print max}' $DATA_FILENAME)
+    else
+        X_MIN=$(awk '/^($|[#]+)/{next} {if(min==""){min='$COLUMN_X'}else{if('$COLUMN_X'<min){min='$COLUMN_X'}}}END{print min}' $DATA_FILENAME)
+        X_MAX=$(awk '/^($|[#]+)/{next} {if(max==""){max='$COLUMN_X'}else{if('$COLUMN_X'>max){max='$COLUMN_X'}}}END{print max}' $DATA_FILENAME)
+    fi
     for NEW_POINT in ${EXTRAPOLATE_TO[@]}; do
         [ $(awk '{if($1<$2){print 0}else{print 1}}' <<< "$NEW_POINT $X_MIN") -eq 0 ] && X_MIN=$NEW_POINT
         [ $(awk '{if($1>$2){print 0}else{print 1}}' <<< "$NEW_POINT $X_MAX") -eq 0 ] && X_MAX=$NEW_POINT
@@ -232,7 +237,7 @@ if [ ${#EXTRAPOLATE_TO[@]} -ne 0 ]; then
     echo ')' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     echo 'print "\nExtrapolation to new points:\n\n'$LABEL_X'\t\t'$LABEL_Y'"' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     for NEW_POINT in ${EXTRAPOLATE_TO[@]}; do
-        echo 'print sprintf("%f\t%f +- %f", '$NEW_POINT', f('$NEW_POINT'), f_err('$NEW_POINT'))' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+        echo 'print sprintf("%f\t\t%f %f", '$NEW_POINT', f('$NEW_POINT'), f_err('$NEW_POINT'))' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     done
     echo 'print ""' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     echo 'set print' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
