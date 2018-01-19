@@ -201,6 +201,9 @@ do
         unset -v 'USER_USAGE'
     done
     #Calculate information about users not in the list
+    #TODO: These three lines should be moved above close to the other squeue because
+    #      if a job change status between a squeue and the other, then this script
+    #      gives wrong results. Remote case, but it happened...
     RUNNING_IN_TOTAL=$(squeue -h -p $PARTITION -t RUNNING -o %D | awk '{sum+=$1}END{print sum}')
     PENDING_IN_TOTAL=$(squeue -h -p $PARTITION -t PENDING -o %D | awk '{sum+=$1}END{print sum}')
     QUEUED_IN_TOTAL=$(squeue -h -p $PARTITION -o %D | awk '{sum+=$1}END{print sum}')
