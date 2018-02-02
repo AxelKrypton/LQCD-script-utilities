@@ -50,26 +50,28 @@ function ParseCommandLineOptions(){
 #-------------------------------------------------------------------------------------------------------#
 #Having loaded PathManagement.sh we get for free all the parameters variables and functionalities
 CheckWilsonStaggeredVariables
-ReadSingleParameterFromPath $PWD $NFLAVOUR_PREFIX
-ReadSingleParameterFromPath $PWD $CHEMPOT_PREFIX
+#Build path regex for later
+RESULTING_REGEX=""
+for INDEX in ${!PARAMETER_REGEXES[@]}; do
+    RESULTING_REGEX="$RESULTING_REGEX/${PARAMETER_PREFIXES[$INDEX]}${PARAMETER_REGEXES[$INDEX]}"
+done && unset -v 'INDEX'
+RESULTING_REGEX="$RESULTING_REGEX/$BETA_FOLDER_REGEX"
 
 WILSON_CONFIGS_POSITION="/home/phil-configs/wilson_nf2_muipi4/ImagMu"
 STAGGERED_CONFIGS_POSITION="/home/phil-configs/Staggered"
 
 #Associative array to make the script user specific
 declare -A REMOTE_PREFIX
-declare -A EXPECTED_POSITION
 
 if [ $STAGGERED = "TRUE" ]; then
-    EXPECTED_POSITION="${STAGGERED_CONFIGS_POSITION}$(GetParametersPath ${NFLAVOUR_PREFIX} ${CHEMPOT_PREFIX})/LastConfigurations"
+    EXPECTED_POSITION="${STAGGERED_CONFIGS_POSITION}/LastConfigurations"
     #Each user can put here the remote prefix if she/he does not want to give it via command line
     REMOTE_PREFIX["sciarra"]="/lustre/nyx/lcsc/asciarra/StaggeredProject"
 elif [ $WILSON = "TRUE" ]; then
-    EXPECTED_POSITION="${WILSON_CONFIGS_POSITION}$(GetParametersPath ${NFLAVOUR_PREFIX} ${CHEMPOT_PREFIX})/LastConfigurations"
+    EXPECTED_POSITION="${WILSON_CONFIGS_POSITION}/LastConfigurations"
     #Each user can put here the remote prefix if she/he does not want to give it via command line
     REMOTE_PREFIX["sciarra"]="/scratch/hfftheo/sciarra/WilsonProject/muiPiT"
     REMOTE_PREFIX["czaban"]="/scratch/hfftheo/czaban/WilsonProject/Nf2/mui0"
-    EXPECTED_POSITION["czaban"]="/home/phil-configs/wilson_nf2_muipi4/ImagMu/Nf2/mui0/LastConfigurations"
     REMOTE_PREFIX["cuteri"]="/scratch/hfftheo/cuteri/ImagMu/muiPiT"
 fi
 
@@ -91,13 +93,9 @@ if [ $(pwd) != ${EXPECTED_POSITION} ]; then
     exit -1
 fi
 
-#Build path regex for later
-RESULTING_REGEX=""
-for INDEX in ${!PARAMETER_REGEXES[@]}; do
-    RESULTING_REGEX="$RESULTING_REGEX/${PARAMETER_PREFIXES[$INDEX]}${PARAMETER_REGEXES[$INDEX]}"
-done && unset -v 'INDEX'
-RESULTING_REGEX="$RESULTING_REGEX/$BETA_FOLDER_REGEX"
-
+#Folders to move at the end the produced files
+CONF_LIST_FOLDER="${EXPECTED_POSITION}/ConfigurationLists"
+SYNC_OUTPUT_FOLDER="${EXPECTED_POSITION}/SyncronizationOutput"
 #-------------------------------------------------------------------------------------------------------#
 
 while :
@@ -135,7 +133,7 @@ do
     printf "\n\e[38;5;39m Obtaining list of files from remote...\e[0m"
     START_TIME=$(date +%s)
     ssh $REMOTE_NAME 'bash -s' > $CONF_LIST_FILE << EOF
-for BETA in ${REMOTE_PREFIX[$(whoami)]}/${NFLAVOUR_PREFIX}${NFLAVOUR}/${CHEMPOT_PREFIX}${CHEMPOT}/${MASS_PREFIX}*/${NTIME_PREFIX}*/${NSPACE_PREFIX}*/${BETA_PREFIX}*; do
+for BETA in ${REMOTE_PREFIX[$(whoami)]}/${NFLAVOUR_PREFIX}*/${CHEMPOT_PREFIX}*/${MASS_PREFIX}*/${NTIME_PREFIX}*/${NSPACE_PREFIX}*/${BETA_PREFIX}*; do
 if [[ \$BETA =~ ^${REMOTE_PREFIX[$(whoami)]}${RESULTING_REGEX//\\/}$ ]]; then
     ls \$BETA | grep "^\(prng\|conf\).[[:digit:]]\+$" | sort -t '.' -k2n | awk '{printf "%s ", \$0; if(\$0 ~ /^prng/){printf "\n"}}' | tac | awk -v beta="\$BETA" 'NF==2{printf "%s\n%s\n", beta"/"\$1, beta"/"\$2; exit}'
 fi
@@ -145,11 +143,11 @@ EOF
 
     #Remove remote prefix from file lines because it will be put in rsync command in order to get
     #the folder structure created on the local folder in case
-    sed -i 's@'${REMOTE_PREFIX[$(whoami)]}/${NFLAVOUR_PREFIX}${NFLAVOUR}/${CHEMPOT_PREFIX}${CHEMPOT}/'@@g' $CONF_LIST_FILE
+    sed -i 's@'${REMOTE_PREFIX[$(whoami)]}/'@@g' $CONF_LIST_FILE
     #Copy the files from remote
     printf "\e[38;5;39m Syncronizing with the remote...\e[0m"
     START_TIME=$(date +%s)
-    rsync -${RSYNC_OPTIONS} --perms --files-from=$CONF_LIST_FILE --chmod=Du=rwx,Dg=rwx,Do=r,Fu=rw,Fog=r $REMOTE_NAME:${REMOTE_PREFIX[$(whoami)]}/${NFLAVOUR_PREFIX}${NFLAVOUR}/${CHEMPOT_PREFIX}${CHEMPOT} .
+    rsync -${RSYNC_OPTIONS} --perms --files-from=$CONF_LIST_FILE --chmod=Du=rwx,Dg=rwx,Do=r,Fu=rw,Fog=r $REMOTE_NAME:${REMOTE_PREFIX[$(whoami)]} .
     printf "\e[38;5;39m ...done in \e[38;5;48m$(SecondsToTimeString $(( $(date +%s) - $START_TIME )) )\e[38;5;39m!\n\n\e[0m"
 
     #-------------------------------------------------------------------------------------------------------#
@@ -164,6 +162,9 @@ EOF
         #      have the .. links in their subdirectories.
         LIST_OF_PROBLEMATIC_FOLDERS=()
         for DIR in $(find . -type d -links 2); do
+            if [[ $(basename $DIR) =~ ^$(basename $CONF_LIST_FOLDER) ]] || [[ $(basename $DIR) =~ ^$(basename $SYNC_OUTPUT_FOLDER) ]]; then
+                continue
+            fi
             cd $DIR
             if [ $(ls conf.[0-9]* 2>> /dev/null | wc -l) -eq 0 ]; then
                 >&2 printf "\e[0;91m Error occurred trying to list files in folder \e[0;93m$(pwd)\e[0;91m -> To be invastigated...\n\e[0m"
@@ -214,8 +215,13 @@ EOF
         fi
     fi
 
-    #Restore stdout and stderr for following iteration
-    exec 1>&3 2>&4
+    mv "$CONF_LIST_FILE" "$CONF_LIST_FOLDER" | exit -2
+    if [ $REDIRECT_OUTPUT_TO_FILES = 'TRUE' ]; then
+        mv "$STANDARD_OUTPUT_FILENAME" "$SYNC_OUTPUT_FOLDER"
+        mv "$STANDARD_ERROR_FILENAME"  "$SYNC_OUTPUT_FOLDER"
+        #Restore stdout and stderr for following iteration
+        exec 1>&3 2>&4
+    fi
 
     [ $SYNC_NOW = "TRUE" ] && break
 done
