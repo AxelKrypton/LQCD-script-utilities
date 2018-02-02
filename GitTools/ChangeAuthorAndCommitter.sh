@@ -2,7 +2,6 @@
 
 #Inspired from https://help.github.com/articles/changing-author-info/
 
-
 function ElementInArray() {
     #Remember in BASH 0 means true and >0 means false
     local ELEMENT
@@ -80,10 +79,7 @@ function ParseCommandLineOption(){
                 shift 2 ;;
             --use-mailmap )
                 USE_MAILMAP='TRUE'
-                echo "\$1 = $1"
-                echo "\$2 = $2"
                 if [[ $2 =~ ^[^-] ]]; then
-                    echo In if
                     MAILMAP_FILENAME=$2; shift
                 fi
                 shift ;;
@@ -177,8 +173,6 @@ if [ $USE_MAILMAP = 'FALSE' ]; then
 
 else
 
-    echo "MAILMAP_FILENAME=$MAILMAP_FILENAME
-"
     if [ ! -f $MAILMAP_FILENAME ]; then
         printf "\n\e[0;91m File \e[1m$MAILMAP_FILENAME\e[21m not found! Aborting...\n\n\e[0m"
         exit -1
@@ -192,7 +186,6 @@ else
         fi
         LINE=`echo $LINE | awk '{split($0, res, "#"); print res[1]}'`
 
-        echo "$LINE"
         #Parse the line extracting the information to call ExecuteGitOperations
         NEW_AUTHOR_NAME="${LINE%%<*}"
         LINE="${LINE#*<}"

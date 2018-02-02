@@ -26,6 +26,7 @@ function ParseCommandLineOption(){
                 echo "   --removePeriodEndOfFirstLine"
                 echo "   --removeHashSymbolsIfFollowedByDigits"
                 echo "   --replaceWrittenEndlineWithTrueEndline"
+                echo "   --replaceMultipleEmptyLinesWithSingleOne"
                 echo "   --insertTwoEndlinesIntoFirstLineAfterCharacterNumber (default 50)"
                 echo "   --foldExceptFirstTwoLinesAfterCharacterNumber        (default 70)"
                 echo "   --all          ->    Executes all commands above in the order above"
@@ -56,7 +57,7 @@ function ParseCommandLineOption(){
                     VALUE_OF_OPTION=50
                     NUMBER_OF_SHIFT=1
                 fi
-                COMMAND+=( 'sed "1s/\(.\{'${VALUE_OF_OPTION}'\}[^[:space:]]*\) /\1\n\n/"' )
+                COMMAND+=( 'fold -s -w '${VALUE_OF_OPTION}' | sed "1G"' )
                 shift $NUMBER_OF_SHIFT ;;
             --foldExceptFirstTwoLinesAfterCharacterNumber )
                 if [ "$2" != '' ] && [[ ! $2 =~ ^- ]]; then
@@ -83,6 +84,9 @@ function ParseCommandLineOption(){
                 shift ;;
             --replaceWrittenEndlineWithTrueEndline )
                 COMMAND+=( 'sed "s/\\\\n/\n/g"' )
+                shift ;;
+            --replaceMultipleEmptyLinesWithSingleOne )
+                COMMAND+=( 'sed "/^\$/N;/^\n\$/D"' )
                 shift ;;
             --command )
                 COMMAND+=( "$2" )
