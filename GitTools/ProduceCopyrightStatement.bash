@@ -55,7 +55,7 @@ fi
 if [ ! -f "${CPR_filename}" ]; then
     printf "\n\e[0;91m File \"${CPR_filename}\" not existing! Aborting...\n\n\e[0m"; exit -1
 else
-    declare -A "CPR_authorYears=( $(git blame -c common_header_files/types_hmc.h | awk 'BEGIN{FS="[\(-]"}{print $2 }' 2>/dev/null | sort | uniq | awk '{array[$1" "$2]=array[$1" "$2]","$3}END{for(key in array){printf "[%s]=%s ", key, array[key]}}') )"
+    declare -A "CPR_authorYears=( $(git blame -c ${CPR_filename} | awk 'BEGIN{FS="[\(-]"}{print $2 }' 2>/dev/null | sort | uniq | awk '{array[$1" "$2]=array[$1" "$2]","$3}END{for(key in array){printf "[%s]=%s ", key, array[key]}}') )"
 fi
 
 # Remove initial comma in year string and collapse years (the strategy here is to print the first year, followed by "-", and replace following years
