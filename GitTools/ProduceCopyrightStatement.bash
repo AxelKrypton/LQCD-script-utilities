@@ -61,12 +61,10 @@ fi
 # Remove initial comma in year string and collapse years (the strategy here is to print the first year, followed by "-", and replace following years
 # by "-" if they are consecutive; at the end replace in the resulting string 2 or less "-" by "," and 3 or more "-" by one "-")
 for author in "${!CPR_authorYears[@]}"; do
-    echo "${CPR_authorYears["$author"]:1}"
     CPR_authorYears["${author}"]=$(echo "${CPR_authorYears["$author"]:1}" |
                                            tr ',' '\n' |
                                            awk 'NR==1{previousYear=$1; printf "%d-", $1; lastYearPrinted=1} NR>1{if($1==previousYear+1){printf "-"; lastYearPrinted=0; previousYear=$1}else{if(lastYearPrinted==0){printf "%d-", previousYear}; printf "%d-", $1; previousYear=$1; lastYearPrinted=1}}END{if(lastYearPrinted==0){printf "%d-", $1}}' |
                                            sed -e 's/[-][-][-]\+/|/g' -e 's/[-][-]\?/,/g' -e 's/|/-/g')
-    echo "CPR_authorYears["$author"]=${CPR_authorYears["${author}"]}"
 done
     
 # Remove last comma and create different associative array for later (years as keys)
