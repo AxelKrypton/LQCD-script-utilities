@@ -37,9 +37,6 @@ function ParseCommandLineOption(){
     done
 }
 
-
-
-
 #----------------------------------------------------------------------#
 # Global vasriables
 CPR_filename=''
@@ -59,12 +56,11 @@ else
 fi
 
 # Remove initial comma in year string and collapse years (the strategy here is to print the first year, followed by "-", and replace following years
-# by "-" if they are consecutive; at the end replace in the resulting string 2 or less "-" by "," and 3 or more "-" by one "-")
+# by "-" if they are consecutive (i.e. if the previous and the following in the list are the previous and the following year); at the end replace
+# in the resulting string 2 or more "-" by one "|", 1 "-" by "," and "|" by "-"). Print always a "-" after the end so that there is always a "," at
+# the end, which will be replaced later (see below).
 for author in "${!CPR_authorYears[@]}"; do
-    CPR_authorYears["${author}"]=$(echo "${CPR_authorYears["$author"]:1}" |
-                                           tr ',' '\n' |
-                                           awk 'NR==1{previousYear=$1; printf "%d-", $1; lastYearPrinted=1} NR>1{if($1==previousYear+1){printf "-"; lastYearPrinted=0; previousYear=$1}else{if(lastYearPrinted==0){printf "%d-", previousYear}; printf "%d-", $1; previousYear=$1; lastYearPrinted=1}}END{if(lastYearPrinted==0){printf "%d-", $1}}' |
-                                           sed -e 's/[-][-][-]\+/|/g' -e 's/[-][-]\?/,/g' -e 's/|/-/g')
+    CPR_authorYears["${author}"]=$(awk 'BEGIN{FS=","}{printf "%d-", $1; for(i=2; i<NF; i++){if($(i-1)+1==$i && $(i)+1==$(i+1)){printf "-"}else{printf "%d-", $i}}; if(NF>1){printf "%d-", $NF}}' <<< "${CPR_authorYears["$author"]:1}" | sed -e 's/[-][-]\+/|/g' -e 's/[-]/,/g' -e 's/|/-/g')
 done
     
 # Remove last comma and create different associative array for later (years as keys)
@@ -73,8 +69,7 @@ for author in "${!CPR_authorYears[@]}"; do
     CPR_yearsAuthor[${CPR_authorYears["$author"]%?}]="$author"
 done
 
-
-
+# Print copyright statement sorted by year
 for yearString in "${!CPR_yearsAuthor[@]}"; do
     printf "%s Copyright (c) %s %s\n"   "${CPR_prefix}"   "${yearString}"   "${CPR_yearsAuthor[$yearString]}"
 done | sort
