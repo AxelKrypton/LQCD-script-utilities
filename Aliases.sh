@@ -159,10 +159,10 @@ if [ $LOAD_PYTHON_ALIASES = "TRUE" ]; then
         echo "PyAnalysis --deactivatePlaq --deactivatePoly --activatePbp --inversionsPerConfig 8"
     }
     function GetAnalysisPolyImWithZeroMeanCommand(){
-        echo "PyAnalysis --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_sq"
+        echo "PyAnalysis --analyzeWithJackknife --analyzeSingleChains --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_sq"
     }
     function GetAnalysisPolySqCommand(){
-        echo "PyAnalysis --deactivatePlaq --deactivatePoly_re --deactivatePoly_im_withZeroMean --deactivatePoly_im --deactivatePoly_im_abs --deactivateSusc"
+        echo "PyAnalysis --analyzeWithJackknife --analyzeSingleChains --deactivatePlaq --deactivatePoly_re --deactivatePoly_im_withZeroMean --deactivatePoly_im --deactivatePoly_im_abs --deactivateSusc"
     }
     function __static__DefineBetaMinMaxResAndCheck(){
         if [ $# -eq 1 ]; then
