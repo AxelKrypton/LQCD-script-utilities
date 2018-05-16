@@ -24,9 +24,9 @@ function ParseCommandLineOption(){
                 echo "  -p | --prefix           ->    Prefix for each line of the copyright statement"
                 echo "  -f | --filename         ->    file in the git to be used"
                 echo "  -s | --substitute       ->    look for copyright statement in file and replace it"
-                echo "  -b | --beginCopyright   ->    used in -s option to specify where the copyright statement begins"
+                echo "  -b | --beginCopyright   ->    used with -s option to specify where the copyright statement begins"
                 echo "                                (if not given, a line started with the prefix followed by 'Copyright' is used)"
-                echo "  -e | --endCopyright     ->    used in -s option to specify where the copyright statement ends"
+                echo "  -e | --endCopyright     ->    used with -s option to specify where the copyright statement ends"
                 echo "                                (if not given, a line with only the prefix and no trailing spaces is used)"
                 echo "  --preview               ->    if -s is given, make file preview using less and ask confirmation"
                 printf "\n\e[0m"
@@ -86,10 +86,12 @@ else
     declare -A "CPR_authorYearsTmp=( $(git blame -c ${CPR_filename} | awk 'BEGIN{FS="[\(-]"}{print $2 }' 2>/dev/null | sort | uniq | awk '{year=$NF; $NF=""; array[$0]=array[$0]","year}END{for(key in array){printf "[%s]=%s ", key, array[key]}}') )"
 fi
 
-#Remove last trailing space from author
+#Remove last trailing space from author and do not consider author "Not Committed Yet"
 declare -A CPR_authorYears
 for author in "${!CPR_authorYearsTmp[@]}"; do
-    CPR_authorYears["${author%?}"]=${CPR_authorYearsTmp["${author}"]}    
+    if [[ ! $author =~ Not\ Committed\ Yet ]]; then
+        CPR_authorYears["${author%?}"]=${CPR_authorYearsTmp["${author}"]}
+    fi
 done
 
 # Remove initial comma in year string and collapse years (the strategy here is to print the first year, followed by "-", and replace following years
@@ -112,7 +114,7 @@ CPR_copyright=$(for author in "${!CPR_authorYears[@]}"; do
                 done | sort)
 echo; echo "----------------------------------------------------------------"
 printf "${CPR_copyright//%/%%}\n"
-echo "----------------------------------------------------------------"
+echo "----------------------------------------------------------------"; echo
 if [ ${CPR_substitute} = 'TRUE' ]; then
     if [ ${CPR_preview} = 'TRUE' ]; then
         sed ':a;N;$!ba;s@'"${CPR_beginCopyrightEscaped}"'.*\n'"${CPR_endCopyrightEscaped}"'@LINE_WHERE_COPYRIGHT_SHOULD_BE_INSERTED\n'"${CPR_prefix}"'\n'"${CPR_endCopyright}"'@g' ${CPR_filename} | awk -v "copyright=${CPR_copyright}" '{if($0=="LINE_WHERE_COPYRIGHT_SHOULD_BE_INSERTED"){printf copyright"\n"}else{print $0}}' | less
