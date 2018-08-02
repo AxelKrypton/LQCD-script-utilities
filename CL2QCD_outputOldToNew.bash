@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script to transform the CL2QCD output file from old to new format.
-# It takes the file to be updated as command line arguments, it
+# It takes the files to be updated as command line arguments, it
 # creates a backup (where this script is sourced) and it overwrites
 # the given file with the new format. The backup has as name the old
 # file global path with / replaced by _.
