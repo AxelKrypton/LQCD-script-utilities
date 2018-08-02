@@ -100,6 +100,10 @@ SYNC_OUTPUT_FOLDER="${EXPECTED_POSITION}/SyncronizationOutput"
 
 while :
 do
+    #The following cd is to always start the backup in the correct place. If during a backup (in the cleaning phase below -> REMOVE_OLDER_FILES)
+    #an error occurs and the script exits in the wrong place, then at the following backup the folders tree will be created from the wrong place,
+    #and this in principle again and again and again leading to very long unexpected paths!
+    cd ${EXPECTED_POSITION}
     if [ $SYNC_NOW = "FALSE" ]; then
 	    #Just to wait time for backup
         TIME_FOR_BACKUP='21'
