@@ -14,7 +14,7 @@ OBSERVABLES_COLUMNS[PlaquetteTemporal]=4
 OBSERVABLES_COLUMNS[PolyakovLoopRe]=5
 OBSERVABLES_COLUMNS[PolyakovLoopIm]=6
 OBSERVABLES_COLUMNS[PolyakovLoopSq]=7
-OBSERVABLES_COLUMNS[Accepted]=11
+OBSERVABLES_COLUMNS[Accepted]=9 #11
 
 #########################################################################
 
