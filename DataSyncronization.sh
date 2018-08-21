@@ -4,8 +4,12 @@
 # data automatically for a bunch of simulations.
 #
 # The idea is that one gives as command-line parameters a set
-# of strings like
-# "muiPiT/k1650/nt6/ns16"
+# of global paths like
+#
+#   "/home/phil-configs/Staggered/Nf2/muiPiT/mass0040/nt6/ns18"
+# or
+#   "/home/phil-configs/wilson_nf2_muipi4/ImagMu/muiPiT/k1650/nt6/ns16"
+#
 # and this script will syncronize data using the betas(Sync) file for
 # such parameters
 #
@@ -62,24 +66,6 @@ function CleanDataFiles(){
 	    fi
 	done
     printf "\e[0m"
-}
-
-
-function UnmergeAndCheck(){
-    for d in $@; do
-	cd $d
-        if [ -e rhmc_output ]; then
-	    ${HOME}/ScriptStaggered/UnmergePbpFile.sh
-	    if [ $? -ne 0 ]; then
-		>&2 echo "$(date +"%d-%m-%Y at %T --->") Error occurred in script \"UnmergePbpFile.sh\" from \"$(pwd)\""
-	    fi
-	    ${HOME}/ScriptStaggered/CheckPbpFilesVSMergedFile.sh
-	    if [ $? -ne 0 ]; then
-		>&2 echo "$(date +"%d-%m-%Y at %T --->") Error occurred in script \"CheckPbpFilesVSMergedFile.sh\" from \"$(pwd)\""
-	    fi
-        fi
-	cd ..
-    done
 }
 
 #-----------------------------------------------------------------------------------------------------------------------------#
@@ -149,10 +135,6 @@ for RUN in ${DATA_GLOBALPATHS[@]}; do
     printf " done!\e[0m\n" 
     # Then clean data files
     CleanDataFiles ${BETAVALUES[@]}
-    # For Staggered runs unmerge pbp file and check if it was ok
-    #UnmergeAndCheck ${BETAVALUES[@]}
-    # Then give an other overview of the status of the folder
-    #printf "\n\e[0;32m--------------------------------------------------------------\e[0m\n"
     PrintSituationVolume
     printf "\n\e[0;36m=======================================================================\e[0m\n\n"
 done
