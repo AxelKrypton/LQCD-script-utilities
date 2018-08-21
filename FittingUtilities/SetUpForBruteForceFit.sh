@@ -1,6 +1,9 @@
 #!/bin/bash
 
-
+#--------------------------------------------------------------------------------#
+# Load auxiliary bash files that will be used.
+source "$HOME/Script/PathManagement.sh" || exit -2
+#--------------------------------------------------------------------------------#
 
 #====================================================================================================
 
@@ -104,7 +107,17 @@ if [ $(ls | wc -l) -ne 0 ]; then
 fi
 
 #Ask for number of volumes
-POSSIBLE_VOLS=( "12 18" "18 24" "12 18 24" "16 20 24" "18 24 30" "20 24 30" "16 20 24 30" "20 24 30 36" "others" )
+ReadSingleParameterFromPath $PWD $NTIME_PREFIX
+ASPECT_RATIOS_SETS=( '3 4 5' '4 5 6' '5 6 7' '3 4 5 6' '4 5 6 7' )
+POSSIBLE_VOLS=()
+for ASPECT_RATIOS in "${ASPECT_RATIOS_SETS[@]}"; do
+    POSSIBLE_VOLS_STRING=""
+    for MULTIPLIER in ${ASPECT_RATIOS}; do
+        POSSIBLE_VOLS_STRING+="$((MULTIPLIER * NTIME)) "
+    done
+    POSSIBLE_VOLS+=( "${POSSIBLE_VOLS_STRING%?}" )
+done
+POSSIBLE_VOLS+=( 'others' )
 printf "\n\e[38;5;118mWhich volumes have been simulated for this kappa?\n\e[0m"
 select VOLUMES in "${POSSIBLE_VOLS[@]}"; do
 	if ! ElementInArray "$VOLUMES" "${POSSIBLE_VOLS[@]}"; then

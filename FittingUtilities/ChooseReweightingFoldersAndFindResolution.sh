@@ -85,7 +85,16 @@ CheckParametersExtractedFromPath $NFLAVOUR_PREFIX $CHEMPOT_PREFIX $MASS_PREFIX $
 
 #==============================================================================================================
 #Ask for number of volumes
-POSSIBLE_VOLS=( "12 18" "12 18 24" "18 24 30" "18 24 30 36" "24 30 36")
+ASPECT_RATIOS_SETS=( '3 4 5' '4 5 6' '5 6 7' )
+POSSIBLE_VOLS=()
+for ASPECT_RATIOS in "${ASPECT_RATIOS_SETS[@]}"; do
+    POSSIBLE_VOLS_STRING=""
+    for MULTIPLIER in ${ASPECT_RATIOS}; do
+        POSSIBLE_VOLS_STRING+="$((MULTIPLIER * NTIME)) "
+    done
+    POSSIBLE_VOLS+=( "${POSSIBLE_VOLS_STRING%?}" )
+done
+POSSIBLE_VOLS+=( 'others' )
 printf "\n\e[38;5;208mFor which volumes do you want to know the resolution in the reweighted data?\e[38;5;226m\n"
 select VOLUMES in "${POSSIBLE_VOLS[@]}"; do
     if ! ElementInArray "$VOLUMES" "${POSSIBLE_VOLS[@]}"; then
@@ -95,6 +104,10 @@ select VOLUMES in "${POSSIBLE_VOLS[@]}"; do
         break
     fi
 done
+if [ "$VOLUMES" = 'others' ]; then
+    printf "\n\e[38;5;118mPlease, insert the volumes separated by a space: \e[0m"
+    read -a VOLUMES
+fi
 echo ''
 
 #==============================================================================================================
