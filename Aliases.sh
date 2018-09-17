@@ -221,9 +221,6 @@ if [ $LOAD_PYTHON_ALIASES = "TRUE" ]; then
         echo "PyFindBetaC --deactivatePlaq --deactivatePoly --activatePbp --deactivateMean --deactivateSusc --deactivateBinder"
     }
     function GetFindBetaCPolySqCommand(){
-        echo "PyFindBetaC --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivateMean --deactivateSkew"
-    }
-    function GetFindBetaCPolySqSkewCommand(){
         echo "PyFindBetaC --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_withZeroMean --deactivatePoly_im_abs --deactivateMean --deactivateSusc --doNotExtractFromRawData"
     }
     function GetPlotScalingPolySqCommand(){
@@ -330,17 +327,17 @@ fi
 if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
     alias cdw="cd ${!IDENTITY_WORK}" 
     alias JobInfo='${HOME}/Script/MonitorSlurmJobs.sh'
-    alias Acceptance="awk '{ sum+=\$11} END {printf \"Accepted %d over %d (%lf%%)\n\", sum, NR, 100*sum/(NR)}'"
+    alias Acceptance="awk '{ sum+=\$9} END {printf \"Accepted %d over %d (%lf%%)\n\", sum, NR, 100*sum/(NR)}'"
     alias LastAcceptance='bash ${HOME}/Script/AcceptanceLastTrajectories.sh'
-	alias FillInMissingLines='bash ${HOME}/Script/FillInMissingLinesOutputFile.sh'
-	alias ClusterUsage='bash ${HOME}/Script/ClusterUsage.sh --doNotUpdateFiles'
+    alias FillInMissingLines='bash ${HOME}/Script/FillInMissingLinesOutputFile.sh'
+    alias ClusterUsage='bash ${HOME}/Script/ClusterUsage.sh --doNotUpdateFiles'
     alias ReportOnCorrelatorFiles='echo; for b in b?.????_s*Chain; do printf "%+38s: %3d correlator files\n" $b $(ls $b/conf.*corr 2>>/dev/null| wc -l); done; echo'
     alias ReportOnScaleSettingFiles='echo; for b in b?.????_s*Chain; do printf "%+38s: %3d nersc confs, %3d flow files\n" $b $(ls $b/conf.*.nersc 2>>/dev/null| wc -l) $(ls $b/flow.conf.*.nersc 2>>/dev/null| wc -l); done; echo'
     
     #Function to count own jobs according to part of string in job name
     function CountJobs(){
         if [ $# -eq 0 ]; then
-             printf "\e[0;91m \n Number of desired chunck of jobname to be used needed as argument!\n\n\e[0m"
+             printf "\e[0;91m \n Number of desired chunck of jobname to be used to count jobs needed as argument (e.g. 1,2,3)!\n\n\e[0m"
              return
         else
             echo
