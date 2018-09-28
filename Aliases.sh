@@ -300,35 +300,42 @@ fi
 #Aliases to work with the python code analysis
 if [ $LOAD_PYTHON_ALIASES = "TRUE" ]; then
 
-    DEFINED_FUNCTIONS+=('PyAutocorrelation')
-    function PyAutocorrelation(){
-        __static__WrapperToInvokeScript "python ${!IDENTITY_PYTHON}/ImagMuAutocorrelationAnalysis.py" "$@"
-    }
+    alias PyAutocorrelation="python ${!IDENTITY_PYTHON}/ImagMuAutocorrelationAnalysis.py"
+    alias PyAnalysis="python ${!IDENTITY_PYTHON}/ImagMuAnalysis.py"
+    alias PySynchronization="python ${!IDENTITY_PYTHON}/ImagMuSync.py"
+    alias PyReweighting="python ${!IDENTITY_PYTHON}/ImagMuReweighting.py"
+    alias PyFindBetaC="python ${!IDENTITY_PYTHON}/ImagMuFindBetaC.py"
+    alias PyPlotScaling="python ${!IDENTITY_PYTHON}/ImagMuPlotScaling.py"
 
-    DEFINED_FUNCTIONS+=('PyAnalysis')
-    function PyAnalysis(){
-        __static__WrapperToInvokeScript "python ${!IDENTITY_PYTHON}/ImagMuAnalysis.py" "$@"
-    }
-
-    DEFINED_FUNCTIONS+=('PySynchronization')
-    function PySynchronization(){
-        __static__WrapperToInvokeScript "python ${!IDENTITY_PYTHON}/ImagMuSync.py" "$@"
-    }
-
-    DEFINED_FUNCTIONS+=('PyReweighting')
-    function PyReweighting(){
-        __static__WrapperToInvokeScript "python ${!IDENTITY_PYTHON}/ImagMuReweighting.py" "$@"
-    }
-
-    DEFINED_FUNCTIONS+=('PyFindBetaC')
-    function PyFindBetaC(){
-        __static__WrapperToInvokeScript "python ${!IDENTITY_PYTHON}/ImagMuFindBetaC.py" "$@"
-    }
-
-    DEFINED_FUNCTIONS+=('PyPlotScaling')
-    function PyPlotScaling(){
-        __static__WrapperToInvokeScript "python ${!IDENTITY_PYTHON}/ImagMuPlotScaling.py" "$@"
-    }
+    #DEFINED_FUNCTIONS+=('PyAutocorrelation')
+    #function PyAutocorrelation(){
+    #    __static__WrapperToInvokeScript "python ${!IDENTITY_PYTHON}/ImagMuAutocorrelationAnalysis.py" "$@"
+    #}
+    #
+    #DEFINED_FUNCTIONS+=('PyAnalysis')
+    #function PyAnalysis(){
+    #    __static__WrapperToInvokeScript "python ${!IDENTITY_PYTHON}/ImagMuAnalysis.py" "$@"
+    #}
+    #
+    #DEFINED_FUNCTIONS+=('PySynchronization')
+    #function PySynchronization(){
+    #    __static__WrapperToInvokeScript "python ${!IDENTITY_PYTHON}/ImagMuSync.py" "$@"
+    #}
+    #
+    #DEFINED_FUNCTIONS+=('PyReweighting')
+    #function PyReweighting(){
+    #    __static__WrapperToInvokeScript "python ${!IDENTITY_PYTHON}/ImagMuReweighting.py" "$@"
+    #}
+    #
+    #DEFINED_FUNCTIONS+=('PyFindBetaC')
+    #function PyFindBetaC(){
+    #    __static__WrapperToInvokeScript "python ${!IDENTITY_PYTHON}/ImagMuFindBetaC.py" "$@"
+    #}
+    #
+    #DEFINED_FUNCTIONS+=('PyPlotScaling')
+    #function PyPlotScaling(){
+    #    __static__WrapperToInvokeScript "python ${!IDENTITY_PYTHON}/ImagMuPlotScaling.py" "$@"
+    #}
 
     DEFINED_FUNCTIONS+=('GetSynchronizationCommand')
     function GetSynchronizationCommand(){
