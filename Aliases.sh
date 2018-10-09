@@ -742,7 +742,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         printf "\n"; printf "%0.s " $(seq 1 $LONGEST_BETA_STRING); printf "      \e[1;38;5;129mGap [nr. of times]\n"
         for BETA in ${BETA_ARRAY[@]}; do
             printf "\n  \e[38;5;129m\e[1m%${LONGEST_BETA_STRING}s\e[0m\e[38;5;199m" "$BETA"
-            ls $BETA | grep "conf.[[:digit:]]\+" | grep -o "[[:digit:]]\+" | sort -n | \
+            ls $BETA | grep "^conf.[[:digit:]]\+" | grep -o "[[:digit:]]\+" | sort -n | \
                 awk 'BEGIN{printf "    "}NR==1{tr=$1}NR>1{countGaps[$1-tr]++; tr=$1}END{for(i in countGaps){printf "%d [%d]   ", i, countGaps[i]}; printf"\n"}'
         done && unset -v 'BETA'
         echo ''
