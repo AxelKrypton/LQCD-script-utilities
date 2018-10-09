@@ -612,7 +612,7 @@ if [ $LOAD_GO_ALIASES = "TRUE" ]; then
                         ;;
                 esac
             done
-            PickUpFolder '!(b*)/'
+            PickUpFolder '!(b*|JobScripts)/'
             case $? in
                 1)
                     cd "$initialPosition"
