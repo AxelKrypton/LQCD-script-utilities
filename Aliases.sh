@@ -963,7 +963,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         fi
         if [ "$2" = "-e" ]; then
             FOLDER_FILE=${FOLDER_FILE/.out/.err}
-        else
+        elif [ "$2" != '' ]; then
             printf "\n\e[0;91m Unknown second command line parameter!\n\n\e[0m" 1>&2 && return -1
         fi
         if [ ! -f $FOLDER_FILE ]; then
