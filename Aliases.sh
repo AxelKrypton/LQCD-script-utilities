@@ -9,8 +9,7 @@ function __static__PrintHelp(){
     echo ''
     printf "\e[0;92m"
     echo '  Options to load bunches of aliases:'
-    echo '    --loadKappa           ->    Creates aliases to go to volumes folder in kappa folders'
-    echo '    --loadMass            ->    Creates aliases to go to volumes folder in kappa folders'
+    echo '    --loadGo              ->    Creates aliases to easily move in the tree of data'
     echo '    --loadPython          ->    Creates aliases to call python functionalities'
     echo '    --loadFit             ->    Creates aliases to call fits functionalities'
     echo '    --loadJob             ->    Creates aliases to work with jobs'
@@ -22,22 +21,17 @@ function __static__PrintHelp(){
     echo '                XXX_work       -> global path to work directory (scratch on clusters, philconfigs locally)'
     echo '                XXX_Wilson     -> local path from work to Wilson simulation folder , i.e. to where the first parameters folder is'
     echo '                XXX_Staggered  -> local path from work to Staggered simulation folder, i.e. to where the first parameters folder is'
-    echo '                XXX_kappaList  -> list of kappa values between "" separated by a space, e.g. "1575 1600 1625"'
-    echo '                XXX_massList   -> list of  mass values between "" separated by a space, e.g. "0080 0090 1500"'
     echo '                XXX_Python     -> global path to Python git, i.e. to ImagMu folder included: "/.../ImagMu"'
-    echo '                XXX_Fits       -> global path to fit git, i.e. git name folder included: "/.../gitNameFolder"'
     echo '             where XXX is the whoami concatenated with the hostname via underscore, e.g. smith_cluster1234'
     echo '             Once (some of) the variables above are defined, then source this script with any desired option.'
     echo ''
     echo ''
-    echo '  Variable(s) that the user should provide:'
+    echo '  Variable(s) that the user must provide:'
     echo ''
-    echo '    [...]_work=""       -> Needed for --loadJob --loadKappa --loadMass'
-    echo '    [...]_Wilson=""     -> Needed for --loadKappa'
-    echo '    [...]_Staggered=""  -> Needed for --loadMass'
-    echo '    [...]_kappaList=""  -> Needed for --loadKappa'
-    echo '    [...]_massList=""   -> Needed for --loadMass'
-    echo '    [...]_Python=""     -> Needed for --loadPython'
+    echo '    --loadGo           requires    [...]_{work,Wilson,Staggered}'
+    echo '    --loadPython       requires    [...]_Python'
+    echo '    --loadJob          requires    [...]_work'
+    #echo '    --loadRootHist     requires    [...]_RootHist'
     echo ''
     echo '  where [...] is the whoami concatenated with hostname.'
     echo ''
@@ -216,8 +210,7 @@ function AliasesHelper(){
 #============================================================================================================================#
 
 #Variable for setup which alias to source
-LOAD_KAPPA_ALIASES="FALSE"
-LOAD_MASS_ALIASES="FALSE"
+LOAD_GO_ALIASES="FALSE"
 LOAD_PYTHON_ALIASES="FALSE"
 LOAD_FIT_ALIASES="FALSE"
 LOAD_JOB_ALIASES="FALSE"
@@ -230,21 +223,20 @@ while [ "$1" != "" ]; do
       -h | --help )
           __static__PrintHelp
           if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
-              unset -v 'LOAD_KAPPA_ALIASES' 'LOAD_MASS_ALIASES' 'LOAD_PYTHON_ALIASES' 'LOAD_FIT_ALIASES' 'LOAD_JOB_ALIASES' 'LOAD_ROOTHIST_ALIASES' 'UNSET_USER_VARIABLES'
+              unset -v 'LOAD_GO_ALIASES' 'LOAD_PYTHON_ALIASES' 'LOAD_FIT_ALIASES' 'LOAD_JOB_ALIASES' 'LOAD_ROOTHIST_ALIASES' 'UNSET_USER_VARIABLES'
               unset -f __static__PrintHelp
               return # Script was sourced!
           else
               exit   # Script was run!
           fi
           shift ;;
-      --loadKappa )           LOAD_KAPPA_ALIASES="TRUE"; shift ;;
-      --loadMass )            LOAD_MASS_ALIASES="TRUE"; shift ;;
+      --loadGo )              LOAD_GO_ALIASES="TRUE"; shift ;;
       --loadPython )          LOAD_PYTHON_ALIASES="TRUE"; shift ;;
       --loadFit )             LOAD_FIT_ALIASES="TRUE"; shift ;;
       --loadJob )             LOAD_JOB_ALIASES="TRUE"; shift ;;
       --loadRootHist )        LOAD_ROOTHIST_ALIASES="TRUE"; shift ;;
       --unsetMyVariables )    UNSET_USER_VARIABLES="TRUE"; shift ;;
-      * ) printf "\n\e[0;31mError parsing the options! Aborting...\n\n\e[0m" ; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1 ;;
+      * ) printf "\n\e[91mError parsing the options! Aborting...\n\n\e[0m" ; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1 ;;
     esac
 done
 
@@ -256,8 +248,6 @@ IDENTITY="$(whoami)_$(hostname)"
 IDENTITY_WORK="${IDENTITY}_work"
 IDENTITY_WILSON="${IDENTITY}_Wilson"
 IDENTITY_STAGGERED="${IDENTITY}_Staggered"
-IDENTITY_KAPPA_LIST="${IDENTITY}_kappaList"
-IDENTITY_MASS_LIST="${IDENTITY}_massList"
 IDENTITY_PYTHON="${IDENTITY}_Python"
 IDENTITY_JOBS="${IDENTITY}_Jobs"
 IDENTITY_ROOTHIST="${IDENTITY}_RootHist"
@@ -266,24 +256,19 @@ IDENTITY_ROOTHIST="${IDENTITY}_RootHist"
 DEFINED_FUNCTIONS=( 'AliasesHelper' ) # This is always defined, the others depend on loading settings
 
 #Checks on variables and directives
-if [ $LOAD_KAPPA_ALIASES = "TRUE" ] && {
-       [ ! ${!IDENTITY_WORK:+x} ] ||
-       [ ! ${!IDENTITY_WILSON:+x} ] ||
-       [ ! ${!IDENTITY_KAPPA_LIST:+x} ]; }; then printf "\n\e[0;31m Kappa aliases desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1
-fi
-if [ $LOAD_MASS_ALIASES = "TRUE" ] && {
+if [ $LOAD_GO_ALIASES = "TRUE" ] && {
        [ ! ${!IDENTITY_WORK:+x} ] ||
        [ ! ${!IDENTITY_STAGGERED:+x} ] ||
-       [ ! ${!IDENTITY_MASS_LIST:+x} ]; }; then printf "\n\e[0;31m Mass aliases desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1
+       [ ! ${!IDENTITY_WILSON:+x} ]; }; then printf "\n\e[91m Mass aliases desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1
 fi
 if [ $LOAD_PYTHON_ALIASES = "TRUE" ] &&
-       [ ! ${!IDENTITY_PYTHON:+x} ]; then printf "\n\e[0;31m Python aliases desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1
+       [ ! ${!IDENTITY_PYTHON:+x} ]; then printf "\n\e[91m Python aliases desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1
 fi
 if [ $LOAD_JOB_ALIASES = "TRUE" ] &&
-       [ ! ${!IDENTITY_WORK:+x} ]; then printf "\n\e[0;31m Job aliases desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1
+       [ ! ${!IDENTITY_WORK:+x} ]; then printf "\n\e[91m Job aliases desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1
 fi
 if [ $LOAD_ROOTHIST_ALIASES = "TRUE" ] && 
-       [ ! ${!IDENTITY_ROOTHIST:+x} ]; then printf "\n\e[0;31m Root 3D histogram program alias desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1 
+       [ ! ${!IDENTITY_ROOTHIST:+x} ]; then printf "\n\e[91m Root 3D histogram program alias desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1 
 fi
 
 #============================================================================================================================#
@@ -513,7 +498,8 @@ fi
 #============================================================================================================================#
 
 #Alias for choosing a folder where we are (displaying first ns[[:digit:]] folders sorted numerically)
-if [ $LOAD_MASS_ALIASES = "TRUE" ] || [ $LOAD_KAPPA_ALIASES = "TRUE" ]; then
+if [ $LOAD_GO_ALIASES = "TRUE" ]; then
+
     DEFINED_FUNCTIONS+=( 'PickUpFolder' )
     function PickUpFolder(){
         local FOLDERS_ARRAY actualPosition
@@ -543,7 +529,11 @@ if [ $LOAD_MASS_ALIASES = "TRUE" ] || [ $LOAD_KAPPA_ALIASES = "TRUE" ]; then
             echo
         else
             printf "\n\e[96mActual position: \e[1m$(pwd)\n\e[0m"
-            PS3='Please enter your choice ("q" to abort and go back to initial position, "s" to stop here): '
+            if [ "${FUNCNAME[1]}" = go ]; then # Invoking funtion was go
+                PS3='Please enter your choice ("q" to abort and go back to initial position, "s" to stop here): '
+            else
+                PS3='#?'
+            fi
             local FOLDER
             select FOLDER in ${ORDERED_FOLDERS_ARRAY[@]%?}; do
                 if [ "${REPLY}" = 'q' ]; then
@@ -592,7 +582,6 @@ if [ $LOAD_MASS_ALIASES = "TRUE" ] || [ $LOAD_KAPPA_ALIASES = "TRUE" ]; then
                     printf "\e[93m \e[1;4mWARNING\e[24m:\e[21m Some given parameters were not used: \e[95m%s\n\n\e[0m"  "${givenParameters[*]}"
                 fi
             }
-
             while [ ${#givenParameters[@]} -gt 0 ] || [ $(ls -d !(b*)/ 2>>/dev/null | wc -l) -gt 0 ]; do
                 if [ $(ls -d !(b*)/ 2>>/dev/null | wc -l) -eq 0 ]; then
                     if [ ${#givenParameters[@]} -gt 0 ]; then
@@ -636,21 +625,6 @@ if [ $LOAD_MASS_ALIASES = "TRUE" ] || [ $LOAD_KAPPA_ALIASES = "TRUE" ]; then
         return 0
     }
 
-fi
-
-#Aliases to go to the kappa folders
-if [ $LOAD_KAPPA_ALIASES = "TRUE" ]; then
-    for KAPPA in ${!IDENTITY_KAPPA_LIST}; do
-    	alias k${KAPPA}="cd ${!IDENTITY_WORK}${!IDENTITY_WILSON}; PickUpFolder Nf; PickUpFolder mui; cd k$KAPPA; PickUpFolder nt; PickUpFolder ns"
-    done && unset -v 'NUM_FOLDER' 'KAPPA'
-fi
-
-
-#Aliases to go to the mass folders
-if [ $LOAD_MASS_ALIASES = "TRUE" ]; then
-    for MASS in ${!IDENTITY_MASS_LIST}; do
-        alias mass${MASS}="cd ${!IDENTITY_WORK}${!IDENTITY_STAGGERED}; PickUpFolder Nf; PickUpFolder mui; cd mass$MASS; PickUpFolder nt; PickUpFolder ns"
-    done && unset -v 'NUM_FOLDER' 'MASS'
 fi
 
 #============================================================================================================================#
@@ -728,7 +702,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
             return
         else
             if [ $(sinfo -h --format "%R" | grep -c "$1") -eq 0 ]; then
-                printf "\e[0;31m \n Partition \"$1\" seems not to be existing!\n\n\e[0m"
+                printf "\e[91m \n Partition \"$1\" seems not to be existing!\n\n\e[0m"
             else
                 echo
                 for f in RUNNING PENDING; do
@@ -1088,16 +1062,13 @@ if [ $UNSET_USER_VARIABLES = "TRUE" ]; then
     [ ${!IDENTITY_WORK+x} ] && unset -v $IDENTITY_WORK
     [ ${!IDENTITY_WILSON+x} ] && unset -v $IDENTITY_WILSON
     [ ${!IDENTITY_STAGGERED+x} ] && unset -v $IDENTITY_STAGGERED
-    [ ${!IDENTITY_KAPPA_LIST+x} ] && unset -v $IDENTITY_KAPPA_LIST
-    [ ${!IDENTITY_MASS_LIST+x} ] && unset -v $IDENTITY_MASS_LIST
     [ ${!IDENTITY_PYTHON+x} ] && unset -v $IDENTITY_PYTHON
     [ ${!IDENTITY_JOBS+x} ] && unset -v $IDENTITY_JOBS
     [ ${!IDENTITY_ROOTHIST+x} ] && unset -v $IDENTITY_ROOTHIST
 fi
 
 #Unsetting remaining variables
-unset -v LOAD_MASS_ALIASES
-unset -v LOAD_KAPPA_ALIASES
+unset -v LOAD_GO_ALIASES
 unset -v LOAD_PYTHON_ALIASES
 unset -v LOAD_FIT_ALIASES
 unset -v LOAD_JOB_ALIASES
@@ -1105,8 +1076,6 @@ unset -v IDENTITY
 unset -v IDENTITY_WORK
 unset -v IDENTITY_WILSON
 unset -v IDENTITY_STAGGERED
-unset -v IDENTITY_KAPPA_LIST
-unset -v IDENTITY_MASS_LIST
 unset -v IDENTITY_PYTHON
 unset -v IDENTITY_JOBS
 unset -v IDENTITY_ROOTHIST
