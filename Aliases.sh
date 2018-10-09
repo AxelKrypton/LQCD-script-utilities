@@ -2,39 +2,44 @@
 
 function __static__PrintHelp(){
     printf "\e[96m"
-    echo ''
-    echo '  Script to collect useful commands for working more comfortably.'
-    echo '  Since each user could have different preferences, use the --load*'
-    echo '  options to decide which aliases to load.'
-    echo ''
+    printf '\n'
+    printf '  Script to collect useful commands for working more comfortably. Since each user could\n'
+    printf '  have different preferences, use the --load* options to decide which aliases to load.\n'
+    printf '\n'
     printf "\e[0;92m"
-    echo '  Options to load bunches of aliases:'
-    echo '    --loadGo              ->    Creates aliases to easily move in the tree of data'
-    echo '    --loadPython          ->    Creates aliases to call python functionalities'
-    echo '    --loadFit             ->    Creates aliases to call fits functionalities'
-    echo '    --loadJob             ->    Creates aliases to work with jobs'
-    echo -e '    --loadRootHist        ->    Creates alias to access the 3D Root histogram program \e[91m <== BROKEN\e[92m'
-    echo '    --unsetMyVariables    ->    Unset the variables the user has allocated him/herself'
-    echo ''
+    printf '  Options to load bunches of aliases:\n'
+    printf '    --loadGo              ->    Creates aliases to easily move in the tree of data\n'
+    printf '    --loadPython          ->    Creates aliases to call python functionalities\n'
+    printf '    --loadFit             ->    Creates aliases to call fits functionalities\n'
+    printf '    --loadJob             ->    Creates aliases to work with jobs\n'
+    printf '    --loadRootHist        ->    Creates alias to access the 3D Root histogram program \e[91m <== BROKEN\e[92m\n'
+    printf '    --unsetMyVariables    ->    Unset the variables the user has allocated him/herself\n'
+    printf '\n'
+    printf "\e[93m"
+    printf "  Use the \e[1;4;96mAliasesHelper\e[21;24;93m function to get help about the loaded aliases. You can\n"
+    printf "  run it as such or you can specify one or more functions to get help about them only.\n"
+    printf '\n'
     printf "\e[96m"
-    echo '  ATTENTION: Each user should define the following variables (NOT here but where it is sourced)'
-    echo '                XXX_work       -> global path to work directory (scratch on clusters, philconfigs locally)'
-    echo '                XXX_Wilson     -> local path from work to Wilson simulation folder , i.e. to where the first parameters folder is'
-    echo '                XXX_Staggered  -> local path from work to Staggered simulation folder, i.e. to where the first parameters folder is'
-    echo '                XXX_Python     -> global path to Python git, i.e. to ImagMu folder included: "/.../ImagMu"'
-    echo '             where XXX is the whoami concatenated with the hostname via underscore, e.g. smith_cluster1234'
-    echo '             Once (some of) the variables above are defined, then source this script with any desired option.'
-    echo ''
-    echo ''
-    echo '  Variable(s) that the user must provide:'
-    echo ''
-    echo '    --loadGo           requires    [...]_{work,Wilson,Staggered}'
-    echo '    --loadPython       requires    [...]_Python'
-    echo '    --loadJob          requires    [...]_work'
-    #echo '    --loadRootHist     requires    [...]_RootHist'
-    echo ''
-    echo '  where [...] is the whoami concatenated with hostname.'
-    echo ''
+    printf '  NOTE: Each user should define the following variables (NOT here but where it is sourced)\n'
+    printf ''
+    printf '           [...]_work       -> global path to work directory (scratch on clusters, philconfigs locally)\n'
+    printf '           [...]_Wilson     -> local path from work to Wilson simulation folder , i.e. to where the first parameters folder is\n'
+    printf '           [...]_Staggered  -> local path from work to Staggered simulation folder, i.e. to where the first parameters folder is\n'
+    printf '           [...]_Python     -> global path to Python git, i.e. to ImagMu folder included: "/.../ImagMu"\n'
+    printf '\n'
+    printf '        where \e[92m[...]\e[96m is the whoami concatenated with the hostname via underscore, e.g. \e[92msmith_cluster1234\e[96m.\n'
+    printf '        Once (some of) the variables above are defined, then source this script with any desired option.\n'
+    printf '\n'
+    printf "\e[92m"
+    printf '  Variable(s) that the user must provide:\n'
+    printf ''
+    printf '    --loadGo           requires    [...]_{work,Wilson,Staggered}\n'
+    printf '    --loadPython       requires    [...]_Python\n'
+    printf '    --loadJob          requires    [...]_work\n'
+    printf '    --loadRootHist     requires    [...]_RootHist\n'
+    printf '\n'
+    printf '  where [...] is the whoami concatenated with hostname.\n'
+    printf '\n'
     printf "\e[0m"
 }
 
@@ -559,9 +564,9 @@ if [ $LOAD_GO_ALIASES = "TRUE" ]; then
         initialPosition=$(pwd); givenParameters=( "$@" )
         for index in ${!givenParameters[@]}; do
             if [[ ${givenParameters[$index]} =~ ^[sS]$ ]]; then
-                goStaggered; unset -v 'givenParameters[$index]'; break
+                eval goStaggered; unset -v 'givenParameters[$index]'; break #https://stackoverflow.com/a/30993227
             elif [[ ${givenParameters[$index]} =~ ^[wW]$ ]]; then
-                goWilson; unset -v 'givenParameters[$index]'; break
+                eval goWilson; unset -v 'givenParameters[$index]'; break #https://stackoverflow.com/a/30993227
             fi
         done
         if [ $# -eq ${#givenParameters[@]} ]; then
@@ -569,9 +574,9 @@ if [ $LOAD_GO_ALIASES = "TRUE" ]; then
             PS3='Please enter your choice: '
             select FORMULATION in "Staggered" "Wilson"; do
                 if [ "${FORMULATION}" =  "Staggered" ]; then
-                    goStaggered; break
+                    eval goStaggered; break #https://stackoverflow.com/a/30993227
                 elif [ "${FORMULATION}" =  "Wilson" ]; then
-                    goWilson; break
+                    eval goWilson; break #https://stackoverflow.com/a/30993227
                 fi
             done
         fi
