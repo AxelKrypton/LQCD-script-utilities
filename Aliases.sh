@@ -557,6 +557,12 @@ if [ $LOAD_GO_ALIASES = "TRUE" ]; then
     alias goStaggered="cd ${!IDENTITY_WORK}${!IDENTITY_STAGGERED}"
     alias goWilson="cd ${!IDENTITY_WORK}${!IDENTITY_WILSON}"
 
+    function __static__GiveWarningIfUnusedParameters(){
+        if [ ${#givenParameters[@]} -gt 0 ]; then
+            printf "\e[93m \e[1;4mWARNING\e[24m:\e[21m Some given parameters were not used: \e[95m%s\n\n\e[0m"  "${givenParameters[*]}"
+        fi
+    }
+
     DEFINED_FUNCTIONS+=( 'go' )
     function go(){
         printf "\e[92m\nInitial position: \e[1m$(pwd)\n\e[0m"
@@ -581,39 +587,22 @@ if [ $LOAD_GO_ALIASES = "TRUE" ]; then
             done
         fi
         givenParameters=( "${givenParameters[@]}" ) #Make array not sparse
-        (
-            function __static__GiveWarningIfUnusedParameters(){
+        while [ ${#givenParameters[@]} -gt 0 ] || [ $(ls -d !(b*)/ 2>>/dev/null | wc -l) -gt 0 ]; do
+            if [ $(ls -d !(b*)/ 2>>/dev/null | wc -l) -eq 0 ]; then
                 if [ ${#givenParameters[@]} -gt 0 ]; then
-                    printf "\e[93m \e[1;4mWARNING\e[24m:\e[21m Some given parameters were not used: \e[95m%s\n\n\e[0m"  "${givenParameters[*]}"
+                    printf "\e[93m\n No sub-folders in the present directory, while ${#givenParameters[@]} given parameter(s) where unused (${givenParameters[@]}).\n\n\e[0m"
                 fi
-            }
-            while [ ${#givenParameters[@]} -gt 0 ] || [ $(ls -d !(b*)/ 2>>/dev/null | wc -l) -gt 0 ]; do
-                if [ $(ls -d !(b*)/ 2>>/dev/null | wc -l) -eq 0 ]; then
-                    if [ ${#givenParameters[@]} -gt 0 ]; then
-                        printf "\e[93m\n No sub-folders in the present directory, while ${#givenParameters[@]} given parameter(s) where unused (${givenParameters[@]}).\n\n\e[0m"
-                    fi
-                    return
-                fi
-                for index in ${!givenParameters[@]}; do
-                    PickUpFolder ${givenParameters[$index]}
-                    case $? in
-                        0)
-                            printf "\e[1A" #Move one line up to avoid too many blank lines
-                            unset -v 'givenParameters[$index]'
-                            givenParameters=( "${givenParameters[@]}" ) #Make array not sparse
-                            continue 2
-                            ;;
-                        1)
-                            cd "$initialPosition"
-                            __static__GiveWarningIfUnusedParameters; return 1
-                            ;;
-                        2)
-                            __static__GiveWarningIfUnusedParameters; return 2
-                            ;;
-                    esac
-                done
-                PickUpFolder '!(b*)/'
+                return
+            fi
+            for index in ${!givenParameters[@]}; do
+                PickUpFolder ${givenParameters[$index]}
                 case $? in
+                    0)
+                        printf "\e[1A" #Move one line up to avoid too many blank lines
+                        unset -v 'givenParameters[$index]'
+                        givenParameters=( "${givenParameters[@]}" ) #Make array not sparse
+                        continue 2
+                        ;;
                     1)
                         cd "$initialPosition"
                         __static__GiveWarningIfUnusedParameters; return 1
@@ -621,12 +610,22 @@ if [ $LOAD_GO_ALIASES = "TRUE" ]; then
                     2)
                         __static__GiveWarningIfUnusedParameters; return 2
                         ;;
-                    0)
-                        printf "\e[1A"
-                        ;;
                 esac
             done
-        )
+            PickUpFolder '!(b*)/'
+            case $? in
+                1)
+                    cd "$initialPosition"
+                    __static__GiveWarningIfUnusedParameters; return 1
+                    ;;
+                2)
+                    __static__GiveWarningIfUnusedParameters; return 2
+                    ;;
+                0)
+                    printf "\e[1A"
+                    ;;
+            esac
+        done
         echo
         return 0
     }
