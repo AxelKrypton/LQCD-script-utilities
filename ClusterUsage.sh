@@ -67,7 +67,7 @@ PRINT_ONLY_TO_SHELL='FALSE'
 if [ "$(hostname)" = "lxlcsc0001" ]; then
     CLUSTER_NAME='LCSC'
     PARTITION='lcsc'
-    USERS_LIST=( "cczaban" "fcuteri" "asciarra" "owitham" )
+    USERS_LIST=( "fcuteri" "asciarra" "aschoen" )
 fi    
 OUTPUT_FILE="${CLUSTER_NAME}_usage"
 EXCLUDED_NODES_FILENAME="${CLUSTER_NAME}_excludedNodes"
