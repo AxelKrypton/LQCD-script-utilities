@@ -123,17 +123,21 @@ function AliasesHelper(){
     )
 
     local availableFunctions index
-    #Find all function or aliases defined in this file (very ugly but the only way AFAIK)
-    availableFunctions=( $(grep -E '^[[:space:]]*([[:alnum:]_]+[[:space:]]*\(\)|function[[:space:]]+[[:alnum:]_]+|alias[[:space:]]+[[:alnum:]_]+=)' "${BASH_SOURCE[0]}" | sed -e 's/\(()\|=\).*//g' -e 's/function \(.*\)/\1/' -e 's/alias \(.*\)/\1/') )
-    for index in ${!availableFunctions[@]}; do
-        if [[ ${availableFunctions[$index]} =~ ^__static__ ]]; then
-            unset -v 'availableFunctions[$index]'
-        fi
-    done
-    availableFunctions=( ${availableFunctions[@]} ) # Make array not sparse to use continuous index later
     (
-		#Start a subshell in order to source "locally"
+		#Start a subshell in order to source "locally" and unalias locally
         source ${HOME}/Script/UtilityFunctions.sh
+        #Find all function or aliases defined in this file (very ugly but the only way AFAIK)
+        if [ "$(type -t grep)" = 'alias' ]; then
+            unalias grep #if grep was aliased to always report line number
+        fi
+        availableFunctions=( $(grep -E '^[[:space:]]*([[:alnum:]_]+[[:space:]]*\(\)|function[[:space:]]+[[:alnum:]_]+|alias[[:space:]]+[[:alnum:]_]+=)' "${BASH_SOURCE[0]}" | sed -e 's/\(()\|=\).*//g' -e 's/function \(.*\)/\1/' -e 's/alias \(.*\)/\1/') )
+        for index in ${!availableFunctions[@]}; do
+            if [[ ${availableFunctions[$index]} =~ ^__static__ ]]; then
+                unset -v 'availableFunctions[$index]'
+            fi
+        done
+        availableFunctions=( ${availableFunctions[@]} ) # Make array not sparse to use continuous index later
+
         if [ $# -eq 0 ]; then # Interactive selecion of function
             printf "\n Here a list of available function. Those with the number \e[4munderlined\e[24m have been loaded.\n\n"
             printf " Use the options ${groupColors[FIT_ALIASES]}--loadFit ${groupColors[PYTHON_ALIASES]}--loadPython ${groupColors[JOB_ALIASES]}--loadJob ${groupColors[GO_ALIASES]}--loadMass|--loadKappa ${groupColors[ROOTHIST_ALIASES]}--loadRootHist\e[0m to load groups of aliases.\n\n"
