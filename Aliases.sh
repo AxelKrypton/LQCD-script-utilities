@@ -578,9 +578,17 @@ if [ $LOAD_GO_ALIASES = "TRUE" ]; then
         initialPosition=$(pwd); givenParameters=( "$@" )
         for index in ${!givenParameters[@]}; do
             if [[ ${givenParameters[$index]} =~ ^[sS]$ ]]; then
-                eval goStaggered; unset -v 'givenParameters[$index]'; break #https://stackoverflow.com/a/30993227
+                eval goStaggered #https://stackoverflow.com/a/30993227
+                if [ $? -ne 0 ]; then
+                    cd "${initialPosition}" && return
+                fi
+                unset -v 'givenParameters[$index]'; break
             elif [[ ${givenParameters[$index]} =~ ^[wW]$ ]]; then
-                eval goWilson; unset -v 'givenParameters[$index]'; break #https://stackoverflow.com/a/30993227
+                eval goWilson #https://stackoverflow.com/a/30993227
+                if [ $? -ne 0 ]; then
+                    cd "${initialPosition}" && return
+                fi
+                unset -v 'givenParameters[$index]'; break
             fi
         done
         if [ $# -eq ${#givenParameters[@]} ]; then
@@ -588,9 +596,17 @@ if [ $LOAD_GO_ALIASES = "TRUE" ]; then
             PS3='Please enter your choice: '
             select FORMULATION in "Staggered" "Wilson"; do
                 if [ "${FORMULATION}" =  "Staggered" ]; then
-                    eval goStaggered; break #https://stackoverflow.com/a/30993227
+                    eval goStaggered #https://stackoverflow.com/a/30993227
+                    if [ $? -ne 0 ]; then
+                        cd "${initialPosition}" && return
+                    fi
+                    break
                 elif [ "${FORMULATION}" =  "Wilson" ]; then
-                    eval goWilson; break #https://stackoverflow.com/a/30993227
+                    eval goWilson #https://stackoverflow.com/a/30993227
+                    if [ $? -ne 0 ]; then
+                        cd "${initialPosition}" && return
+                    fi
+                    break
                 fi
             done
         fi
