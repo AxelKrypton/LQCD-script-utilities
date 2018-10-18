@@ -28,6 +28,10 @@ function __static__PrintHelp(){
     printf '           [...]_Python     -> global path to Python git, i.e. to ImagMu folder included: "/.../ImagMu"\n'
     printf '\n'
     printf '        where \e[92m[...]\e[96m is the whoami concatenated with the hostname via underscore, e.g. \e[92msmith_cluster1234\e[96m.\n'
+    printf '        Please, note that shell variables names can only contain the underscore as symbol and, hence, all other symbols\n'
+    printf '        must be replaced by "_". You can use \e[92mdeclare $(whoami)_$(hostname | sed '"'"'s/[^a-zA-Z0-9_]/_/g'"'"')_suffix=...\e[96m to\n'
+    printf '        declare variables in your shell configuration file (where suffix completes the variable name). In this way you\n'
+    printf '        are maximally versatile. Of course, whoami should not contain symbols, but in case you can act in a similar way.\n'
     printf '        Once (some of) the variables above are defined, then source this script with any desired option.\n'
     printf '\n'
     printf "\e[92m"
@@ -249,7 +253,7 @@ done
 [[ "${BASH_SOURCE[0]}" == "${0}" ]] && exit
 
 #Variables for later indirect reference 
-IDENTITY="$(whoami)_$(hostname)"
+IDENTITY="$(whoami | sed 's/[^a-zA-Z0-9_]/_/g')_$(hostname | sed 's/[^a-zA-Z0-9_]/_/g')"
 IDENTITY_WORK="${IDENTITY}_work"
 IDENTITY_WILSON="${IDENTITY}_Wilson"
 IDENTITY_STAGGERED="${IDENTITY}_Staggered"
