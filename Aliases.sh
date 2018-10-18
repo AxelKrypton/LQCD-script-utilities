@@ -173,7 +173,8 @@ function AliasesHelper(){
                 printf "\n \e[91mThe terminal is too small to contain even the name of a single function! Use larger terminal!  Unable to help!\e[0m\n\n"
                 return -1
             fi
-            printf "${stringToBePrint}\n" | column -t | sed 's/^/     /'
+            #Make '\' double '\\' because read "interprets" them making '\\' become '\' only.
+            column -t <<< "${stringToBePrint//\\/\\\\}" | while read LINE; do printf "\t${LINE}\n"; done
             printf '\n For which functions would you like to get help? Use a comma separated list of entries or ranges (e.g. \e[93m1,4-6,16\e[0m): \e[s'
             local selectedIndices
             while read selectedIndices; do #Here selectedIndices is a variable
