@@ -946,7 +946,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
             else
                 printf "\e[38;5;202m ...found ${#TRAJ[@]} bunch(es) of missing trajectory(ies)!\e[0m\n"
                 for VALUE in ${TRAJ[@]}; do
-                    local LINE_NUMBER=$(grep -n "^$VALUE[[:space:]]" "$FOLDER_FILE" | cut -f1 -d':')
+                    local LINE_NUMBER=$(grep -n "^[[:space:]]*$VALUE[[:space:]]" "$FOLDER_FILE" | cut -f1 -d':')
                     if [ -z ${EDITOR:+x} ]; then
                         vim +$LINE_NUMBER $FOLDER_FILE
                     else
