@@ -28,6 +28,10 @@ function __static__PrintHelp(){
     printf '           [...]_Python     -> global path to Python git, i.e. to ImagMu folder included: "/.../ImagMu"\n'
     printf '\n'
     printf '        where \e[92m[...]\e[96m is the whoami concatenated with the hostname via underscore, e.g. \e[92msmith_cluster1234\e[96m.\n'
+    printf '        Please, note that shell variables names can only contain the underscore as symbol and, hence, all other symbols\n'
+    printf '        must be replaced by "_". You can use \e[92mdeclare $(whoami)_$(hostname | sed '"'"'s/[^a-zA-Z0-9_]/_/g'"'"')_suffix=...\e[96m to\n'
+    printf '        declare variables in your shell configuration file (where suffix completes the variable name). In this way you\n'
+    printf '        are maximally versatile. Of course, whoami should not contain symbols, but in case you can act in a similar way.\n'
     printf '        Once (some of) the variables above are defined, then source this script with any desired option.\n'
     printf '\n'
     printf "\e[92m"
@@ -57,12 +61,12 @@ function AliasesHelper(){
         ["PlotBestFits"]="Correctly invoke the \"${HOME}/Script/PlottingUtilities/PlotBestFits.plt\" script via gnuplot using the given options as filenames."
         ["GetFilteringProcedure"]="Return command to filter the brute force fit results."
         ["GetSelectingBestFitProcedure"]="Return command to smartly invoke the script to select the best fits out of the bunch created via the filtering procedure."
-        ["PyAnalysis"]="$(alias PyAnalysis)"
-        ["PyAutocorrelation"]="$(alias PyAutocorrelation)"
-        ["PyFindBetaC"]="$(alias PyFindBetaC)"
-        ["PyPlotScaling"]="$(alias PyPlotScaling)"
-        ["PyReweighting"]="$(alias PyReweighting)"
-        ["PySynchronization"]="$(alias PySynchronization)"
+        ["PyAnalysis"]="Run PLASMA in analysis mode"
+        ["PyAutocorrelation"]="Run PLASMA in autocorrelation mode"
+        ["PyFindBetaC"]="Run PLASMA in find critical beta mode"
+        ["PyPlotScaling"]="Run PLASMA in plot scaling mode"
+        ["PyReweighting"]="Run PLASMA in reweighting mode"
+        ["PySynchronization"]="Run PLASMA in synchronisation mode"
         ["GetSynchronizationCommand"]="Return standard invocation of \"PySynchronization\". Remote host name has to be passed as option."
         ["GetAnalysisPbpCommand"]="Return standard invokation of \"PyAnalysis\" to analise the chiral condensate."
         ["GetAnalysisPolyImWithZeroMeanCommand"]="Return standard invokation of \"PyAnalysis\" to analise the Polyakov loop with zero mean."
@@ -79,8 +83,8 @@ function AliasesHelper(){
         ["CheckNumberOfEntriesPerLine"]="Count the number of fields per line in the given file and make a summary. As second argument the expected number of entries can be specified to colour the summary accordingly. Space(s) are used as field separator."
         ["RemoveLinesWithNumberOfColumnsDifferentFrom"]="Given a number N and a file name as command line options, a backup of the file is created and the lines not with N fields are removed from the original file."
         ["PickUpFolder"]="Given an optional prefix, all folders (matching the given prefix) are listed. The user has to select one to cd into. If the prefix terminates with \"/\" then it is intended as a full folder name (still pattern matching is performed)."
-        ['goStaggered']="$(alias goStaggered)"
-        ['goWilson']="$(alias goWilson)"
+        ['goStaggered']="Move to staggered folder"
+        ['goWilson']="Move to Wilson folder"
         ["go"]="Interactive function to move to data folder. It goes either to staggered or to Wilson folders and explores the tree asking to which folder to cd. Parameters different from \"s\" or \"S\" and \"w\" or \"W\" (which can be used to choose between staggered and Wilson, respectively) are interpred as prefix of folder names. If they identify unanbiguous folders at a given step, then such a folder is chosen at that step and such a prefix is not used any more."
         ["cdw"]="Move into the work directory (scratch on clusters, phil-configs locally) -> $(alias cdw)."
         ["JobInfo"]="Invoke \"${HOME}/Script/MonitorSlurmJobs.sh\" script (DEPRECATED, use BaHaMAS if possible)."
@@ -119,17 +123,21 @@ function AliasesHelper(){
     )
 
     local availableFunctions index
-    #Find all function or aliases defined in this file (very ugly but the only way AFAIK)
-    availableFunctions=( $(grep -E '^[[:space:]]*([[:alnum:]_]+[[:space:]]*\(\)|function[[:space:]]+[[:alnum:]_]+|alias[[:space:]]+[[:alnum:]_]+=)' "${BASH_SOURCE[0]}" | sed -e 's/\(()\|=\).*//g' -e 's/function \(.*\)/\1/' -e 's/alias \(.*\)/\1/') )
-    for index in ${!availableFunctions[@]}; do
-        if [[ ${availableFunctions[$index]} =~ ^__static__ ]]; then
-            unset -v 'availableFunctions[$index]'
-        fi
-    done
-    availableFunctions=( ${availableFunctions[@]} ) # Make array not sparse to use continuous index later
     (
-		#Start a subshell in order to source "locally"
+		#Start a subshell in order to source "locally" and unalias locally
         source ${HOME}/Script/UtilityFunctions.sh
+        #Find all function or aliases defined in this file (very ugly but the only way AFAIK)
+        if [ "$(type -t grep)" = 'alias' ]; then
+            unalias grep #if grep was aliased to always report line number
+        fi
+        availableFunctions=( $(grep -E '^[[:space:]]*([[:alnum:]_]+[[:space:]]*\(\)|function[[:space:]]+[[:alnum:]_]+|alias[[:space:]]+[[:alnum:]_]+=)' "${BASH_SOURCE[0]}" | sed -e 's/\(()\|=\).*//g' -e 's/function \(.*\)/\1/' -e 's/alias \(.*\)/\1/') )
+        for index in ${!availableFunctions[@]}; do
+            if [[ ${availableFunctions[$index]} =~ ^__static__ ]]; then
+                unset -v 'availableFunctions[$index]'
+            fi
+        done
+        availableFunctions=( ${availableFunctions[@]} ) # Make array not sparse to use continuous index later
+
         if [ $# -eq 0 ]; then # Interactive selecion of function
             printf "\n Here a list of available function. Those with the number \e[4munderlined\e[24m have been loaded.\n\n"
             printf " Use the options ${groupColors[FIT_ALIASES]}--loadFit ${groupColors[PYTHON_ALIASES]}--loadPython ${groupColors[JOB_ALIASES]}--loadJob ${groupColors[GO_ALIASES]}--loadMass|--loadKappa ${groupColors[ROOTHIST_ALIASES]}--loadRootHist\e[0m to load groups of aliases.\n\n"
@@ -165,7 +173,8 @@ function AliasesHelper(){
                 printf "\n \e[91mThe terminal is too small to contain even the name of a single function! Use larger terminal!  Unable to help!\e[0m\n\n"
                 return -1
             fi
-            printf "${stringToBePrint}\n" | column -t | sed 's/^/     /'
+            #Make '\' double '\\' because read "interprets" them making '\\' become '\' only.
+            column -t <<< "${stringToBePrint//\\/\\\\}" | while read LINE; do printf "\t${LINE}\n"; done
             printf '\n For which functions would you like to get help? Use a comma separated list of entries or ranges (e.g. \e[93m1,4-6,16\e[0m): \e[s'
             local selectedIndices
             while read selectedIndices; do #Here selectedIndices is a variable
@@ -249,7 +258,7 @@ done
 [[ "${BASH_SOURCE[0]}" == "${0}" ]] && exit
 
 #Variables for later indirect reference 
-IDENTITY="$(whoami)_$(hostname)"
+IDENTITY="$(whoami | sed 's/[^a-zA-Z0-9_]/_/g')_$(hostname | sed 's/[^a-zA-Z0-9_]/_/g')"
 IDENTITY_WORK="${IDENTITY}_work"
 IDENTITY_WILSON="${IDENTITY}_Wilson"
 IDENTITY_STAGGERED="${IDENTITY}_Staggered"
@@ -570,9 +579,17 @@ if [ $LOAD_GO_ALIASES = "TRUE" ]; then
         initialPosition=$(pwd); givenParameters=( "$@" )
         for index in ${!givenParameters[@]}; do
             if [[ ${givenParameters[$index]} =~ ^[sS]$ ]]; then
-                eval goStaggered; unset -v 'givenParameters[$index]'; break #https://stackoverflow.com/a/30993227
+                eval goStaggered #https://stackoverflow.com/a/30993227
+                if [ $? -ne 0 ]; then
+                    cd "${initialPosition}" && return
+                fi
+                unset -v 'givenParameters[$index]'; break
             elif [[ ${givenParameters[$index]} =~ ^[wW]$ ]]; then
-                eval goWilson; unset -v 'givenParameters[$index]'; break #https://stackoverflow.com/a/30993227
+                eval goWilson #https://stackoverflow.com/a/30993227
+                if [ $? -ne 0 ]; then
+                    cd "${initialPosition}" && return
+                fi
+                unset -v 'givenParameters[$index]'; break
             fi
         done
         if [ $# -eq ${#givenParameters[@]} ]; then
@@ -580,9 +597,17 @@ if [ $LOAD_GO_ALIASES = "TRUE" ]; then
             PS3='Please enter your choice: '
             select FORMULATION in "Staggered" "Wilson"; do
                 if [ "${FORMULATION}" =  "Staggered" ]; then
-                    eval goStaggered; break #https://stackoverflow.com/a/30993227
+                    eval goStaggered #https://stackoverflow.com/a/30993227
+                    if [ $? -ne 0 ]; then
+                        cd "${initialPosition}" && return
+                    fi
+                    break
                 elif [ "${FORMULATION}" =  "Wilson" ]; then
-                    eval goWilson; break #https://stackoverflow.com/a/30993227
+                    eval goWilson #https://stackoverflow.com/a/30993227
+                    if [ $? -ne 0 ]; then
+                        cd "${initialPosition}" && return
+                    fi
+                    break
                 fi
             done
         fi
