@@ -171,7 +171,7 @@ function AliasesHelper(){
             done
             if [ "$stringToBePrint" = '' ]; then
                 printf "\n \e[91mThe terminal is too small to contain even the name of a single function! Use larger terminal!  Unable to help!\e[0m\n\n"
-                return -1
+                return 255
             fi
             #Make '\' double '\\' because read "interprets" them making '\\' become '\' only.
             column -t <<< "${stringToBePrint//\\/\\\\}" | while read LINE; do printf "\t${LINE}\n"; done
@@ -524,7 +524,7 @@ if [ $LOAD_GO_ALIASES = "TRUE" ]; then
             FOLDERS_ARRAY=( $(ls -d ${1}*/ 2>>/dev/null) )
         fi
         if [ ${#FOLDERS_ARRAY[@]} -eq 0 ]; then
-            return -1
+            return 255
         fi
         local ORDERED_FOLDERS_ARRAY=()
         for INDEX in "${!FOLDERS_ARRAY[@]}"; do
@@ -864,7 +864,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         local FOLDERS_ARRAY=()
         for ARGUMENT in $@; do
             if [[ ! $ARGUMENT =~ ^[[:digit:]][.][[:digit:]]{4}_s[[:digit:]]{4}_[[:alpha:]]{2}$ ]]; then
-                printf "\n\e[91m Unable to complete \"${ARGUMENT}\" name.\e[0m\n\n" 1>&2 && return -1
+                printf "\n\e[91m Unable to complete \"${ARGUMENT}\" name.\e[0m\n\n" 1>&2 && return 255
             fi
             local SUFFIX=${ARGUMENT##*_}
             if [ $SUFFIX = "fH" ]; then
@@ -885,15 +885,15 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         if [ -d "$1" ]; then
             FOLDER="$1"
         else
-            FOLDER=$(CompleteFolderName "$1") || return -1
-            [ ! -d $FOLDER ] && printf "\n\e[0;91m Folder \"$FOLDER\" not found!\n\e[0m" 1>&2 && return -1
+            FOLDER=$(CompleteFolderName "$1") || return 255
+            [ ! -d $FOLDER ] && printf "\n\e[0;91m Folder \"$FOLDER\" not found!\n\e[0m" 1>&2 && return 255
         fi
         if [ $(grep "[sS]taggered" <<< "$PWD" | wc -l) -gt 0 ]; then
             local FOLDER_FILE="${FOLDER}/rhmc_output"
         elif [ $(grep "[wW]ilson" <<< "$PWD" | wc -l) -gt 0 ]; then
             local FOLDER_FILE="${FOLDER}/hmc_output"
         else
-            echo "Neither in Staggered nor in Wilson path!"  1>&2 && return -1
+            echo "Neither in Staggered nor in Wilson path!"  1>&2 && return 255
         fi
         echo "$FOLDER_FILE"
     }
@@ -904,16 +904,16 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         if [ -d "$1" ]; then
             FOLDER="$1"
         else
-            FOLDER=$(CompleteFolderName "$1") || return -1
-            [ ! -d $FOLDER ] && printf "\n\e[0;91m Folder \"$FOLDER\" not found!\n\n\e[0m"  1>&2 && return -1
+            FOLDER=$(CompleteFolderName "$1") || return 255
+            [ ! -d $FOLDER ] && printf "\n\e[0;91m Folder \"$FOLDER\" not found!\n\n\e[0m"  1>&2 && return 255
         fi
-        [ $(find $FOLDER -regex ".*/?hmc.*[.]out" | wc -l) -eq 0 ] && printf "\n\e[0;91m No standard output file found in \"$FOLDER\"!\n\n\e[0m"  1>&2 && return -1
+        [ $(find $FOLDER -regex ".*/?hmc.*[.]out" | wc -l) -eq 0 ] && printf "\n\e[0;91m No standard output file found in \"$FOLDER\"!\n\n\e[0m"  1>&2 && return 255
         if [ $(grep "[sS]taggered" <<< "$PWD" | wc -l) -gt 0 ]; then
             local FOLDER_FILE="$(ls -rt1 $FOLDER/rhmc*.*.out | tail -n1)"
         elif [ $(grep "[wW]ilson" <<< "$PWD" | wc -l) -gt 0 ]; then
             local FOLDER_FILE="$(ls -rt1 $FOLDER/hmc*.*.out | tail -n1)"
         else
-            echo "Neither in Staggered nor in Wilson path!"  1>&2 && return -1
+            echo "Neither in Staggered nor in Wilson path!"  1>&2 && return 255
         fi
         echo "$FOLDER_FILE"
     }
@@ -961,7 +961,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
     DEFINED_FUNCTIONS+=( 'TimeTr' )
     function TimeTr(){
         local OUTPUT_FILE; OUTPUT_FILE=$(GetOutputFilePath "$1") #To be able to check error code, local keyword sweeps it away!
-        [ $? -ne 0 ] && printf "\n \e[91mError in \"$FUNCNAME\" function, unable to reconstruct output filename!\e[0m\n\n"  1>&2 && return -1
+        [ $? -ne 0 ] && printf "\n \e[91mError in \"$FUNCNAME\" function, unable to reconstruct output filename!\e[0m\n\n"  1>&2 && return 255
         local TIME_AND_NUMBER_TR=( $(awk '{ time=$10; if(time!=0){sum+=time; counter+=1}} END {if(counter!=0){printf "%d", sum/counter}else{printf "%d", 0}; printf " %d", counter}' "$OUTPUT_FILE") )
         printf "\n \e[92mAmount of trajectories with non-zero time: %d   Time per trajectory: %ds\n\n" ${TIME_AND_NUMBER_TR[1]} ${TIME_AND_NUMBER_TR[0]}
         for INDEX in 1000 5000 10000 25000 50000; do
@@ -984,15 +984,15 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
                 echo "Neither in Staggered nor in Wilson path!"
             fi
         else
-            printf "\n\e[0;91m Unknown first command line parameter!\n\n\e[0m" 1>&2 && return -1
+            printf "\n\e[0;91m Unknown first command line parameter!\n\n\e[0m" 1>&2 && return 255
         fi
         if [ "$2" = "-e" ]; then
             FOLDER_FILE=${FOLDER_FILE/.out/.err}
         elif [ "$2" != '' ]; then
-            printf "\n\e[0;91m Unknown second command line parameter!\n\n\e[0m" 1>&2 && return -1
+            printf "\n\e[0;91m Unknown second command line parameter!\n\n\e[0m" 1>&2 && return 255
         fi
         if [ ! -f $FOLDER_FILE ]; then
-            printf "\n\e[0;91m File \"$FOLDER_FILE\" not found!\n\n\e[0m" 1>&2 && return -1
+            printf "\n\e[0;91m File \"$FOLDER_FILE\" not found!\n\n\e[0m" 1>&2 && return 255
         fi
         less $FOLDER_FILE
         #Print jobid and node to screen
@@ -1004,7 +1004,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
     DEFINED_FUNCTIONS+=( 'FindHighestDH' )
     function FindHighestDH(){
         local FOLDER_FILE; FOLDER_FILE=$(GetOutputFilePath "$1")
-        [ $? -ne 0 ] && printf "\n \e[91mError in \"$FUNCNAME\" function, unable to reconstruct output filename!\e[0m\n\n"  1>&2 && return -1
+        [ $? -ne 0 ] && printf "\n \e[91mError in \"$FUNCNAME\" function, unable to reconstruct output filename!\e[0m\n\n"  1>&2 && return 255
         local NUMBER_TR=30
         if [[ $2 =~ ^[0-9]+$ ]]; then
             NUMBER_TR=$2
@@ -1017,7 +1017,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
     DEFINED_FUNCTIONS+=( 'CheckCl2qcdOutput' )
     function CheckCl2qcdOutput(){
         local FOLDER_FILE; FOLDER_FILE=$(GetOutputFilePath "$1")
-        [ $? -ne 0 ] && printf "\n \e[91mError in \"$FUNCNAME\" function, unable to reconstruct output filename!\e[0m\n\n"  1>&2 && return -1
+        [ $? -ne 0 ] && printf "\n \e[91mError in \"$FUNCNAME\" function, unable to reconstruct output filename!\e[0m\n\n"  1>&2 && return 255
         printf "\e[38;5;129m\n Calling:\e[38;5;117m ${HOME}/Script/CheckCorrectnessCl2qcdOutputFile.sh $FOLDER_FILE\n\e[0m"
         bash ${HOME}/Script/CheckCorrectnessCl2qcdOutputFile.sh $FOLDER_FILE
     }
