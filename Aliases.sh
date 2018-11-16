@@ -772,7 +772,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
             ls $BETA | grep "^conf.[[:digit:]]\+" | grep -o "[[:digit:]]\+" | sort -n | \
                 awk 'BEGIN{printf "    "}NR==1{tr=$1}NR>1{countGaps[$1-tr]++; tr=$1}END{for(i in countGaps){printf "%d [%d]   ", i, countGaps[i]}; printf"\n"}'
         done && unset -v 'BETA'
-        echo ''
+        printf '\n\e[0m'
     }
 
     DEFINED_FUNCTIONS+=( 'DeleteConfPrngNotEvery' )
