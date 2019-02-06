@@ -61,24 +61,19 @@ function AliasesHelper(){
         ["PlotBestFits"]="Correctly invoke the \"${HOME}/Script/PlottingUtilities/PlotBestFits.plt\" script via gnuplot using the given options as filenames."
         ["GetFilteringProcedure"]="Return command to filter the brute force fit results."
         ["GetSelectingBestFitProcedure"]="Return command to smartly invoke the script to select the best fits out of the bunch created via the filtering procedure."
-        ["PyAnalysis"]="Run PLASMA in analysis mode"
-        ["PyAutocorrelation"]="Run PLASMA in autocorrelation mode"
-        ["PyFindBetaC"]="Run PLASMA in find critical beta mode"
-        ["PyPlotScaling"]="Run PLASMA in plot scaling mode"
-        ["PyReweighting"]="Run PLASMA in reweighting mode"
-        ["PySynchronization"]="Run PLASMA in synchronisation mode"
-        ["GetSynchronizationCommand"]="Return standard invocation of \"PySynchronization\". Remote host name has to be passed as option."
-        ["GetAnalysisPbpCommand"]="Return standard invokation of \"PyAnalysis\" to analise the chiral condensate."
-        ["GetAnalysisPolyImWithZeroMeanCommand"]="Return standard invokation of \"PyAnalysis\" to analise the Polyakov loop with zero mean."
-        ["GetAnalysisPolySqCommand"]="Return standard invokation of \"PyAnalysis\" to analise the square norm of the Polyakov loop."
-        ["GetReweightingPbpCommand"]="Return standard invokation of \"PyReweighting\" to reweight the chiral condensate. It either needs betaMin, betaMax and the resolution in beta or just the latter (in this case betaMin and betaMax are the first and the last line of the file \"betas\")"
-        ["GetReweightingPolyImWithZeroMeanCommand"]="Return standard invokation of \"PyReweighting\" to reweight the Polyakov loop with zero mean. It either needs betaMin, betaMax and the resolution in beta or just the latter (in this case betaMin and betaMax are the first and the last line of the file \"betas\")"
-        ["GetReweightingPolySqSkewCommand"]="Return standard invokation of \"PyReweighting\" to reweight the square norm of the Polyakov loop. It either needs betaMin, betaMax and the resolution in beta or just the latter (in this case betaMin and betaMax are the first and the last line of the file \"betas\")"
-        ["GetFindBetaCPbpCommand"]="Return standard invokation of \"PyFindBetaC\" to extract the critical beta from the chiral condensate."
-        ["GetFindBetaCPolySqCommand"]="Return standard invokation of \"PyFindBetaC\" to extract the critical beta from the square norm of the Polyakov loop."
-        ["GetPlotScalingPolySqCommand"]="Return standard invokation of \"PyPlotScaling\" to create the scaling plots of the square norm of the Polyakov loop. It needs the ns values as arguments."
-        ["GetPlotScalingPbpCommand"]="Return standard invokation of \"PyPlotScaling\" to create the scaling plots of the chiral condensate. It needs the ns values as arguments."
-        ["GetPlotScalingPolyImWithZeroMeanCommand"]="Return standard invokation of \"PyPlotScaling\" to create the scaling plots of the Polyakov loop with zero mean. It needs the critical beta as first argument and the ns values as following arguments."
+        ["PLASMA"]="Alias to run PLASMA."
+        ["GetSynchronizationCommand"]="Return standard invocation of PLASMA in synchronisation mode. Remote host name has to be passed as option."
+        ["GetAnalysisPbpCommand"]="Return standard invokation of PLASMA to analyse the chiral condensate."
+        ["GetAnalysisPolyImWithZeroMeanCommand"]="Return standard invokation of PLASMA to analyse the Polyakov loop with zero mean."
+        ["GetAnalysisPolySqCommand"]="Return standard invokation of PLASMA to analyse the square norm of the Polyakov loop."
+        ["GetReweightingPbpCommand"]="Return standard invokation of PLASMA to reweight the chiral condensate. It either needs betaMin, betaMax and the resolution in beta or just the latter (in this case betaMin and betaMax are the first and the last line of the file \"betas\")"
+        ["GetReweightingPolyImWithZeroMeanCommand"]="Return standard invokation of PLASMA to reweight the Polyakov loop with zero mean. It either needs betaMin, betaMax and the resolution in beta or just the latter (in this case betaMin and betaMax are the first and the last line of the file \"betas\")"
+        ["GetReweightingPolySqSkewCommand"]="Return standard invokation of PLASMA to reweight the square norm of the Polyakov loop. It either needs betaMin, betaMax and the resolution in beta or just the latter (in this case betaMin and betaMax are the first and the last line of the file \"betas\")"
+        ["GetFindBetaCPbpCommand"]="Return standard invokation of PLASMA to extract the critical beta from the chiral condensate."
+        ["GetFindBetaCPolySqCommand"]="Return standard invokation of PLASMA to extract the critical beta from the square norm of the Polyakov loop."
+        ["GetPlotScalingPolySqCommand"]="Return standard invokation of PLASMA to create the scaling plots of the square norm of the Polyakov loop. It needs the ns values as arguments."
+        ["GetPlotScalingPbpCommand"]="Return standard invokation of PLASMA to create the scaling plots of the chiral condensate. It needs the ns values as arguments."
+        ["GetPlotScalingPolyImWithZeroMeanCommand"]="Return standard invokation of PLASMA to create the scaling plots of the Polyakov loop with zero mean. It needs the critical beta as first argument and the ns values as following arguments."
         ["HasFileDifferentNumberOfEntriesPerLine"]="Boolean function. It returns true if the file given as argument has at least two lines with e different number of fields, false otherwise. Space(s) are used as field separator."
         ["CheckNumberOfEntriesPerLine"]="Count the number of fields per line in the given file and make a summary. As second argument the expected number of entries can be specified to colour the summary accordingly. Space(s) are used as field separator."
         ["RemoveLinesWithNumberOfColumnsDifferentFrom"]="Given a number N and a file name as command line options, a backup of the file is created and the lines not with N fields are removed from the original file."
@@ -116,7 +111,7 @@ function AliasesHelper(){
     groupedFunctions=(
         ['GENERAL']='AliasesHelper'
         ['FIT_ALIASES']='BinderFit BruteForceFit FilterFitResults SetUpForBruteForceFit SelectBestFits ChooseReweightingFolders QuantitativeCollapse PlotBestFits GetFilteringProcedure GetSelectingBestFitProcedure'
-        ['PYTHON_ALIASES']='PyAnalysis PyAutocorrelation PyFindBetaC PyPlotScaling PyReweighting PySynchronization GetSynchronizationCommand GetAnalysisPbpCommand GetAnalysisPolyImWithZeroMeanCommand GetAnalysisPolySqCommand GetReweightingPbpCommand GetReweightingPolyImWithZeroMeanCommand GetReweightingPolySqSkewCommand GetFindBetaCPbpCommand GetFindBetaCPolySqCommand GetPlotScalingPolySqCommand GetPlotScalingPbpCommand GetPlotScalingPolyImWithZeroMeanCommand HasFileDifferentNumberOfEntriesPerLine CheckNumberOfEntriesPerLine RemoveLinesWithNumberOfColumnsDifferentFrom'
+        ['PYTHON_ALIASES']='PLASMA GetSynchronizationCommand GetAnalysisPbpCommand GetAnalysisPolyImWithZeroMeanCommand GetAnalysisPolySqCommand GetReweightingPbpCommand GetReweightingPolyImWithZeroMeanCommand GetReweightingPolySqSkewCommand GetFindBetaCPbpCommand GetFindBetaCPolySqCommand GetPlotScalingPolySqCommand GetPlotScalingPbpCommand GetPlotScalingPolyImWithZeroMeanCommand HasFileDifferentNumberOfEntriesPerLine CheckNumberOfEntriesPerLine RemoveLinesWithNumberOfColumnsDifferentFrom'
         ['GO_ALIASES']='PickUpFolder goStaggered goWilson go'
         ['JOB_ALIASES']='cdw JobInfo Acceptance LastAcceptance FillInMissingLines ClusterUsage ReportOnCorrelatorFiles ReportOnScaleSettingFiles CountJobs OverviewJobs Walltime CalculateGapsInTrajectoriesBetweenStoredConfigurations DeleteConfPrngNotEvery ListOfTrashFolders ListOfTrashFoldersWithSizes SizeOfTrashFolders CompleteFolderName GetOutputFilePath FindLastStandardOutput FindMissingTrajectories TimeTr ShowStd FindHighestDH CheckCl2qcdOutput'
         ['ROOTHIST_ALIASES']='CreateRootHistograms'
@@ -273,7 +268,7 @@ DEFINED_FUNCTIONS=( 'AliasesHelper' ) # This is always defined, the others depen
 if [ $LOAD_GO_ALIASES = "TRUE" ] && {
        [ ! ${!IDENTITY_WORK:+x} ] ||
        [ ! ${!IDENTITY_STAGGERED:+x} ] ||
-       [ ! ${!IDENTITY_WILSON:+x} ]; }; then printf "\n\e[91m Mass aliases desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1
+       [ ! ${!IDENTITY_WILSON:+x} ]; }; then printf "\n\e[91m Go aliases desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1
 fi
 if [ $LOAD_PYTHON_ALIASES = "TRUE" ] &&
        [ ! ${!IDENTITY_PYTHON:+x} ]; then printf "\n\e[91m Python aliases desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1
@@ -347,33 +342,26 @@ fi
 #Aliases to work with the python code analysis
 if [ $LOAD_PYTHON_ALIASES = "TRUE" ]; then
 
-    #alias PLASMA="python ${!IDENTITY_PYTHON}/PLASMA.py"
-
-    alias PyAutocorrelation="python ${!IDENTITY_PYTHON}/ImagMuAutocorrelationAnalysis.py"
-    alias PyAnalysis="python ${!IDENTITY_PYTHON}/ImagMuAnalysis.py"
-    alias PySynchronization="python ${!IDENTITY_PYTHON}/ImagMuSync.py"
-    alias PyReweighting="python ${!IDENTITY_PYTHON}/ImagMuReweighting.py"
-    alias PyFindBetaC="python ${!IDENTITY_PYTHON}/ImagMuFindBetaC.py"
-    alias PyPlotScaling="python ${!IDENTITY_PYTHON}/ImagMuPlotScaling.py"
+    alias PLASMA="${!IDENTITY_PYTHON}/PLASMA.py"
 
     DEFINED_FUNCTIONS+=( 'GetSynchronizationCommand' )
     function GetSynchronizationCommand(){
-        echo "PySynchronization --betasFile=betasSync --remote=$1"
+        echo "PLASMA s --betasFile=betasSync --remote=$1"
     }
 
     DEFINED_FUNCTIONS+=( 'GetAnalysisPbpCommand' )
     function GetAnalysisPbpCommand(){
-        echo "PyAnalysis --deactivatePlaq --deactivatePoly --activatePbp --inversionsPerConfig 8"
+        echo "PLASMA A --deactivatePlaq --deactivatePoly --activatePbp --inversionsPerConfig 8"
     }
 
     DEFINED_FUNCTIONS+=( 'GetAnalysisPolyImWithZeroMeanCommand' )
     function GetAnalysisPolyImWithZeroMeanCommand(){
-        echo "PyAnalysis --analyzeWithJackknife --analyzeSingleChains --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_sq"
+        echo "PLASMA A --analyzeWithJackknife --analyzeSingleChains --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_sq"
     }
 
     DEFINED_FUNCTIONS+=( 'GetAnalysisPolySqCommand' )
     function GetAnalysisPolySqCommand(){
-        echo "PyAnalysis --analyzeWithJackknife --analyzeSingleChains --deactivatePlaq --deactivatePoly_re --deactivatePoly_im_withZeroMean --deactivatePoly_im --deactivatePoly_im_abs --deactivateSusc"
+        echo "PLASMA A --analyzeWithJackknife --analyzeSingleChains --deactivatePlaq --deactivatePoly_re --deactivatePoly_im_withZeroMean --deactivatePoly_im --deactivatePoly_im_abs --deactivateSusc"
     }
 
     function __static__DefineBetaMinMaxResAndCheck(){
@@ -403,7 +391,7 @@ if [ $LOAD_PYTHON_ALIASES = "TRUE" ]; then
         __static__DefineBetaMinMaxResAndCheck "$@" || return
         echo -n '[ $(ls Nf?_mui*_nt?_ns??_reweighting 2>/dev/null | wc -l) -eq 0 ]'
         echo -n ' && [ $(ls -d -1 Nf?_mui*_nt?_ns??_reweighting_pbp/ | wc -l) -eq 0 ]'
-        echo -n " && time PyReweighting --deactivatePlaq --deactivatePoly --activatePbp --inversionsPerConfig 8 --deactivateMean --deactivateSusc --doNotUseSimulatedPointsAsNewPoints -r $BETA_MIN $BETA_MAX -p $NUM_POINTS"
+        echo -n " && time PLASMA r --deactivatePlaq --deactivatePoly --activatePbp --inversionsPerConfig 8 --deactivateMean --deactivateSusc --doNotUseSimulatedPointsAsNewPoints -r $BETA_MIN $BETA_MAX -p $NUM_POINTS"
         echo -n ' && [ $(ls -d -1 Nf?_mui*_nt?_ns??_reweighting/ | wc -l) -eq 1 ]'
         echo -n ' && FOLDER="$(ls -d -1 Nf?_mui*_nt?_ns??_reweighting/)"'
         echo -n ' && mv ${FOLDER%?} ${FOLDER%?}_pbp'
@@ -415,7 +403,7 @@ if [ $LOAD_PYTHON_ALIASES = "TRUE" ]; then
         local BETA_MIN BETA_MAX RESOLUTION NUM_POINTS
         __static__DefineBetaMinMaxResAndCheck "$@" || return
         echo -n '[ $(ls Nf?_mui*_nt?_ns??_reweighting 2>/dev/null | wc -l) -eq 0 ]'
-        echo -n ' && time PyReweighting --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_sq --deactivateMean --deactivateSusc --deactivateSkew --printEstimatorsToFile'
+        echo -n ' && time PLASMA r --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_sq --deactivateMean --deactivateSusc --deactivateSkew --printEstimatorsToFile'
         echo -n " --doNotUseSimulatedPointsAsNewPoints -r $BETA_MIN $BETA_MAX -p $NUM_POINTS"
         echo -n ' && [ $(ls -d -1 Nf?_mui*_nt?_ns??_reweighting/ | wc -l) -eq 1 ]'
         echo -n ' && FOLDER="$(ls -d -1 Nf?_mui*_nt?_ns??_reweighting/)"'
@@ -428,7 +416,7 @@ if [ $LOAD_PYTHON_ALIASES = "TRUE" ]; then
         local BETA_MIN BETA_MAX RESOLUTION NUM_POINTS
         __static__DefineBetaMinMaxResAndCheck "$@" || return
         echo -n '[ $(ls Nf?_mui*_nt?_ns??_reweighting 2>/dev/null | wc -l) -eq 0 ]'
-        echo -n ' && time PyReweighting --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_im_withZeroMean --deactivateMean --deactivateSusc'
+        echo -n ' && time PLASMA r --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_im_withZeroMean --deactivateMean --deactivateSusc'
         echo -n " --doNotUseSimulatedPointsAsNewPoints -r $BETA_MIN $BETA_MAX -p $NUM_POINTS"
         echo -n ' && [ $(ls -d -1 Nf?_mui*_nt?_ns??_reweighting/ | wc -l) -eq 1 ]'
         echo -n ' && FOLDER="$(ls -d -1 Nf?_mui*_nt?_ns??_reweighting/)"'
@@ -438,29 +426,29 @@ if [ $LOAD_PYTHON_ALIASES = "TRUE" ]; then
 
     DEFINED_FUNCTIONS+=( 'GetFindBetaCPbpCommand' )
     function GetFindBetaCPbpCommand(){
-        echo "PyFindBetaC --deactivatePlaq --deactivatePoly --activatePbp --deactivateMean --deactivateSusc --deactivateBinder"
+        echo "PLASMA bC --deactivatePlaq --deactivatePoly --activatePbp --deactivateMean --deactivateSusc --deactivateBinder"
     }
 
     DEFINED_FUNCTIONS+=( 'GetFindBetaCPolySqCommand' )
     function GetFindBetaCPolySqCommand(){
-        echo "PyFindBetaC --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_withZeroMean --deactivatePoly_im_abs --deactivateMean --deactivateSusc --doNotExtractFromRawData"
+        echo "PLASMA bC --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_withZeroMean --deactivatePoly_im_abs --deactivateMean --deactivateSusc --doNotExtractFromRawData"
     }
 
     DEFINED_FUNCTIONS+=( 'GetPlotScalingPolySqCommand' )
     function GetPlotScalingPolySqCommand(){
-        echo "PyPlotScaling --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_im_withZeroMean --nsArray $@ --doNotPlotRawData --doNotMakeCombinedPlots --deactivateMean --deactivateSkew --deactivateBinder"
+        echo "PLASMA sP --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_im_withZeroMean --nsArray $@ --doNotPlotRawData --doNotMakeCombinedPlots --deactivateMean --deactivateSkew --deactivateBinder"
     }
 
     DEFINED_FUNCTIONS+=( 'GetPlotScalingPbpCommand' )
     function GetPlotScalingPbpCommand(){
-        echo "PyPlotScaling --deactivatePlaq --deactivatePoly --activatePbp --nsArray $@ --doNotPlotRawData --doNotMakeCombinedPlots --deactivateMean --deactivateSusc"
+        echo "PLASMA sP --deactivatePlaq --deactivatePoly --activatePbp --nsArray $@ --doNotPlotRawData --doNotMakeCombinedPlots --deactivateMean --deactivateSusc"
     }
 
     DEFINED_FUNCTIONS+=( 'GetPlotScalingPolyImWithZeroMeanCommand' )
     function GetPlotScalingPolyImWithZeroMeanCommand(){
         local BETAC="$1"
         shift
-        echo "PyPlotScaling --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_sq --nsArray $@ --doNotPlotRawData --deactivateMean --deactivateSusc --deactivateSkew --betaCForCollapsePlots $BETAC"
+        echo "PLASMA sP --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_sq --nsArray $@ --doNotPlotRawData --deactivateMean --deactivateSusc --deactivateSkew --betaCForCollapsePlots $BETAC"
     }
 
     DEFINED_FUNCTIONS+=( 'HasFileDifferentNumberOfEntriesPerLine' )
