@@ -30,14 +30,15 @@ function MakeGnuplotHistogram() {
         elif [ $MASS_PREFIX = 'k' ]; then
             local XAXIS_BOTTOM_LABEL='\\kappa'
         fi
-        #The following is to order data that in an associative array are in general not!
-        for INDEX in $(printf "%s\n" ${!NUMBER_OF_VOLUMES[@]} | sort -n | xargs -n1 printf "%s "); do
+        for INDEX in ${MASSES[@]}; do
             ARRAY_FOR_HISTOGRAM_POSITIONING+=( ${NUMBER_OF_VOLUMES["$INDEX"]} )
         done
         local ARRAY_XAXIS_BOTTOM=( "${MASSES[@]}" )
         #Add 0. in front of masses values for labels in plot
         for INDEX in ${!ARRAY_XAXIS_BOTTOM[@]}; do
-            ARRAY_XAXIS_BOTTOM[$INDEX]="0.${ARRAY_XAXIS_BOTTOM[$INDEX]}"
+            if [[ ! ${ARRAY_XAXIS_BOTTOM[$INDEX]} =~ [.] ]]; then
+                ARRAY_XAXIS_BOTTOM[$INDEX]="0.${ARRAY_XAXIS_BOTTOM[$INDEX]}"
+            fi
         done
         local XAXIS_UPPERLEFT_LABEL='N_{\\sigma}'
         local ROTATE='FALSE'
@@ -46,8 +47,7 @@ function MakeGnuplotHistogram() {
         local FACTOR_TO_DIVIDE_FOR_COLOR=$NTIME
     elif [ $BETA_OVERVIEW = 'TRUE' ]; then
         local XAXIS_BOTTOM_LABEL='\\beta'
-        #The following is to order data that in an associative array are in general not!
-        for INDEX in $(printf "%s\n" ${!NUMBER_OF_CHAINS[@]} | sort -n | xargs -n1 printf "%s "); do
+        for INDEX in ${BETAS[@]}; do
             ARRAY_FOR_HISTOGRAM_POSITIONING["$INDEX"]=${NUMBER_OF_CHAINS["$INDEX"]}
         done
         local ARRAY_XAXIS_BOTTOM=( "${BETAS[@]}" )
@@ -96,7 +96,7 @@ function MakeGnuplotHistogram() {
     done
     echo '' >> $GNUPLOT_TEMP_SCRIPT
     if [ "$1" = 'TRUE' ]; then
-        echo 'set terminal lua tikz standalone solid preamble '"'"'\usepackage{amsmath, mathabx}'"'" >> $GNUPLOT_TEMP_SCRIPT
+        echo 'set terminal lua tikz standalone preamble '"'"'\usepackage{amsmath, mathabx}'"'" >> $GNUPLOT_TEMP_SCRIPT
         echo "set output \"${OUTPUT_PLOT_FILENAME}.tex\"" >> $GNUPLOT_TEMP_SCRIPT
         echo 'set label "\\scriptsize{$'$XAXIS_UPPERLEFT_LABEL'\\to$}" at screen '$XAXIS_UPPERLEFT_LABEL_POSITION_UP', screen 0.053 left' >> $GNUPLOT_TEMP_SCRIPT
         echo 'set label "\\scriptsize{$'$XAXIS_BOTTOM_LABEL'\\to$}" at screen '$XAXIS_UPPERLEFT_LABEL_POSITION_DOWN', screen 0.01 left' >> $GNUPLOT_TEMP_SCRIPT
@@ -176,7 +176,7 @@ while [ "$1" != "" ]; do
                 printf "\n\e[0;31mOption \"-b | --betas\" and \"-k | --masses\" are mutually exclusive! Aborting...\n\n\e[0m" ; exit -1
             fi
             MASS_OVERVIEW='TRUE'
-            while [[ $2 =~ ^[[:digit:]]{4}$ ]]; do
+            while [[ $2 =~ ^([0-9][.])?[0-9]{4}$ ]]; do
                 MASSES+=( "$2" )
                 shift
             done
