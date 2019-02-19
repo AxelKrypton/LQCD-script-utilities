@@ -33,9 +33,8 @@ FIXB4="TRUE"
 FIXNU="TRUE"
 USECORRECTIONTERM="FALSE"
 QUIET_MODE="FALSE"
-
 SUPPRESS_TITLE="FALSE"
-
+PLOT_ONLY_DATA='FALSE'
 PRINTCOMMIT="FALSE"
 
 #VARIABLES FOR THE SCRIPT
@@ -68,30 +67,31 @@ if ElementInArray "--help" $@ || ElementInArray "-h" $@; then
     printf "Further option to the script\e[24m:\e[21m\n\n\t\e[38;5;4m"
     printf "    -q   | --quietMode                                                                                                         \n\t"
     printf "   --st  | --suppressTitle           -> Suppresses title of the fit in case the plot is needed for a publication.              \n\t"
-    printf "   -p    | --postfix                 -> Appends the specified postfix to the title.                                             \n\t"
-    printf "   --printCommitID                                                                                                            \n\t"
+    printf "    -p   | --postfix                 -> Appends the specified postfix to the title.                                            \n\t"
     printf "   --nf  | --numberOfFlavours        -> If given, an N_f label is added to the plot                                            \n\t"
     printf "   --mc  | --criticalMass            -> default: 0.1                                                                           \n\t"
     printf "   --nu  | --criticalExponent        -> default: 0.6301                                                                        \n\t"
     printf "   --a0  | --B4infinity              -> default: 1.604                                                                         \n\t"
     printf "   --a1  | --linearCoefficient       -> default: 1                                                                             \n\t"
     printf "   --a2  | --cubicCoefficient        -> default: 1                                                                             \n\t"
-    printf "   --cubic                           -> Produces cubic fit                                                                     \n\t"
     printf "    -f   | --dataFilename            -> default: poly_sq_BinderCumulantAtBetaC.dat                                             \n\t"
     printf "    -o   | --outputFilename          -> default: BinderCumulant_poly_sq_Fit.pdf                                                \n\t"
-    printf "    -l   | --fitLowerBound           -> If not given, the lower bound will be determined to be 95%% of the minimal kappa.      \n\t"
-    printf "    -u   | --fitUpperBound           -> If not given, the upper bound will be determined to be 105%% of the maximal kappa.     \n\t"
-    printf "    --yr | --fityRange)              -> Sets y-range of fit. Option expects two numbers: yrange-low yrange-high                \n\t"
+    printf "    -l   | --fitLowerBound           -> If not given, the lower bound will be determined to be 95%% of the minimal mass.       \n\t"
+    printf "    -u   | --fitUpperBound           -> If not given, the upper bound will be determined to be 105%% of the maximal mass.      \n\t"
+    printf "   --yr  | --fityRange               -> Sets y-range of fit. Option expects two numbers: yrange-low yrange-high                \n\t"
     printf "   --obs | --observable              -> default: poly_sq                                                                       \n\t"
     printf "    -s   | --seperateMassValues      -> Specify a value by which the points of the mass values will be shifted such that       \n\t"
     printf "                                     -> their error bars do not overlap. E.g. \"-s 0.05\" for 5%% of the whole fitting range.  \n\t"
     printf "                                     -> This is just for readability and the shifted mass values will not be used for the fit. \n\t"
+    printf "    -c | --useCorrectionTerm         -> If given, the correction term (1+BN^(yt-yh)) is multiplied to correct for              \n\t"
+    printf "                                        finite volume effects at large N_tau.                                                  \n\t"
+    printf "   --cubic                           -> Produces cubic fit                                                                     \n\t"
     printf "   --doNotFixB4                      -> If given, B4(m,ns=inf) is extracted as fit parameters.                                 \n\t"
     printf "                                        The initial value for the fit is set by --a0.                                          \n\t"
     printf "   --doNotfixNu                      -> If given, nu is extracted as fit parameters.                                           \n\t"
     printf "                                        The initial value for the fit is set by --nu.                                          \n\t"
-    printf "   -c | --useCorrectionTerm)         -> If given, the correction term (1+BN^(yt-yh)) is multiplied to correct for              \n\t"
-    printf "                                        finite volume effects at large N_tau.                                                  \n\t"
+    printf "   --plotOnlyData                    -> If given, the fit result are not displayed in the plot.                                \n\t"
+    printf "   --printCommitID                                                                                                             \n\t"
     printf "\n\e[0m"
     exit 3
 fi
@@ -164,6 +164,9 @@ while [ $# -gt 0 ]; do
             ;;
         --doNotfixNu)
             FIXNU="FALSE"
+            ;;
+        --plotOnlyData)
+            PLOT_ONLY_DATA='TRUE'
             ;;
         -c | --useCorrectionTerm)
             USECORRECTIONTERM="TRUE"
@@ -388,13 +391,14 @@ function CreateGnuplotFit(){
     [ "$WILSON" = "TRUE" ] && echo 'set xlabel "$\\kappa$"'    >> $TMP_FILE_FOR_GNUPLOT
     [ "$STAGGERED" = "TRUE" ] && echo 'set ylabel "$B_4(\\beta_c,m,N_\\sigma)$"'    >> $TMP_FILE_FOR_GNUPLOT
     [ "$WILSON" = "TRUE" ] && echo 'set ylabel "$B_4(\\beta_c,\\kappa,N_\\sigma)$"'    >> $TMP_FILE_FOR_GNUPLOT
-    echo 'set key at graph 0.3, graph 0.95 spacing 1.75'    >> $TMP_FILE_FOR_GNUPLOT 
+    echo 'set key at graph 0.4, graph 0.95 spacing 1.75'    >> $TMP_FILE_FOR_GNUPLOT
     [ "$NFLAVOUR" != "" ] && echo 'set label "$N_f = '${NFLAVOUR}'$" at graph 0.85,0.1 center'           >> $TMP_FILE_FOR_GNUPLOT
     echo 'set xrange[fitrange_low : fitrange_high]'         >> $TMP_FILE_FOR_GNUPLOT
     echo 'set mxtics'                                       >> $TMP_FILE_FOR_GNUPLOT
 
     if [ "$FIT_TYPE" = "linear" ]; then
-        FIT_FORM='B_4(\\infty) + a(\\kappa - \\kappa_{c})\\cdot N_{s}^{(1/\\nu)}'
+        [ $WILSON = 'TRUE' ] &&    FIT_FORM='B_4(\\infty) + a(\\kappa - \\kappa_{c})\\cdot N_{s}^{(1/\\nu)}'
+        [ $STAGGERED = 'TRUE' ] && FIT_FORM='B_4(\\infty) + a(m - m_{c})\\cdot N_{s}^{(1/\\nu)}'
     elif [ "$FIT_TYPE" = "cubic" ]; then
         FIT_FORM='B_4(\\infty) + a(\\kappa - \\kappa_{c})\\cdot N_{s}^{(1/\\nu)} + b(\\kappa - \\kappa_{c})\\cdot N_{s}^{(3/\\nu)}'
     fi
@@ -440,12 +444,18 @@ function CreateGnuplotFit(){
     if [ "$SET_Y_RANGE" = "TRUE" ]; then
         echo "set yrange [$FIT_Y_RANGE_LOW:$FIT_Y_RANGE_HIGH]"      >> $TMP_FILE_FOR_GNUPLOT
     fi
-    echo -n 'plot   '                                                  >> $TMP_FILE_FOR_GNUPLOT
+    if [ ${PLOT_ONLY_DATA} = 'TRUE' ]; then
+        echo -n 'plot  a lw 0.1 lc 0 notitle, '                           >> $TMP_FILE_FOR_GNUPLOT
+    else
+        echo -n 'plot    '                           >> $TMP_FILE_FOR_GNUPLOT
+    fi
     for INDEX in ${!VOLUMES[@]}; do
         echo '"'$FILE_WITH_DATA_TO_BE_PLOTTED'"' index $INDEX u 1:6:7 pt 1 lt 1 lc $(($INDEX+1)) w e title '"$N_\\sigma=$ "'.ns$INDEX '\' >> $TMP_FILE_FOR_GNUPLOT   #pt = pointtype
-        echo -n ', fns'$INDEX'(x) notitle lt 1 lc '$(($INDEX+1))                                                                          >> $TMP_FILE_FOR_GNUPLOT   #lt = linetype; lc = linecolor
-       [ $INDEX -lt $((${#VOLUMES[@]}-1)) ] && echo -n ' ,'                                                                               >> $TMP_FILE_FOR_GNUPLOT
-       [ $INDEX -lt $((${#VOLUMES[@]}-1)) ] && echo ' \'                                                                                  >> $TMP_FILE_FOR_GNUPLOT
+        if [ ${PLOT_ONLY_DATA} = 'FALSE' ]; then
+            echo -n ', fns'$INDEX'(x) notitle lt 1 lc '$(($INDEX+1))                                                                      >> $TMP_FILE_FOR_GNUPLOT   #lt = linetype; lc = linecolor
+        fi
+        [ $INDEX -lt $((${#VOLUMES[@]}-1)) ] && echo -n ' ,'                                                                              >> $TMP_FILE_FOR_GNUPLOT
+        [ $INDEX -lt $((${#VOLUMES[@]}-1)) ] && echo ' \'                                                                                 >> $TMP_FILE_FOR_GNUPLOT
     done
     echo >> $TMP_FILE_FOR_GNUPLOT
     echo 'unset arrow' >> $TMP_FILE_FOR_GNUPLOT
