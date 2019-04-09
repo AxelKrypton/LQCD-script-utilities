@@ -603,7 +603,7 @@ if [ $LOAD_GO_ALIASES = "TRUE" ]; then
         while [ ${#givenParameters[@]} -gt 0 ] || [ $(ls -d !(b*|JobScripts)/ 2>>/dev/null | wc -l) -gt 0 ]; do
             if [ $(ls -d !(b*)/ 2>>/dev/null | wc -l) -eq 0 ]; then
                 if [ ${#givenParameters[@]} -gt 0 ]; then
-                    printf "\e[93m\n No sub-folders in the present directory, while ${#givenParameters[@]} given parameter(s) where unused (${givenParameters[@]}).\n\n\e[0m"
+                    printf "\e[93m\n No sub-folders in the present directory, while ${#givenParameters[@]} given parameter(s) where unused (${givenParameters[*]}).\n\n\e[0m"
                 fi
                 return
             fi
