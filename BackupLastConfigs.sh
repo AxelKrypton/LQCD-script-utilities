@@ -66,7 +66,7 @@ declare -A REMOTE_PREFIX
 if [ $STAGGERED = "TRUE" ]; then
     EXPECTED_POSITION="${STAGGERED_CONFIGS_POSITION}/LastConfigurations"
     #Each user can put here the remote prefix if she/he does not want to give it via command line
-    REMOTE_PREFIX["sciarra"]="/lustre/nyx/lcsc/asciarra/StaggeredProject"
+    REMOTE_PREFIX["sciarra"]="/lustre/lcsc/asciarra/StaggeredProject"
 elif [ $WILSON = "TRUE" ]; then
     EXPECTED_POSITION="${WILSON_CONFIGS_POSITION}/LastConfigurations"
     #Each user can put here the remote prefix if she/he does not want to give it via command line

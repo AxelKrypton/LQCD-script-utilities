@@ -171,7 +171,7 @@ if [ $CLUSTER_NAME = 'LOEWE' ]; then
     DATA2_DIR="/data02/hfftheo/$SELECTED_USER"
 else
     HOME_DIR=${HOME}
-    WORK_DIR="/lustre/nyx/lcsc/$SELECTED_USER"
+    WORK_DIR="/lustre/lcsc/$SELECTED_USER"
 fi
 
 for ((j=0; j<${#JOB_SUBMISSION_FOLDER[@]}; j++)); do
