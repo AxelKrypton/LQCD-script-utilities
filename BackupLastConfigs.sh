@@ -77,7 +77,7 @@ fi
 
 #Variables
 if [ $(grep -c "lcsc" <<< "${REMOTE_PREFIX[$(whoami)]}") -eq 0 ]; then
-    REMOTE_NAME="loewe"
+    REMOTE_NAME="hlr"
 else
     REMOTE_NAME="lcsc"
 fi
