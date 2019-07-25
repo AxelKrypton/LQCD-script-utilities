@@ -351,7 +351,7 @@ if [ $LOAD_PYTHON_ALIASES = "TRUE" ]; then
 
     DEFINED_FUNCTIONS+=( 'GetAnalysisPbpCommand' )
     function GetAnalysisPbpCommand(){
-        echo "PLASMA A --deactivatePlaq --deactivatePoly --activatePbp --inversionsPerConfig 8"
+        echo "PLASMA A --analyzeWithJackknife --deactivatePlaq --deactivatePoly --activatePbp --inversionsPerConfig 8"
     }
 
     DEFINED_FUNCTIONS+=( 'GetAnalysisPolyImWithZeroMeanCommand' )
