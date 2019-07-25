@@ -29,18 +29,20 @@ function ParseCommandLineOptions(){
                 echo "   --now                 ->    if given, start the syncronization immediately and not at 21"
                 echo "   --doNotRemoveFiles    ->    if given, only the backup is done and no older checkpoint is deleted"
                 echo "   --doNotRedirect       ->    if given, no redirection of standard output and error is done"
+                echo "   --preservePermissions ->    if given, source permissions are preserved, otherwise destination default are used"
                 echo " "
                 echo " NOTE: Changing rsync permissions could affect permissions on reciever that are"
                 echo "       by default set to \"--chmod=Du=rwx,Dg=rwx,Do=r,Fu=rw,Fog=r\" how it should be."
                 printf "\n\e[0m"
                 exit
                 shift;;
-            -r | --remote )       REMOTE_NAME="$2"; shift 2 ;;
-            --remotePrefix )      REMOTE_PREFIX[$(whoami)]="$2"; shift 2 ;;
-            --rsyncOptions )      RSYNC_OPTIONS="$2"; shift 2 ;;
-            --now )               SYNC_NOW="TRUE"; shift ;;
-            --doNotRemoveFiles )  REMOVE_OLDER_FILES="FALSE"; shift ;;
-            --doNotRedirect )     REDIRECT_OUTPUT_TO_FILES="FALSE"; shift ;;
+            -r | --remote )        REMOTE_NAME="$2"; shift 2 ;;
+            --remotePrefix )       REMOTE_PREFIX[$(whoami)]="$2"; shift 2 ;;
+            --rsyncOptions )       RSYNC_OPTIONS="$2"; shift 2 ;;
+            --now )                SYNC_NOW="TRUE"; shift ;;
+            --doNotRemoveFiles )   REMOVE_OLDER_FILES="FALSE"; shift ;;
+            --doNotRedirect )      REDIRECT_OUTPUT_TO_FILES="FALSE"; shift ;;
+            --preservePermissions) USE_DESTINATION_PERMISSIONS='FALSE'; shift ;;
             * ) printf "\n\e[0;31mError parsing the options! Aborting...\n\n\e[0m" ; exit -1 ;;
         esac
     done
@@ -85,6 +87,7 @@ RSYNC_OPTIONS="qluz"
 SYNC_NOW='FALSE'
 REMOVE_OLDER_FILES='TRUE'
 REDIRECT_OUTPUT_TO_FILES='TRUE'
+USE_DESTINATION_PERMISSIONS='TRUE'
 ParseCommandLineOptions $@
 
 #If not in the expected position, abort
@@ -151,7 +154,11 @@ EOF
     #Copy the files from remote
     printf "\e[38;5;39m Syncronizing with the remote...\e[0m"
     START_TIME=$(date +%s)
-    rsync -${RSYNC_OPTIONS} --perms --files-from=$CONF_LIST_FILE --chmod=Du=rwx,Dg=rwx,Do=r,Fu=rw,Fog=r $REMOTE_NAME:${REMOTE_PREFIX[$(whoami)]} .
+    if [ $USE_DESTINATION_PERMISSIONS = 'TRUE' ]; then
+        rsync -${RSYNC_OPTIONS} --no-p --no-g --chmod=ugo=rwX --files-from=$CONF_LIST_FILE $REMOTE_NAME:${REMOTE_PREFIX[$(whoami)]} .
+    else
+        rsync -${RSYNC_OPTIONS} --perms --files-from=$CONF_LIST_FILE $REMOTE_NAME:${REMOTE_PREFIX[$(whoami)]} .
+    fi
     printf "\e[38;5;39m ...done in \e[38;5;48m$(SecondsToTimeString $(( $(date +%s) - $START_TIME )) )\e[38;5;39m!\n\n\e[0m"
 
     #-------------------------------------------------------------------------------------------------------#
