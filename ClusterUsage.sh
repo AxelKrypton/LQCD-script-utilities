@@ -86,7 +86,7 @@ while [ "$1" != "" ]; do
             echo "   -x | --remotePath            ->    remote path (default = $REMOTE_PATH)"
             echo "   -o | --outputFile            ->    name of output file (default = $OUTPUT_FILE)"
             echo "   -e | --excludedNodeFilename  ->    name of file with --exclude string (default = $EXCLUDED_NODES_FILENAME)"
-            echo "   --now                        ->    run it now, not at 2 a.m."
+            echo "   --now                        ->    run it now, not at 4 a.m."
             echo "   --doNotUpdateFiles           ->    print the report only to screen and not to files (this option activates --now)"
             printf "\n\e[0m"
             exit
