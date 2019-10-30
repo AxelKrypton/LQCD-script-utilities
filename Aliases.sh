@@ -682,19 +682,29 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
 
     DEFINED_FUNCTIONS+=( 'ReportOnCorrelatorFiles' )
     function ReportOnCorrelatorFiles(){
+        if [[ $1 =~ ^[1-9][.][0-9]{4}$ ]]; then
+            BETA=$1
+        else
+            BETA='?.????'
+        fi
         echo
-        for b in b?.????_s*Chain; do
-            printf "%+38s: %3d correlator files\n" $b $(ls $b/conf.*corr 2>>/dev/null| wc -l)
-        done && unset -v 'b'
+        for b in b${BETA}_s*Chain; do
+            printf "%+38s: %4d correlator files, %d empty\n" $b $(ls $b/conf.*corr 2>>/dev/null| wc -l) $(find $b -name "conf.*corr" -empty | wc -l)
+        done && unset -v 'b' 'BETA'
         echo
     }
 
     DEFINED_FUNCTIONS+=( 'ReportOnScaleSettingFiles' )
     function ReportOnScaleSettingFiles(){
+        if [[ $1 =~ ^[1-9][.][0-9]{4}$ ]]; then
+            BETA=$1
+        else
+            BETA='?.????'
+        fi
         echo
-        for b in b?.????_s*Chain; do
+        for b in b${BETA}_s*Chain; do
             printf "%+38s: %3d nersc confs, %3d flow files\n" $b $(ls $b/conf.*.nersc 2>>/dev/null| wc -l) $(ls $b/flow.conf.*.nersc 2>>/dev/null| wc -l)
-        done && unset -v 'b'
+        done && unset -v 'b' 'BETA'
         echo
     }
 
@@ -757,7 +767,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         printf "\n"; printf "%0.s " $(seq 1 $LONGEST_BETA_STRING); printf "      \e[1;38;5;129mGap [nr. of times]\n"
         for BETA in ${BETA_ARRAY[@]}; do
             printf "\n  \e[38;5;129m\e[1m%${LONGEST_BETA_STRING}s\e[0m\e[38;5;199m" "$BETA"
-            ls $BETA | grep "^conf.[[:digit:]]\+" | grep -o "[[:digit:]]\+" | sort -n | \
+            ls $BETA | grep "^conf.[[:digit:]]\+$" | grep -o "[[:digit:]]\+" | sort -n | \
                 awk 'BEGIN{printf "    "}NR==1{tr=$1}NR>1{countGaps[$1-tr]++; tr=$1}END{for(i in countGaps){printf "%d [%d]   ", i, countGaps[i]}; printf"\n"}'
         done && unset -v 'BETA'
         printf '\n\e[0m'
