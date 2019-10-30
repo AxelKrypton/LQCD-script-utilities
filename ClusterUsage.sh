@@ -57,7 +57,7 @@ function PrintClusterUsageInformation(){
 #--------------------------------------------------------------------------------#
 
 #Variables to be changed, hardcoded for the moment
-USERS_LIST=( "czaban" "cuteri" "sciarra" "witham" )
+USERS_LIST=( "cuteri" "sciarra" "aschoen" )
 CLUSTER_NAME='LOEWE'
 PARTITION='gpu'
 REMOTE_NAME='uni'
@@ -67,7 +67,7 @@ PRINT_ONLY_TO_SHELL='FALSE'
 if [ "$(hostname)" = "lxlcsc0001" ]; then
     CLUSTER_NAME='LCSC'
     PARTITION='lcsc'
-    USERS_LIST=( "fcuteri" "asciarra" "aschoen" )
+    USERS_LIST=( "fcuteri" "asciarra" "aschoen" "rkaiser" )
 fi    
 OUTPUT_FILE="${CLUSTER_NAME}_usage"
 EXCLUDED_NODES_FILENAME="${CLUSTER_NAME}_excludedNodes"
@@ -102,7 +102,7 @@ while [ "$1" != "" ]; do
                 CLUSTER_NAME="$2"
                 shift
             else
-                printf "\n\e[38;5;202m Value \e[1m${2}\e[21m not valid for option \e[1m${1}\e[21m! Aborting...\n\n\e[0m" 1>&2; exit -1
+                printf "\n\e[38;5;202m Value \e[1m${2}\e[22m not valid for option \e[1m${1}\e[22m! Aborting...\n\n\e[0m" 1>&2; exit -1
             fi
             shift ;;
         -p | --partition )
@@ -110,7 +110,7 @@ while [ "$1" != "" ]; do
                 PARTITION="$2"
                 shift
             else
-                printf "\n\e[38;5;202m Value \e[1m${2}\e[21m not valid for option \e[1m${1}\e[21m! Aborting...\n\n\e[0m" 1>&2; exit -1
+                printf "\n\e[38;5;202m Value \e[1m${2}\e[22m not valid for option \e[1m${1}\e[22m! Aborting...\n\n\e[0m" 1>&2; exit -1
             fi
             shift ;;
         -r | --remote )
@@ -118,7 +118,7 @@ while [ "$1" != "" ]; do
                 REMOTE_NAME="$2"
                 shift
             else
-                printf "\n\e[38;5;202m Value \e[1m${2}\e[21m not valid for option \e[1m${1}\e[21m! Aborting...\n\n\e[0m" 1>&2; exit -1
+                printf "\n\e[38;5;202m Value \e[1m${2}\e[22m not valid for option \e[1m${1}\e[22m! Aborting...\n\n\e[0m" 1>&2; exit -1
             fi
             shift ;;
         -x | --remotePath )
@@ -126,7 +126,7 @@ while [ "$1" != "" ]; do
                 REMOTE_PATH="$2"
                 shift
             else
-                printf "\n\e[38;5;202m Value \e[1m${2}\e[21m not valid for option \e[1m${1}\e[21m! Aborting...\n\n\e[0m" 1>&2; exit -1
+                printf "\n\e[38;5;202m Value \e[1m${2}\e[22m not valid for option \e[1m${1}\e[22m! Aborting...\n\n\e[0m" 1>&2; exit -1
             fi
             shift ;;
         -o | --outputFile )
@@ -134,7 +134,7 @@ while [ "$1" != "" ]; do
                 OUTPUT_FILE="$2"
                 shift
             else
-                printf "\n\e[38;5;202m Value \e[1m${2}\e[21m not valid for option \e[1m${1}\e[21m! Aborting...\n\n\e[0m" 1>&2; exit -1
+                printf "\n\e[38;5;202m Value \e[1m${2}\e[22m not valid for option \e[1m${1}\e[22m! Aborting...\n\n\e[0m" 1>&2; exit -1
             fi
             shift ;;
         -e | --excludedNodeFilename )
@@ -142,7 +142,7 @@ while [ "$1" != "" ]; do
                 EXCLUDED_NODES_FILENAME="$2"
                 shift
             else
-                printf "\n\e[38;5;202m Value \e[1m${2}\e[21m not valid for option \e[1m${1}\e[21m! Aborting...\n\n\e[0m" 1>&2; exit -1
+                printf "\n\e[38;5;202m Value \e[1m${2}\e[22m not valid for option \e[1m${1}\e[22m! Aborting...\n\n\e[0m" 1>&2; exit -1
             fi
             shift ;;
         --now )
@@ -152,7 +152,7 @@ while [ "$1" != "" ]; do
             PRINT_ONLY_TO_SHELL='TRUE'
             SYNC_NOW="TRUE"
             shift ;;
-        * ) printf "\n\e[0;31m Unknouwn option \e[1m${1}\e[21m! Aborting...\n\n\e[0m" 1>&2; exit -1 ;;
+        * ) printf "\n\e[0;31m Unknouwn option \e[1m${1}\e[22m! Aborting...\n\n\e[0m" 1>&2; exit -1 ;;
     esac
 done
 
