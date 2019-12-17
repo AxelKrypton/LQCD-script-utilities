@@ -216,7 +216,7 @@ echo -n '", a0, a0_err/FIT_STDFIT'  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 for((i=1; i<=$POLYNOMIAL_DEGREE; i++)); do
     echo -n ', a'${i}', a'${i}'_err/FIT_STDFIT' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 done
-echo ')."\n"' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+echo ')."\n\n".sprintf("$\\chi^2_{\\mbox{d.o.f.}}=$%.3f", FIT_STDFIT**2)."\n"' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 # Plot information
 echo 'set xlabel "'$LABEL_X'"'                          >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
 echo 'set ylabel "'$LABEL_Y'"'                          >> $TMP_FILE_FOR_GNUPLOT_SCRIPT  
