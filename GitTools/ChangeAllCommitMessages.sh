@@ -137,7 +137,7 @@ if ElementInArray "-h" ${SPECIFIED_COMMAND_LINE_OPTIONS[@]} || ElementInArray "-
     SPECIFIED_COMMAND_LINE_OPTIONS=( "--help" )
 elif ElementInArray "--all" ${SPECIFIED_COMMAND_LINE_OPTIONS[@]}; then
     for INDEX in ${!SPECIFIED_COMMAND_LINE_OPTIONS[@]}; do
-        [ ${SPECIFIED_COMMAND_LINE_OPTIONS[$INDEX]} = '--all' ] && unset -v 'SPECIFIED_COMMAND_LINE_OPTIONS[$INDEX]'
+        [ "${SPECIFIED_COMMAND_LINE_OPTIONS[$INDEX]}" = '--all' ] && unset -v 'SPECIFIED_COMMAND_LINE_OPTIONS[$INDEX]'
     done
     SPECIFIED_COMMAND_LINE_OPTIONS+=( "--capitalizeInitialOfFirstLine"
                                       "--removePeriodEndOfFirstLine"
