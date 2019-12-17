@@ -7,7 +7,7 @@
 #=========================================================================#
 
 #Variables connected to command line options
-DATA_FILENAME=''
+DATA_FILENAME=()
 TMP_FILE_FOR_GNUPLOT_SCRIPT='FileThatHopefullyDoesNotExist.plt'
 COLUMN_X=1
 LABEL_X="x"
@@ -29,7 +29,7 @@ function ElementInArray() {
 if ElementInArray "--help" $@ || ElementInArray "-h" $@; then
     printf "\n\t\e[38;5;13m\e[1m"
     printf "\e[4mPossible options to the script\e[24m:\e[21m\n\n\t\e[38;5;10m"
-    printf "   -f | --filename          ->   The data file (globalpath or path from present folder)\n\t"
+    printf "   -f | --filename          ->   The data file (globalpath or path from present folder, one or more)\n\t"
 	printf "   -x | --columnX           ->   default value = $COLUMN_X\n\t"
 	printf "   -w | --binWidth          ->   width of bins to be used\n\t"
 	printf "   -n | --binNumber         ->   number of bins to be used\n\t"
@@ -47,9 +47,11 @@ fi
 while [ "$1" != "" ]; do
     case $1 in
         -f | --filename )
-            DATA_FILENAME="$2"
-            shift 2
-            ;;
+            while [[ ! $2 =~ ^(-|$) ]]; do
+                DATA_FILENAME+=( "$2" )
+                shift
+            done
+            shift ;;
         -x | --columnX )
             if [[ $2 =~ ^[[:digit:]]+$ ]]; then
                 COLUMN_X=$2
@@ -110,10 +112,17 @@ done
 
 #==============================================================================================================
 #Checks on command line parameters
-if [ ! -f "$DATA_FILENAME" ]; then
-    printf "\n\e[38;5;9m File \"$DATA_FILENAME\" not found! Aborting...\n\n\e[0m"
-    exit -1
+if [ ${#DATA_FILENAME[@]} -eq 0 ]; then
+        printf "\n\e[38;5;9m No file specified! Aborting...\n\n\e[0m"
+        exit -1
 fi
+
+for FILE in "${DATA_FILENAME[@]}"; do
+    if [ ! -f "$FILE" ]; then
+        printf "\n\e[38;5;9m File \"$FILE\" not found! Aborting...\n\n\e[0m"
+        exit -1
+    fi
+done && unset 'FILE'
 
 if [ ${#XRANGE[@]} -ne 0 ] && [ ${#XRANGE[@]} -ne 2 ]; then
     printf "\n\e[38;5;9m X range has been not correctly specified (two numbers should be given)! Aborting...\n\n\e[0m"
@@ -138,10 +147,32 @@ fi
 echo "set title \"$PLOT_TITLE\""
 echo "set xlabel \"$LABEL_X\""
 echo "set ylabel \"$LABEL_Y\""
-echo "stats \"$DATA_FILENAME\" using $COLUMN_X name \"data\" nooutput"
 echo ''
-echo "Min = data_min"  # where binning starts
-echo "Max = data_max"  # where binning ends
+echo "array Min_all[${#DATA_FILENAME[@]}]"
+echo "array Max_all[${#DATA_FILENAME[@]}]"
+for INDEX in "${!DATA_FILENAME[@]}"; do
+    echo "stats \"${DATA_FILENAME[INDEX]}\" using $COLUMN_X name \"data\" nooutput"
+    (( INDEX++ ))
+    echo "Min_all[$INDEX] = data_min"
+    echo "Max_all[$INDEX] = data_max"
+    echo ''
+done
+
+echo "Min = Min_all[1]"  # where binning starts
+echo "Max = Max_all[1]"  # where binning ends
+echo "do for [i=1:${#DATA_FILENAME[@]}] {"
+echo "    if (Min > Min_all[i]) {"
+echo "        Min = Min_all[i]"
+echo "    }"
+echo "    if (Max < Max_all[i]) {"
+echo "        Max = Max_all[i]"
+echo "    }"
+echo "}"
+echo ''
+
+#echo 'print Min_all'
+#echo 'print Max_all'
+
 if [ $USE_BINNUMBER = 'TRUE' ]; then
     echo "n = $BIN_NUMBER" # the number of bins
     echo "binwidth = (Max-Min)/n"
@@ -153,7 +184,7 @@ echo''
 if [ ${#XRANGE[@]} -ne 0 ]; then
     echo 'set xrange ['${XRANGE[0]}':'${XRANGE[1]}']'
 else
-    echo 'set xrange [0.99*(Min-binwidth):1.01*(Max+binwidth)]'
+    echo 'set autoscale x'
 fi
 echo 'set yrange [0:]'
 echo''
@@ -162,10 +193,15 @@ echo "set boxwidth binwidth"
 echo "set style fill solid border -1"
 echo ''
 if [ $NORMALIZE = 'FALSE' ]; then
-    echo "plot '$DATA_FILENAME' using (bin(\$$COLUMN_X)):(1.0) smooth freq with boxes title \"$PLOT_TITLE\""
+    for INDEX in "${!DATA_FILENAME[@]}"; do
+        echo -n "$([ $INDEX -eq 0 ] && echo 'plot') '${DATA_FILENAME[INDEX]}' using (bin(\$$COLUMN_X)):(1.0) smooth freq with boxes title \"${DATA_FILENAME[INDEX]//_/ }\", "
+    done
 else
-    echo "plot '$DATA_FILENAME' using (bin(\$$COLUMN_X)):(1.0/(binwidth*data_records)) smooth freq with boxes title \"$PLOT_TITLE\""
+    for INDEX in "${!DATA_FILENAME[@]}"; do
+        echo -n "$([ $INDEX -eq 0 ] && echo 'plot') '${DATA_FILENAME[0]}' using (bin(\$$COLUMN_X)):(1.0/(binwidth*data_records)) smooth freq with boxes title \"${DATA_FILENAME[INDEX]//_/ }\", "
+    done
 fi
+echo '' # Crucial to complete plot command which has no newline
 if [ $SAVE_PLOT = 'FALSE' ]; then
     echo "pause -1 \"Press enter to quit (all plots will be closed)\""
     echo "q"
