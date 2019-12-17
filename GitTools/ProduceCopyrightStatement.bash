@@ -29,6 +29,7 @@ function ParseCommandLineOption(){
                 echo "  -e | --endCopyright     ->    used with -s option to specify where the copyright statement ends"
                 echo "                                (if not given, a line with only the prefix and no trailing spaces is used)"
                 echo "  --preview               ->    if -s is given, make file preview using less and ask confirmation"
+                echo "  --dashConsecutiveYears  ->    Print e.g. \"2008,2010-2011\" instead of \"2008,2010,2011\""
                 printf "\n\e[0m"
                 exit
                 shift ;;
@@ -43,6 +44,9 @@ function ParseCommandLineOption(){
                 shift ;;
             --preview )
                 CPR_preview='TRUE'
+                shift ;;
+            --dashConsecutiveYears )
+                CPR_dashConsecutiveYears='TRUE'
                 shift ;;
             -b | --beginCopyright )
                 CPR_beginCopyright="$2"
@@ -61,6 +65,7 @@ CPR_filename=''
 CPR_prefix=''
 CPR_substitute='FALSE'
 CPR_preview='FALSE'
+CPR_dashConsecutiveYears='FALSE'
 CPR_endCopyright=''
 CPR_beginCopyright=''
 
@@ -101,6 +106,14 @@ done
 for author in "${!CPR_authorYears[@]}"; do
     CPR_authorYears["${author}"]=$(awk 'BEGIN{FS=","}{printf "%d-", $1; for(i=2; i<NF; i++){if($(i-1)+1==$i && $(i)+1==$(i+1)){printf "-"}else{printf "%d-", $i}}; if(NF>1){printf "%d-", $NF}}' <<< "${CPR_authorYears["$author"]:1}" | sed -e 's/[-][-]\+/|/g' -e 's/[-]/,/g' -e 's/|/-/g')
 done
+
+# Replace "," by "-" between consecutive years. This is a tricky task. The following code works in awk since there a field equal to 2011-2013 becomes
+# 2012 if increased by one in an arithmetic context and this will never be equal to the following year which in this example is for sure >2013.
+if [[ ${CPR_dashConsecutiveYears} = 'TRUE' ]]; then
+    for author in "${!CPR_authorYears[@]}"; do
+        CPR_authorYears["${author}"]=$(awk 'BEGIN{FS=","}{for(i=1; i<=NF; i++){if($(i)+1==$(i+1)){printf "%s-", $i}else{printf "%s,", $i}}}' <<< "${CPR_authorYears["$author"]%?}")
+    done
+fi
 
 # Remove last comma 
 declare -A CPR_yearsAuthor
