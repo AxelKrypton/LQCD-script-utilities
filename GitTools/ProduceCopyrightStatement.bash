@@ -50,7 +50,7 @@ function ParseCommandLineOption(){
             -e | --endCopyright )
                 CPR_endCopyright="$2"
                 shift 2 ;;
-            * ) printf "\n\e[0;31m Option \e[1m$1\e[21m not recognized! Aborting...\n\n\e[0m" ; exit -1 ;;
+            * ) printf "\n\e[0;31m Option \e[1m$1\e[22m not recognized! Aborting...\n\n\e[0m" ; exit -1 ;;
         esac
     done
 }

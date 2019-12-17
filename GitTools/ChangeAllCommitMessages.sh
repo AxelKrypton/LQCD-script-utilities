@@ -31,7 +31,7 @@ function ParseCommandLineOption(){
                 echo "   --foldExceptFirstTwoLinesAfterCharacterNumber        (default 70)"
                 echo "   --all          ->    Executes all commands above in the order above"
                 echo "   --command      ->    Customized command (use '' to avoid shell conflicts)"
-                printf  "\n\e[1;33m NOTE:\e[21;36m"
+                printf  "\n\e[1;33m NOTE:\e[22;36m"
                 echo " The option above can be combined and if several are provided,"
                 echo "       they are considered in the given order!"
                 echo "       "
@@ -91,7 +91,7 @@ function ParseCommandLineOption(){
             --command )
                 COMMAND+=( "$2" )
                 shift 2 ;;
-            * ) printf "\n\e[0;31m Option \e[1m$1\e[21m not recognized! Aborting...\n\n\e[0m" ; exit -1 ;;
+            * ) printf "\n\e[0;31m Option \e[1m$1\e[22m not recognized! Aborting...\n\n\e[0m" ; exit -1 ;;
         esac
     done
 }
@@ -100,7 +100,7 @@ function RunGitCommand(){
     local COMMAND_TO_BE_RUN="git filter-branch -f --msg-filter '"$@"' --tag-name-filter cat -- --all"
     printf "\n\e[35m ===== Executing \e[1m"
     echo -n "'${COMMAND_TO_BE_RUN}'"
-    printf "\e[21m =====\n\n\e[0m"
+    printf "\e[22m =====\n\n\e[0m"
     eval $(echo $COMMAND_TO_BE_RUN)
 }
 

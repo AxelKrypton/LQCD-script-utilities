@@ -3,7 +3,7 @@
 function ParseCommandLineOption(){
     while [ "$1" != "" ]; do
         case $1 in
-            --help )
+            -h | --help )
                 printf "\n\e[0;91m"
                 echo "This script will rewrite the history of your git repository on all branches,"
                 echo "therefore use it with care (from great powers comes great responsibilities)!" 
@@ -20,7 +20,7 @@ function ParseCommandLineOption(){
                 printf "\n\e[0m"
                 exit
                 shift ;;
-            * ) printf "\n\e[0;31m Option \e[1m$1\e[21m not recognized! Aborting...\n\n\e[0m" ; exit -1 ;;
+            * ) printf "\n\e[0;31m Option \e[1m$1\e[22m not recognized! Aborting...\n\n\e[0m" ; exit -1 ;;
         esac
     done
 }

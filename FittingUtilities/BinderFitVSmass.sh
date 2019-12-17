@@ -64,7 +64,7 @@ if ElementInArray "--help" $@ || ElementInArray "-h" $@; then
     printf "options --doNotFixB4, --doNotfixNu (and --nu, --a0) to extract also B4(m,ns=inf) and/or nu as fit\n\t"
     printf "parameters (and specify different starting values for them).\n\t"
     printf "\n\t\e[38;5;13m\e[1m\e[4m"
-    printf "Further option to the script\e[24m:\e[21m\n\n\t\e[38;5;4m"
+    printf "Further option to the script\e[24m:\e[22m\n\n\t\e[38;5;4m"
     printf "    -q   | --quietMode                                                                                                         \n\t"
     printf "   --st  | --suppressTitle           -> Suppresses title of the fit in case the plot is needed for a publication.              \n\t"
     printf "    -p   | --postfix                 -> Appends the specified postfix to the title.                                            \n\t"

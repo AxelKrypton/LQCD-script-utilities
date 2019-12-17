@@ -54,7 +54,7 @@ function ParseCommandLineOption(){
                 echo "                              option, it is used, otherwise the file used is the \".mailmap\" one. The"
                 echo "                              \"complete\" adjective means that the file must contain four information"
                 echo "                              per line: \"Proper Name <proper@email.xx> Wrong Name <wrong@email.xx>\""
-                printf "\n\e[1;33mNOTE: \e[21;36m"
+                printf "\n\e[1;33mNOTE: \e[22;36m"
                 echo "If the option \"--use-mailmap\" is given, all the other ones are ignored!"
                 printf "\n\e[0m"
                 exit
@@ -83,7 +83,7 @@ function ParseCommandLineOption(){
                     MAILMAP_FILENAME=$2; shift
                 fi
                 shift ;;
-            * ) printf "\n\e[0;31m Option \e[1m$1\e[21m not recognized! Aborting...\n\n\e[0m" ; exit -1 ;;
+            * ) printf "\n\e[0;31m Option \e[1m$1\e[22m not recognized! Aborting...\n\n\e[0m" ; exit -1 ;;
         esac
     done
 }
@@ -160,7 +160,7 @@ if [ $USE_MAILMAP = 'FALSE' ]; then
         echo "OLD_AUTHOR_EMAIL=$OLD_AUTHOR_EMAIL"
         echo "NEW_AUTHOR_EMAIL=$NEW_AUTHOR_EMAIL"
         echo " NEW_AUTHOR_NAME=$NEW_AUTHOR_NAME"
-        printf "\n\e[0;31m Options \e[1m--oldAuthorEmail --newAuthorEmail --newAuthorName\e[21m are mandatory! Aborting...\n\n\e[0m"
+        printf "\n\e[0;31m Options \e[1m--oldAuthorEmail --newAuthorEmail --newAuthorName\e[22m are mandatory! Aborting...\n\n\e[0m"
         exit -1
     fi
 
@@ -174,7 +174,7 @@ if [ $USE_MAILMAP = 'FALSE' ]; then
 else
 
     if [ ! -f $MAILMAP_FILENAME ]; then
-        printf "\n\e[0;91m File \e[1m$MAILMAP_FILENAME\e[21m not found! Aborting...\n\n\e[0m"
+        printf "\n\e[0;91m File \e[1m$MAILMAP_FILENAME\e[22m not found! Aborting...\n\n\e[0m"
         exit -1
     fi
 
