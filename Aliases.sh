@@ -556,7 +556,7 @@ if [ $LOAD_GO_ALIASES = "TRUE" ]; then
 
     function __static__GiveWarningIfUnusedParameters(){
         if [ ${#givenParameters[@]} -gt 0 ]; then
-            printf "\e[93m \e[1;4mWARNING\e[24m:\e[21m Some given parameters were not used: \e[95m%s\n\n\e[0m"  "${givenParameters[*]}"
+            printf "\e[93m \e[1;4mWARNING\e[24m:\e[22m Some given parameters were not used: \e[95m%s\n\n\e[0m"  "${givenParameters[*]}"
         fi
     }
 
@@ -790,8 +790,8 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
             REMAINING_NR=$1 && shift #Here we assume beta to have a prefix like "b"
 		fi
         echo ''
-        printf "\e[36m Actual position: \e[1m$(pwd)\n\e[21m"
-        printf "\e[38;5;202m All conf.XXXXX and prng.XXXXX with XXXXX \e[1mnot multiple of $FREQUENCY\e[21m will be deleted (except the last ${REMAINING_NR}). Proceed (Y/N)?\e[0m "
+        printf "\e[36m Actual position: \e[1m$(pwd)\n\e[22m"
+        printf "\e[38;5;202m All conf.XXXXX and prng.XXXXX with XXXXX \e[1mnot multiple of $FREQUENCY\e[22m will be deleted (except the last ${REMAINING_NR}). Proceed (Y/N)?\e[0m "
         local CONFIRM="";
         while read CONFIRM; do
 	        if [ "$CONFIRM" = "Y" ]; then break; elif [ "$CONFIRM" = "N" ]; then echo '' && return; else  printf "\n\e[0;33m Please enter Y (yes) or N (no): \e[0m"; fi
@@ -820,7 +820,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
                 )
 				cd ..
             else
-                printf "  \e[1;31m$BETA\e[21m folder not found, skipping it!\e[0m\n"
+                printf "  \e[1;31m$BETA\e[22m folder not found, skipping it!\e[0m\n"
             fi
         done && unset -v 'BETA'
         echo ''
