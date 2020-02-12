@@ -30,7 +30,7 @@ function ElementInArray() {
 
 if ElementInArray "--help" $@ || ElementInArray "-h" $@; then
     printf "\n\t\e[38;5;13m\e[1m"
-    printf "\e[4mPossible options to the script\e[24m:\e[21m\n\n\t\e[38;5;10m"
+    printf "\e[4mPossible options to the script\e[24m:\e[22m\n\n\t\e[38;5;10m"
     printf "   -f | --filename          ->   The data file, default \"$DATA_FILENAME\" (globalpath or path from present folder)\n\t"
     printf "   -v | --verbose           ->   Print additional output during fit procedure\n\t"
     printf "   -d | --degree            ->   Degree of the polynomial, default = $POLYNOMIAL_DEGREE\n\t"
@@ -112,7 +112,7 @@ while [ "$1" != "" ]; do
             PLOT_TITLE="$2"
             shift 2
             ;;
-        * ) printf "\n\e[38;5;9m Option \e[1m$1\e[21m invalid! Aborting...\n\n\e[0m"; exit -1
+        * ) printf "\n\e[38;5;9m Option \e[1m$1\e[22m invalid! Aborting...\n\n\e[0m"; exit -1
     esac
 done
 
