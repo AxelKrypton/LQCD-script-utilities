@@ -282,13 +282,13 @@ function CreateGnuplotFit(){
             if [ "$FIT_TYPE" = "linear" ]; then
                 echo "fns${INDEX}(x) = (a  + b*(x-mc)*ns${INDEX}**(1./nu))*(1+bfactor*ns${INDEX}**(ny))" >> $TMP_FILE_FOR_GNUPLOT
             elif [ "$FIT_TYPE" = "cubic" ]; then
-                echo "fns${INDEX}(x) = (a  + b*(x-mc)*ns${INDEX}**(1./nu) + b2*(x-mc)*ns${INDEX}**(3./nu))*(1+bfactor*ns${INDEX}**(ny))" >> $TMP_FILE_FOR_GNUPLOT
+                echo "fns${INDEX}(x) = (a  + b*(x-mc)*ns${INDEX}**(1./nu) + b2*(x-mc)**3*ns${INDEX}**(3./nu))*(1+bfactor*ns${INDEX}**(ny))" >> $TMP_FILE_FOR_GNUPLOT
             fi
         else
             if [ "$FIT_TYPE" = "linear" ]; then
                 echo "fns${INDEX}(x) = a  + b*(x-mc)*ns${INDEX}**(1./nu)" >> $TMP_FILE_FOR_GNUPLOT
             elif [ "$FIT_TYPE" = "cubic" ]; then
-                echo "fns${INDEX}(x) = a  + b*(x-mc)*ns${INDEX}**(1./nu) + b2*(x-mc)*ns${INDEX}**(3./nu)" >> $TMP_FILE_FOR_GNUPLOT
+                echo "fns${INDEX}(x) = a  + b*(x-mc)*ns${INDEX}**(1./nu) + b2*(x-mc)**3*ns${INDEX}**(3./nu)" >> $TMP_FILE_FOR_GNUPLOT
             fi
         fi
     done
@@ -400,8 +400,8 @@ function CreateGnuplotFit(){
         [ $WILSON = 'TRUE' ] &&    FIT_FORM='B_4(\\infty) + a(\\kappa - \\kappa_{c})\\cdot N_{s}^{(1/\\nu)}'
         [ $STAGGERED = 'TRUE' ] && FIT_FORM='B_4(\\infty) + a(m - m_{c})\\cdot N_{s}^{(1/\\nu)}'
     elif [ "$FIT_TYPE" = "cubic" ]; then
-        [ $WILSON = 'TRUE' ] &&    FIT_FORM='B_4(\\infty) + a(\\kappa - \\kappa_{c})\\cdot N_{s}^{(1/\\nu)} + b(\\kappa - \\kappa_{c})\\cdot N_{s}^{(3/\\nu)}'
-        [ $STAGGERED = 'TRUE' ] && FIT_FORM='B_4(\\infty) + a(m - m_{c})\\cdot N_{s}^{(1/\\nu)} + b(m - m_{c})\\cdot N_{s}^{(3/\\nu)}'
+        [ $WILSON = 'TRUE' ] &&    FIT_FORM='B_4(\\infty) + a(\\kappa - \\kappa_{c})\\cdot N_{s}^{(1/\\nu)} + b(\\kappa - \\kappa_{c})^3\\cdot N_{s}^{(3/\\nu)}'
+        [ $STAGGERED = 'TRUE' ] && FIT_FORM='B_4(\\infty) + a(m - m_{c})\\cdot N_{s}^{(1/\\nu)} + b(m - m_{c})^3\\cdot N_{s}^{(3/\\nu)}'
     fi
 
     [ "$OBSERVABLE" = "pbp" ] && echo 'fit_title = "Fit to $B_4( \\langle\\bar\\Psi\\Psi\\rangle )$ of form $\\to B_4(\\infty) + a(m - m_c)\\cdot N_{s}^{(1/\\nu)}$\n\n"\'         >> $TMP_FILE_FOR_GNUPLOT
