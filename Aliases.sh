@@ -389,11 +389,11 @@ if [ $LOAD_PYTHON_ALIASES = "TRUE" ]; then
     function GetReweightingPbpCommand(){
         local BETA_MIN BETA_MAX RESOLUTION NUM_POINTS
         __static__DefineBetaMinMaxResAndCheck "$@" || return
-        echo -n '[ $(ls Nf?_mui*_nt?_ns??_reweighting 2>/dev/null | wc -l) -eq 0 ]'
-        echo -n ' && [ $(ls -d -1 Nf?_mui*_nt?_ns??_reweighting_pbp/ | wc -l) -eq 0 ]'
+        echo -n '[ $(ls Nf?_mui*_nt*_ns??_reweighting 2>/dev/null | wc -l) -eq 0 ]'
+        echo -n ' && [ $(ls -d -1 Nf?_mui*_nt*_ns??_reweighting_pbp/ | wc -l) -eq 0 ]'
         echo -n " && time PLASMA r --deactivatePlaq --deactivatePoly --activatePbp --inversionsPerConfig 8 --deactivateMean --deactivateSusc --doNotUseSimulatedPointsAsNewPoints -r $BETA_MIN $BETA_MAX -p $NUM_POINTS"
-        echo -n ' && [ $(ls -d -1 Nf?_mui*_nt?_ns??_reweighting/ | wc -l) -eq 1 ]'
-        echo -n ' && FOLDER="$(ls -d -1 Nf?_mui*_nt?_ns??_reweighting/)"'
+        echo -n ' && [ $(ls -d -1 Nf?_mui*_nt*_ns??_reweighting/ | wc -l) -eq 1 ]'
+        echo -n ' && FOLDER="$(ls -d -1 Nf?_mui*_nt*_ns??_reweighting/)"'
         echo -n ' && mv ${FOLDER%?} ${FOLDER%?}_pbp'
         echo    ' && unset -v '"'FOLDER'"
     }
@@ -402,11 +402,11 @@ if [ $LOAD_PYTHON_ALIASES = "TRUE" ]; then
     function GetReweightingPolyImWithZeroMeanCommand(){
         local BETA_MIN BETA_MAX RESOLUTION NUM_POINTS
         __static__DefineBetaMinMaxResAndCheck "$@" || return
-        echo -n '[ $(ls Nf?_mui*_nt?_ns??_reweighting 2>/dev/null | wc -l) -eq 0 ]'
+        echo -n '[ $(ls Nf?_mui*_nt*_ns??_reweighting 2>/dev/null | wc -l) -eq 0 ]'
         echo -n ' && time PLASMA r --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_sq --deactivateMean --deactivateSusc --deactivateSkew --printEstimatorsToFile'
         echo -n " --doNotUseSimulatedPointsAsNewPoints -r $BETA_MIN $BETA_MAX -p $NUM_POINTS"
-        echo -n ' && [ $(ls -d -1 Nf?_mui*_nt?_ns??_reweighting/ | wc -l) -eq 1 ]'
-        echo -n ' && FOLDER="$(ls -d -1 Nf?_mui*_nt?_ns??_reweighting/)"'
+        echo -n ' && [ $(ls -d -1 Nf?_mui*_nt*_ns??_reweighting/ | wc -l) -eq 1 ]'
+        echo -n ' && FOLDER="$(ls -d -1 Nf?_mui*_nt*_ns??_reweighting/)"'
         echo -n ' && mv ${FOLDER%?} ${FOLDER%?}_dBeta'$RESOLUTION
         echo    ' && unset -v '"'FOLDER'"
     }
@@ -415,11 +415,11 @@ if [ $LOAD_PYTHON_ALIASES = "TRUE" ]; then
     function GetReweightingPolySqSkewCommand(){
         local BETA_MIN BETA_MAX RESOLUTION NUM_POINTS
         __static__DefineBetaMinMaxResAndCheck "$@" || return
-        echo -n '[ $(ls Nf?_mui*_nt?_ns??_reweighting 2>/dev/null | wc -l) -eq 0 ]'
+        echo -n '[ $(ls Nf?_mui*_nt*_ns??_reweighting 2>/dev/null | wc -l) -eq 0 ]'
         echo -n ' && time PLASMA r --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_im_withZeroMean --deactivateMean --deactivateSusc'
         echo -n " --doNotUseSimulatedPointsAsNewPoints -r $BETA_MIN $BETA_MAX -p $NUM_POINTS"
-        echo -n ' && [ $(ls -d -1 Nf?_mui*_nt?_ns??_reweighting/ | wc -l) -eq 1 ]'
-        echo -n ' && FOLDER="$(ls -d -1 Nf?_mui*_nt?_ns??_reweighting/)"'
+        echo -n ' && [ $(ls -d -1 Nf?_mui*_nt*_ns??_reweighting/ | wc -l) -eq 1 ]'
+        echo -n ' && FOLDER="$(ls -d -1 Nf?_mui*_nt*_ns??_reweighting/)"'
         echo -n ' && mv ${FOLDER%?} ${FOLDER%?}_poly_sq'
         echo    ' && unset -v '"'FOLDER'"
     }
