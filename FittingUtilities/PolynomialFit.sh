@@ -180,7 +180,7 @@ done
 echo 'set term lua tikz latex createstyle' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT #Creates support files locally
 echo 'set terminal lua tikz standalone preamble '"'"'\usepackage{amsmath, mathabx}'"'" >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 
-echo 'set fit errorvariables  # to get the errors' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+echo 'set fit errorvariables covariancevariables # to get the errors' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 if [ $QUIET_MODE = 'TRUE' ]; then
     echo 'set fit quiet' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 fi
@@ -233,6 +233,9 @@ if [ ${#EXTRAPOLATE_TO[@]} -ne 0 ]; then
     echo -n 'f_err(x) = sqrt((a0_err/FIT_STDFIT)**2 ' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     for((i=1; i<=$POLYNOMIAL_DEGREE; i++)); do
         echo -n '+ x**(2*'${i}')*(a'${i}'_err/FIT_STDFIT)**2' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+	for((j=0; j<i; j++));do
+		echo -n '+ 2*x**('${j}'+'${i}')*FIT_COV_a'${j}'_a'${i}'/FIT_STDFIT**2' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+	done
     done
     echo ')' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     echo 'print "\nExtrapolation to new points:\n\n'$LABEL_X'\t\t'$LABEL_Y'"' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
