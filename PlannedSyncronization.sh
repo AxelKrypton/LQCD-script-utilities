@@ -35,6 +35,7 @@
 
 sciarra="/home/sciarra/Documents/PhD_project/Data_Elaboration_tools/AutomaticSyncronizationData"
 czaban="/home/czaban/Promotion/Physics/AutomaticSyncImagMuDataReports"
+kaiser="/home/kaiser/MasterThesis/Data_Elaboration_Tools/AutomaticSyncronizationData"
 
 #Move to the correct sync folder
 identity=$(whoami)
