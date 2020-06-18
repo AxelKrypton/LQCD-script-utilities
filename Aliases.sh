@@ -93,7 +93,7 @@ function AliasesHelper(){
         ["OverviewJobs"]="RUNNING and PENDING jobs on a specified partition are counted and a report with the amount of jobs per user is printed."
         ["Walltime"]="Given the number of trajectories to be done and the seconds required to do one trajectory, the total walltime is calculated and printed."
         ["CalculateGapsInTrajectoriesBetweenStoredConfigurations"]="A summary about frequency of stored configurations is constructed, considering the beta folders given as command line arguments."
-        ["DeleteConfPrngNotEvery"]="The first argument is mandatory and it has to be an integer which determines which checkpoints will be kept (those whose trajectory number is multiple of the given number). A second integer specifies how many last checkpoints to keep. From the third argument on, beta folder can be specified, otherwise all \"b{5,6}*\" folder are considered."
+        ["DeleteConfPrngDataNotEvery"]="The first argument is mandatory and it has to be an integer which determines which checkpoints will be kept (those whose trajectory number is multiple of the given number). A second integer specifies how many last checkpoints to keep. From the third argument on, beta folder can be specified, otherwise all \"b{5,6}*\" folder are considered."
         ["ListOfTrashFolders"]="Find down in the tree from the invoking position all the \"Trash*\" folders and print their global paths."
         ["ListOfTrashFoldersWithSizes"]="Find down in the tree from the invoking position all the \"Trash*\" folders and print their global paths with their sizes."
         ["SizeOfTrashFolders"]="Find down in the tree from the invoking position all the \"Trash*\" folders and print their total size."
@@ -113,7 +113,7 @@ function AliasesHelper(){
         ['FIT_ALIASES']='BinderFit BruteForceFit FilterFitResults SetUpForBruteForceFit SelectBestFits ChooseReweightingFolders QuantitativeCollapse PlotBestFits GetFilteringProcedure GetSelectingBestFitProcedure'
         ['PYTHON_ALIASES']='PLASMA GetSynchronizationCommand GetAnalysisPbpCommand GetAnalysisPolyImWithZeroMeanCommand GetAnalysisPolySqCommand GetReweightingPbpCommand GetReweightingPolyImWithZeroMeanCommand GetReweightingPolySqSkewCommand GetFindBetaCPbpCommand GetFindBetaCPolySqCommand GetPlotScalingPolySqCommand GetPlotScalingPbpCommand GetPlotScalingPolyImWithZeroMeanCommand HasFileDifferentNumberOfEntriesPerLine CheckNumberOfEntriesPerLine RemoveLinesWithNumberOfColumnsDifferentFrom'
         ['GO_ALIASES']='PickUpFolder goStaggered goWilson go'
-        ['JOB_ALIASES']='cdw JobInfo Acceptance LastAcceptance FillInMissingLines ClusterUsage ReportOnCorrelatorFiles ReportOnScaleSettingFiles CountJobs OverviewJobs Walltime CalculateGapsInTrajectoriesBetweenStoredConfigurations DeleteConfPrngNotEvery ListOfTrashFolders ListOfTrashFoldersWithSizes SizeOfTrashFolders CompleteFolderName GetOutputFilePath FindLastStandardOutput FindMissingTrajectories TimeTr ShowStd FindHighestDH CheckCl2qcdOutput'
+        ['JOB_ALIASES']='cdw JobInfo Acceptance LastAcceptance FillInMissingLines ClusterUsage ReportOnCorrelatorFiles ReportOnScaleSettingFiles CountJobs OverviewJobs Walltime CalculateGapsInTrajectoriesBetweenStoredConfigurations DeleteConfPrngDataNotEvery ListOfTrashFolders ListOfTrashFoldersWithSizes SizeOfTrashFolders CompleteFolderName GetOutputFilePath FindLastStandardOutput FindMissingTrajectories TimeTr ShowStd FindHighestDH CheckCl2qcdOutput'
         ['ROOTHIST_ALIASES']='CreateRootHistograms'
     )
 
@@ -773,8 +773,8 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         printf '\n\e[0m'
     }
 
-    DEFINED_FUNCTIONS+=( 'DeleteConfPrngNotEvery' )
-    function DeleteConfPrngNotEvery() {
+    DEFINED_FUNCTIONS+=( 'DeleteConfPrngDataNotEvery' )
+    function DeleteConfPrngDataNotEvery() {
 		local REMAINING_NR="4"
 		local USAGE_STRING="\e[31m Usage: $0 <value of which multiples will be deleted> <number of last checkpoints to keep> <beta directories ... >\e[0m\n"
         if [[ ! $1 =~ ^[1-9][0-9]*$ ]]; then
@@ -791,7 +791,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
 		fi
         echo ''
         printf "\e[36m Actual position: \e[1m$(pwd)\n\e[22m"
-        printf "\e[38;5;202m All conf.XXXXX and prng.XXXXX with XXXXX \e[1mnot multiple of $FREQUENCY\e[22m will be deleted (except the last ${REMAINING_NR}). Proceed (Y/N)?\e[0m "
+        printf "\e[38;5;202m All conf.XXXXX, prng.XXXXX and data.XXXXX with XXXXX \e[1mnot multiple of $FREQUENCY\e[22m will be deleted (except the last ${REMAINING_NR}). Proceed (Y/N)?\e[0m "
         local CONFIRM="";
         while read CONFIRM; do
 	        if [ "$CONFIRM" = "Y" ]; then break; elif [ "$CONFIRM" = "N" ]; then echo '' && return; else  printf "\n\e[0;33m Please enter Y (yes) or N (no): \e[0m"; fi
@@ -814,6 +814,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
 					        local NUM=$(grep -o "[[:digit:]]*" <<< $FILE)
 					        if [ ${NUM:+x} ]; then
 						        [ $(awk -v freq="$FREQUENCY" '{print $1%freq}' <<< $NUM) -ne 0 ] && rm -f $FILE ${FILE/conf/prng}
+						        [ $(awk -v freq="$FREQUENCY" '{print $1%freq}' <<< $NUM) -ne 0 ] && rm -f $FILE ${FILE/conf/data}
 					        fi
 					    fi
 				    done
