@@ -24,11 +24,12 @@ function ParseCommandLineOptions()
                 echo " Call the script $0 with the following optional arguments:"
                 printf "\n\e[0;96m"
                 echo "   -r | --remote         ->    remote name (default = ${remoteName})"
-                echo "   --remotePrefix        ->    remote prefix (default = ${remotePrefix[$(whoami)]})"
+                echo "   --remotePrefix        ->    remote prefix (default = '${remotePrefix[$(whoami)_${remoteName}]}')"
                 echo "   --rsyncOptions        ->    options passed to rsync (default = $rsyncOptions)"
                 echo "   --now                 ->    if given, start the syncronization immediately and not at 21"
                 echo "   --doNotRemoveFiles    ->    if given, only the backup is done and no older checkpoint is deleted"
                 echo "   --doNotRedirect       ->    if given, no redirection of standard output and error is done"
+                echo "   --cleanAllFolders     ->    if given, all existing beta folders are considered in removing older checkpoints"
                 echo "   --preservePermissions ->    if given, source permissions are preserved, otherwise destination default are used"
                 printf "\n\e[0;93m"
                 echo " NOTE: Changing rsync permissions could affect permissions on reciever that are"
@@ -41,7 +42,7 @@ function ParseCommandLineOptions()
                 shift 2
                 ;;
             --remotePrefix )
-                remotePrefix[$(whoami)]="$2"
+                remotePrefixCommandLine="$2"
                 shift 2
                 ;;
             --rsyncOptions )
@@ -58,6 +59,10 @@ function ParseCommandLineOptions()
                 ;;
             --doNotRedirect )
                 redirectOutpuTtoFiles='FALSE'
+                shift
+                ;;
+            --cleanAllFolders )
+                cleanAllFolders='TRUE'
                 shift
                 ;;
             --preservePermissions)
@@ -90,15 +95,13 @@ declare -A remotePrefix
 if [[ ${STAGGERED} = 'TRUE' ]]; then
     expectedPosition="${staggeredConfigurationPathPrefix}/LastConfigurations"
     #Each user can put here the remote prefix if she/he does not want to give it via command line
-    remotePrefix["sciarra"]="/lustre/lcsc/asciarra/StaggeredProject"
-    remotePrefix["kaiser"]="/lustre/lcsc/rekaiser/StaggeredProject"
+    remotePrefix["sciarra_lcsc"]="/lustre/lcsc/asciarra/StaggeredProject"
+    remotePrefix["kaiser_lcsc"]="/lustre/lcsc/rekaiser/StaggeredProject"
 elif [[ ${WILSON} = 'TRUE' ]]; then
     expectedPosition="${wilsonConfigurationPathPrefix}/LastConfigurations"
     #Each user can put here the remote prefix if she/he does not want to give it via command line
-    #remotePrefix["sciarra"]="/scratch/hfftheo/sciarra/WilsonProject/muiPiT"
-    remotePrefix["sciarra"]="/p/scratch/cpw2/CPWilson"
-    remotePrefix["czaban"]="/scratch/hfftheo/czaban/WilsonProject/Nf2/mui0"
-    remotePrefix["cuteri"]="/scratch/hfftheo/cuteri/ImagMu/muiPiT"
+    remotePrefix["sciarra_hlr"]="/scratch/latticeqcd/sciarra/Wilson"
+    remotePrefix["sciarra_juwels"]="/p/scratch/cpw2/CPWilson"
 fi
 
 #Folders to move at the end the produced files
@@ -106,17 +109,19 @@ readonly configurationListsFolderGlobalPath="${expectedPosition}/ConfigurationLi
 readonly synchronizationOutputFolderGlobalPath="${expectedPosition}/SyncronizationOutput"
 
 #Variables
-if [[ $(grep -c "lcsc" <<< "${remotePrefix[$(whoami)]}") -eq 0 ]]; then
-    remoteName="hlr"
-else
-    remoteName="lcsc"
-fi
+remoteName="hlr"
 rsyncOptions="qluz"
 syncNow='FALSE'
 removeOlderFiles='TRUE'
 redirectOutpuTtoFiles='TRUE'
 useDestinationPermissions='TRUE'
-ParseCommandLineOptions $@
+remotePrefixCommandLine=''
+dataFileMustExist='FALSE'
+cleanAllFolders='FALSE'
+ParseCommandLineOptions "$@"
+if [[ "${remotePrefixCommandLine}" != '' ]]; then
+    remotePrefix["$(whoami)_${remoteName}"]="${remotePrefixCommandLine}"
+fi
 
 #If not in the expected position, abort
 if [[ $(pwd) != ${expectedPosition} ]]; then
@@ -124,7 +129,47 @@ if [[ $(pwd) != ${expectedPosition} ]]; then
     exit -1
 fi
 
+if [[ "${remotePrefix[$(whoami)_${remoteName}]}" = '' ]]; then
+    printf "\n\e[0;91m The script does not know the remote prefix for \"$(whoami)_${remoteName}\".\n"
+    printf " Use the --remotePrefix option or edit \"${BASH_SOURCE[0]}\" accordingly.\n\n\e[0m"
+    exit -1
+fi
+
 #-------------------------------------------------------------------------------------------------------#
+function SleepTillNextBackup()
+{
+    local timeForBackup currentEpoch targetEpoch sleepSeconds
+    timeForBackup='21'
+	currentEpoch=$(date +'%s')
+	targetEpoch=$(date -d "${timeForBackup}" +'%s')
+	sleepSeconds=$(( (targetEpoch - currentEpoch + 3600*24) % (3600*24) ))
+    printf "\n\t\e[38;5;147mEntering sleeping mode. Performing next backup on \e[38;5;86m$(date -d @$((currentEpoch + sleepSeconds)) +"%d.%m.%Y \e[38;5;147mat\e[38;5;86m %H:%M")\e[0m\n\n"
+	sleep ${sleepSeconds}
+}
+
+function IsSizeLastTwoFilesTheSame()
+{
+    local filePrefix lastTwoFiles sizesOfLastTwoFiles
+    filePrefix="$1"
+    lastTwoFiles=( $(printf "%s\n" "${filePrefix}".[0-9]* | sort -V | tail -n2) )
+    if [[ ${#lastTwoFiles[@]} -eq 0 ]]; then
+        printf "\e[0;91m No '${filePrefix}' file found in folder \e[0;93m$(pwd)\e[0;91m -> To be invastigated...\n\e[0m" >&2
+        return 1
+    elif [[ ${#lastTwoFiles[@]} -eq 1 ]]; then
+        return 0
+    else
+        #Test if the size of the two files is the same
+        sizesOfLastTwoFiles=( $(stat -c '%s' "${lastTwoFiles[@]}") )
+        if [[ ${sizesOfLastTwoFiles[0]} -ne ${sizesOfLastTwoFiles[1]} ]]; then
+            printf "\e[0;91m Last two '${filePrefix}' in folder \e[0;93m$(pwd)\e[0;91m have different sizes [${sizesOfLastTwoFiles[0]}!=${sizesOfLastTwoFiles[1]}] -> To be invastigated...\n\e[0m" >&2
+            return 1
+        else
+            return 0
+        fi
+    fi
+}
+#-------------------------------------------------------------------------------------------------------#
+shopt -s nullglob # to work on filenames more comfortably
 
 while :
 do
@@ -133,17 +178,10 @@ do
     #and this in principle again and again and again leading to very long unexpected paths!
     cd "${expectedPosition}"
     if [[ ${syncNow} = 'FALSE' ]]; then
-	    #Just to wait time for backup
-        timeForBackup='21'
-	    currentEpoch=$(date +'%s')
-	    targetEpoch=$(date -d "${timeForBackup}" +'%s')
-	    sleepSeconds=$(( (targetEpoch - currentEpoch + 3600*24) % (3600*24) ))
-        printf "\n\t\e[38;5;147mEntering sleeping mode. Performing next backup on \e[38;5;86m$(date -d @$((currentEpoch + sleepSeconds)) +"%d.%m.%Y \e[38;5;147mat\e[38;5;86m %H:%M")\e[0m\n\n"
-	    sleep ${sleepSeconds}
+        SleepTillNextBackup
 	fi
 
     if [[ ${redirectOutpuTtoFiles} = 'TRUE' ]]; then
-        #Redirection of output and error to files containing date and time
         standardOutputFilename="SyncronizationFrom_${remoteName}_$(whoami)_on_$(date +'%F_%H%M').out"
         standardErrorFilename="${standardOutputFilename%.out}.err"
         exec 3>&1 4>&2 1> "${standardOutputFilename}" 2> "${standardErrorFilename}"
@@ -167,8 +205,8 @@ do
     printf "\n\e[38;5;39m Obtaining list of files from remote...\e[0m"
     startTime=$(date +%s)
     ssh "${remoteName}" 'bash -s' > "${configurationListFilename}" << EOF
-for BETA in ${remotePrefix[$(whoami)]}/${NFLAVOUR_PREFIX}*/${CHEMPOT_PREFIX}*/${MASS_PREFIX}*/${NTIME_PREFIX}*/${NSPACE_PREFIX}*/${BETA_PREFIX}*; do
-if [[ \$BETA =~ ^${remotePrefix[$(whoami)]}${pathRegex//\\/}$ ]]; then
+for BETA in ${remotePrefix[$(whoami)_${remoteName}]}/${NFLAVOUR_PREFIX}*/${CHEMPOT_PREFIX}*/${MASS_PREFIX}*/${NTIME_PREFIX}*/${NSPACE_PREFIX}*/${BETA_PREFIX}*; do
+if [[ \$BETA =~ ^${remotePrefix[$(whoami)_${remoteName}]}${pathRegex//\\/}$ ]]; then
     ls \$BETA | grep "^\(prng\|conf\|data\).[[:digit:]]\+$" | sort -t '.' -k2n | awk '{printf "%s ", \$0; if(\$0 ~ /^prng/){printf "\n"}}' | tac | awk -v beta="\$BETA" 'NF==2{printf "%s\n%s\n", beta"/"\$1, beta"/"\$2; exit} NF==3{printf "%s\n%s\n%s\n", beta"/"\$1, beta"/"\$2, beta"/"\$3; exit}'
 fi
 done
@@ -177,19 +215,20 @@ EOF
 
     #Remove remote prefix from file lines because it will be put in rsync command in order to get
     #the folder structure created on the local folder in case
-    sed -i 's@'"${remotePrefix[$(whoami)]}/"'@@g' "${configurationListFilename}"
+    sed -i 's@'"${remotePrefix[$(whoami)_${remoteName}]}/"'@@g' "${configurationListFilename}"
     #Copy the files from remote
     printf "\e[38;5;39m Syncronizing with the remote...\e[0m"
     startTime=$(date +%s)
     if [[ ${useDestinationPermissions} = 'TRUE' ]]; then
-        rsync -"${rsyncOptions}" --no-p --no-g --chmod=ugo=rwX --files-from="${configurationListFilename}" "${remoteName}:${remotePrefix[$(whoami)]}" .
+        rsync -"${rsyncOptions}" --no-p --no-g --chmod=ugo=rwX --files-from="${configurationListFilename}" "${remoteName}:${remotePrefix[$(whoami)_${remoteName}]}" .
     else
-        rsync -"${rsyncOptions}" --perms --files-from="${configurationListFilename}" "${remoteName}:${remotePrefix[$(whoami)]}" .
+        rsync -"${rsyncOptions}" --perms --files-from="${configurationListFilename}" "${remoteName}:${remotePrefix[$(whoami)_${remoteName}]}" .
     fi
-    printf "\e[38;5;39m ...done in \e[38;5;48m$(SecondsToTimeString $(( $(date +%s) - ${startTime} )) )\e[38;5;39m!\n\n\e[0m"
+    printf "\e[38;5;39m ...done in \e[38;5;48m$(SecondsToTimeString $(( $(date +%s) - ${startTime} )) )\e[38;5;39m!\n\e[0m"
 
     #-------------------------------------------------------------------------------------------------------#
     if [[ ${removeOlderFiles} = 'TRUE' ]]; then
+        startTime=$(date +%s)
         # Go through all beta folders and check if there are more than one checkpoint. Check size of configurations
         # and if everything is fine, keep only last. Strictly speaking this check does not ensure that the
         # configuration is valid, but CL2QCD already makes some checks in production, trying to read back
@@ -200,62 +239,68 @@ EOF
         #      The one in their parent directory and the . link in themselves. Those with subdirectories also
         #      have the .. links in their subdirectories.
         listOfProblematicFolders=()
-        for folder in $(find . -type d -links 2); do
+        listOfRemovedFiles=()
+        listOfFoldersToBeCleaned=()
+        if [[ ${cleanAllFolders} = 'TRUE' ]]; then
+            readarray -d '' listOfFoldersToBeCleaned < <(find . -type d -links 2 -print0)
+        else
+            readarray -t listOfFoldersToBeCleaned < "${configurationListFilename}"
+            listOfFoldersToBeCleaned=( "${listOfFoldersToBeCleaned[@]%/*}" )
+        fi
+        printf "\e[38;5;39m Checkpoints to be checked and cleaned in ${#listOfFoldersToBeCleaned[@]} folders...\e[0m\n\n"
+        for folder in "${listOfFoldersToBeCleaned[@]}"; do
+            cd "${expectedPosition}" # To come back to the correct position in case of 'continue'
             if [[ $(basename "${folder}") =~ ^$(basename "${configurationListsFolderGlobalPath}") ]]; then
                 continue
             elif [[ $(basename "${folder}") =~ ^$(basename "${synchronizationOutputFolderGlobalPath}") ]]; then
                 continue
             fi
             cd "${folder}"
-            if [[ $(ls conf.[0-9]* 2>> /dev/null | wc -l) -eq 0 ]]; then
-                printf "\e[0;91m Error occurred trying to list files in folder \e[0;93m$(pwd)\e[0;91m -> To be invastigated...\n\e[0m" >&2 
-                listOfProblematicFolders+=( "$(pwd)" )
-                cd "${expectedPosition}"
-                continue
-            fi
-            lastTwoConfigurations=( $(ls conf.[0-9]* | sort -V | tail -n2) )
-            if [[ ${#lastTwoConfigurations[@]} -gt 1 ]]; then
-                #Test if the size of the two files is the same
-                sizesOfLastTwoConfs=( $(stat -c '%s' "${lastTwoConfigurations[@]}") )
-                if [[ ${sizesOfLastTwoConfs[0]} -ne ${sizesOfLastTwoConfs[1]} ]]; then
-                    printf "\e[0;91m Last two configurations in folder \e[0;93m$(pwd)\e[0;91m have different sizes [${sizesOfLastTwoConfs[0]}!=${sizesOfLastTwoConfs[1]}] -> To be invastigated...\n\e[0m" >&2
-                    keepOnlyLastConfiguration='FALSE'
-                else
-                    keepOnlyLastConfiguration='TRUE'
+            # The size of 'data' files increases during simulation, do not check it
+            for prefix in 'conf' 'prng'; do
+                if ! IsSizeLastTwoFilesTheSame "${prefix}"; then
+                    listOfProblematicFolders+=( "$(pwd)" )
+                    continue 2
                 fi
-                #Test if associated to confs there are prng and if they have same size
-                lastTwoPrng=( "${lastTwoConfigurations[@]/conf/prng}" )
-                if [[ ! -f "${lastTwoPrng[0]}" ]] || [[ ! -f "${lastTwoPrng[1]}" ]]; then
-                    printf "\e[0;91m Prng file(s) associated to last two configurations in folder \e[0;93m$(pwd)\e[0;91m not found! To be invastigated...\n\e[0m" >&2
-                    keepOnlyLastPrng='FALSE'
-                else
-                    sizesOfLastTwoPrng=( $(stat -c '%s' "${lastTwoPrng[@]}") )
-                    if [[ ${sizesOfLastTwoPrng[0]} -ne ${sizesOfLastTwoPrng[1]} ]]; then
-                        printf "\e[0;91m Last two prng files in folder \e[0;93m$(pwd)\e[0;91m have different sizes [${sizesOfLastTwoPrng[0]}!=${sizesOfLastTwoPrng[1]}] -> To be invastigated...\n\e[0m" >&2
-                        keepOnlyLastPrng='FALSE'
+            done
+            numberLastCheckpoint="$(printf "%s\n" conf.[0-9]* | sort -V | tail -n1 | cut -d'.' -f 2)"
+            for prefix in 'conf' 'prng' 'data'; do
+                if [[ ! -f "${prefix}.${numberLastCheckpoint}" ]]; then
+                    if [[ ${prefix} = 'data' ]] && [[ ${dataFileMustExist} = 'FALSE' ]]; then
+                        continue
                     else
-                        keepOnlyLastPrng='TRUE'
+                        printf "\e[0;91m Checkpoint ${numberLastCheckpoint} is incomplete in \e[0;93m$(pwd)\e[0;91m -> To be invastigated...\n\e[0m" >&2    
+                        listOfProblematicFolders+=( "$(pwd)" )
+                        continue 2
                     fi
                 fi
-                #Remove in case previous checkpoints
-                if [[ ${keepOnlyLastConfiguration} = 'TRUE' ]] && [[ ${keepOnlyLastPrng} = 'TRUE' ]]; then
-                    ls {conf,prng}.[0-9]* | grep -v "${lastTwoConfigurations[1]}\|${lastTwoPrng[1]}" | xargs -n1 rm -f
-                else
-                    listOfProblematicFolders+=( "$(pwd)" )
+            done
+            # Here previous checkpoints can be removed
+            regexLastCheckpoint="(conf|prng|data)[.]${numberLastCheckpoint}"
+            for checkpointFile in {conf,prng,data}.[0-9]*; do
+                if [[ ! ${checkpointFile} =~ ^${regexLastCheckpoint}$ ]]; then
+                    listOfRemovedFiles+=( "$(pwd)/${checkpointFile}" )
+                    rm "${checkpointFile}"
                 fi
-            fi
-            cd ${expectedPosition}
+            done
         done
         #Short report for the user
+        if [[ ${#listOfRemovedFiles[@]} -gt 0 ]]; then
+            printf "\n\e[38;5;105m ${#listOfRemovedFiles[@]} checkpoint files have been deleted:\n\e[0m"
+            for checkpointFile in "${listOfRemovedFiles[@]}"; do
+                printf "\e[38;5;39m   ${checkpointFile}\n\e[0m"
+            done
+        fi
         if [[ ${#listOfProblematicFolders[@]} -gt 0 ]]; then
-            printf "\n\e[38;5;105m There are ${#listOfProblematicFolders[@]} folders in which no configuration was found or it was not possible to delete files:\n\e[0m"
+            printf "\n\e[38;5;105m There are ${#listOfProblematicFolders[@]} folders in which an error occurred:\n\e[0m"
             for folder in "${listOfProblematicFolders[@]}"; do
                 printf "\e[38;5;39m   ${folder}\n\e[0m"
             done
-            echo
         fi
+        printf "\n\e[38;5;39m ...checkpoint processing done in \e[38;5;48m$(SecondsToTimeString $(( $(date +%s) - ${startTime} )) )\e[38;5;39m!\n\n\e[0m"
     fi
 
+    cd "${expectedPosition}"
     mv "${configurationListFilename}" "${configurationListsFolderGlobalPath}" || exit -2
     if [[ ${redirectOutpuTtoFiles} = 'TRUE' ]]; then
         mv "${standardOutputFilename}" "${synchronizationOutputFolderGlobalPath}" || exit -2
