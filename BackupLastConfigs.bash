@@ -23,14 +23,15 @@ function ParseCommandLineOptions()
                 printf "\n\e[0;92m"
                 echo " Call the script $0 with the following optional arguments:"
                 printf "\n\e[0;96m"
-                echo "   -r | --remote         ->    remote name (default = ${remoteName})"
-                echo "   --remotePrefix        ->    remote prefix (default = '${remotePrefix[$(whoami)_${remoteName}]}')"
-                echo "   --rsyncOptions        ->    options passed to rsync (default = $rsyncOptions)"
-                echo "   --now                 ->    if given, start the syncronization immediately and not at 21"
-                echo "   --doNotRemoveFiles    ->    if given, only the backup is done and no older checkpoint is deleted"
-                echo "   --doNotRedirect       ->    if given, no redirection of standard output and error is done"
-                echo "   --cleanAllFolders     ->    if given, all existing beta folders are considered in removing older checkpoints"
-                echo "   --preservePermissions ->    if given, source permissions are preserved, otherwise destination default are used"
+                echo "   -r | --remote         ->    remote name (default = '${remoteName}')"
+                echo "   -s | --software       ->    remote name (default = '${softwareName}')"
+                echo "   --remotePrefix        ->    remote prefix (by default hard-coded)"
+                echo "   --rsyncOptions        ->    options passed to rsync (default = '${rsyncOptions}')"
+                echo "   --now                 ->    start the syncronization immediately and not at 21"
+                echo "   --doNotRemoveFiles    ->    only the backup is done and no older checkpoint is deleted"
+                echo "   --doNotRedirect       ->    no redirection of standard output and error is done"
+                echo "   --cleanAllFolders     ->    all beta folders instead of synchronised ones are considered removing checkpoints"
+                echo "   --preservePermissions ->    source permissions are preserved, otherwise destination default are used"
                 printf "\n\e[0;93m"
                 echo " NOTE: Changing rsync permissions could affect permissions on reciever that are"
                 echo "       by default set to \"--chmod=Du=rwx,Dg=rwx,Do=r,Fu=rw,Fog=r\" how it should be."
@@ -39,6 +40,14 @@ function ParseCommandLineOptions()
                 shift;;
             -r | --remote )
                 remoteName="$2"
+                shift 2
+                ;;
+            -s | --software )
+                if [[ ! $2 =~ ^(CL2QCD|openQCD-FASTSUM)$ ]]; then
+                    printf "\n\e[0;91m Only 'CL2QCD' and 'openQCD-FASTSUM' supported as software. Aborting...\n\n\e[0m"
+                    exit -1
+                fi
+                softwareName="$2"
                 shift 2
                 ;;
             --remotePrefix )
@@ -70,7 +79,7 @@ function ParseCommandLineOptions()
                 shift
                 ;;
             * )
-                printf "\n\e[0;31mError parsing the options! Aborting...\n\n\e[0m"
+                printf "\n\e[0;91m Error parsing the options! Aborting...\n\n\e[0m"
                 exit -1
                 ;;
         esac
@@ -78,6 +87,26 @@ function ParseCommandLineOptions()
 }
 
 #-------------------------------------------------------------------------------------------------------#
+#Variables
+remoteName='hlr'
+softwareName='CL2QCD'
+rsyncOptions='qluz'
+syncNow='FALSE'
+removeOlderFiles='TRUE'
+redirectOutpuTtoFiles='TRUE'
+useDestinationPermissions='TRUE'
+remotePrefixCommandLine=''
+cleanAllFolders='FALSE'
+
+ParseCommandLineOptions "$@"
+
+if [[ ${softwareName} = 'CL2QCD' ]]; then
+    dataFileMustExist='FALSE'
+else
+    dataFileMustExist='TRUE'
+fi
+
+
 #Having loaded PathManagement.sh we get for free all the parameters variables and functionalities
 CheckWilsonStaggeredVariables
 #Build path regex for later
@@ -87,40 +116,25 @@ for index in ${!PARAMETER_REGEXES[@]}; do
 done && unset -v 'index'
 readonly pathRegex="${pathRegex}/${BETA_FOLDER_REGEX}"
 
-readonly wilsonConfigurationPathPrefix="/home/phil-configs/wilson_nf2_muipi4/ImagMu"
-readonly staggeredConfigurationPathPrefix="/home/phil-configs/Staggered"
+readonly wilsonConfigurationPathPrefix="/home/phil-configs/ColumbiaPlot_Wilson_${softwareName}"
+readonly staggeredConfigurationPathPrefix="/home/phil-configs/ColumbiaPlot_Staggered_${softwareName}"
 
 #Associative array to make the script user specific
 declare -A remotePrefix
-if [[ ${STAGGERED} = 'TRUE' ]]; then
-    expectedPosition="${staggeredConfigurationPathPrefix}/LastConfigurations"
-    #Each user can put here the remote prefix if she/he does not want to give it via command line
-    remotePrefix["sciarra_lcsc"]="/lustre/lcsc/asciarra/StaggeredProject"
-    remotePrefix["kaiser_lcsc"]="/lustre/lcsc/rekaiser/StaggeredProject"
-elif [[ ${WILSON} = 'TRUE' ]]; then
-    expectedPosition="${wilsonConfigurationPathPrefix}/LastConfigurations"
-    #Each user can put here the remote prefix if she/he does not want to give it via command line
-    remotePrefix["sciarra_hlr"]="/scratch/latticeqcd/sciarra/Wilson"
-    remotePrefix["sciarra_juwels"]="/p/scratch/cpw2/CPWilson"
-fi
-
-#Folders to move at the end the produced files
-readonly configurationListsFolderGlobalPath="${expectedPosition}/ConfigurationLists"
-readonly synchronizationOutputFolderGlobalPath="${expectedPosition}/SyncronizationOutput"
-
-#Variables
-remoteName="hlr"
-rsyncOptions="qluz"
-syncNow='FALSE'
-removeOlderFiles='TRUE'
-redirectOutpuTtoFiles='TRUE'
-useDestinationPermissions='TRUE'
-remotePrefixCommandLine=''
-dataFileMustExist='FALSE'
-cleanAllFolders='FALSE'
-ParseCommandLineOptions "$@"
 if [[ "${remotePrefixCommandLine}" != '' ]]; then
     remotePrefix["$(whoami)_${remoteName}"]="${remotePrefixCommandLine}"
+else
+    if [[ ${STAGGERED} = 'TRUE' ]]; then
+        expectedPosition="${staggeredConfigurationPathPrefix}/Checkpoints"
+        #Each user can put here the remote prefix if she/he does not want to give it via command line
+        remotePrefix["sciarra_lcsc"]="/lustre/lcsc/asciarra/StaggeredProject"
+        remotePrefix["kaiser_lcsc"]="/lustre/lcsc/rekaiser/StaggeredProject"
+    elif [[ ${WILSON} = 'TRUE' ]]; then
+        expectedPosition="${wilsonConfigurationPathPrefix}/Checkpoints"
+        #Each user can put here the remote prefix if she/he does not want to give it via command line
+        remotePrefix["sciarra_hlr"]="/scratch/latticeqcd/sciarra/Wilson"
+        remotePrefix["sciarra_juwels"]="/p/scratch/cpw2/CPWilson"
+    fi
 fi
 
 #If not in the expected position, abort
@@ -129,12 +143,22 @@ if [[ $(pwd) != ${expectedPosition} ]]; then
     exit -1
 fi
 
+#Remote path must be not empty
 if [[ "${remotePrefix[$(whoami)_${remoteName}]}" = '' ]]; then
     printf "\n\e[0;91m The script does not know the remote prefix for \"$(whoami)_${remoteName}\".\n"
     printf " Use the --remotePrefix option or edit \"${BASH_SOURCE[0]}\" accordingly.\n\n\e[0m"
     exit -1
 fi
 
+#Folders to move at the end the produced files
+readonly configurationListsFolderGlobalPath="${expectedPosition}/ListsOfCheckpoints"
+readonly synchronizationOutputFolderGlobalPath="${expectedPosition}/SynchronizationOutput"
+
+for folder in "${configurationListsFolderGlobalPath}" "${synchronizationOutputFolderGlobalPath}"; do
+    if [[ ! -d "${folder}" ]]; then
+        mkdir "${folder}"
+    fi
+done
 #-------------------------------------------------------------------------------------------------------#
 function SleepTillNextBackup()
 {
@@ -182,7 +206,7 @@ do
 	fi
 
     if [[ ${redirectOutpuTtoFiles} = 'TRUE' ]]; then
-        standardOutputFilename="SyncronizationFrom_${remoteName}_$(whoami)_on_$(date +'%F_%H%M').out"
+        standardOutputFilename="From_${remoteName}_$(whoami)_on_$(date +'%F_%H%M').out"
         standardErrorFilename="${standardOutputFilename%.out}.err"
         exec 3>&1 4>&2 1> "${standardOutputFilename}" 2> "${standardErrorFilename}"
     fi
@@ -192,7 +216,7 @@ do
     if [[ ${syncNow} = 'FALSE' ]]; then
         printf "\n\e[38;5;39mStarting backup of last configurations: $(date +'%F')\e[0m\n\n"
     fi
-    configurationListFilename="ConfigurationListFrom_${remoteName}_$(whoami)_on_$(date +'%F_%H%M')"
+    checkpointsListFilename="Checkpoints_from_${remoteName}_$(whoami)_on_$(date +'%F_%H%M')"
 
     #Getting configurations from remote (supposing folder structure)
     #ATTENTION: To list all the folders one could think to use find with -regex but this is much slower than using shell globbing.
@@ -204,25 +228,25 @@ do
     #           available on the cluster and avoid to copy back a prng/conf for which there is not the correspondent conf/prng.
     printf "\n\e[38;5;39m Obtaining list of files from remote...\e[0m"
     startTime=$(date +%s)
-    ssh "${remoteName}" 'bash -s' > "${configurationListFilename}" << EOF
+    ssh "${remoteName}" 'bash -s' > "${checkpointsListFilename}" << EOF
 for BETA in ${remotePrefix[$(whoami)_${remoteName}]}/${NFLAVOUR_PREFIX}*/${CHEMPOT_PREFIX}*/${MASS_PREFIX}*/${NTIME_PREFIX}*/${NSPACE_PREFIX}*/${BETA_PREFIX}*; do
 if [[ \$BETA =~ ^${remotePrefix[$(whoami)_${remoteName}]}${pathRegex//\\/}$ ]]; then
     ls \$BETA | grep "^\(prng\|conf\|data\).[[:digit:]]\+$" | sort -t '.' -k2n | awk '{printf "%s ", \$0; if(\$0 ~ /^prng/){printf "\n"}}' | tac | awk -v beta="\$BETA" 'NF==2{printf "%s\n%s\n", beta"/"\$1, beta"/"\$2; exit} NF==3{printf "%s\n%s\n%s\n", beta"/"\$1, beta"/"\$2, beta"/"\$3; exit}'
 fi
 done
 EOF
-    printf "\e[38;5;39m obtained $(wc -l < ${configurationListFilename}) files in \e[38;5;48m$(SecondsToTimeString $(( $(date +%s) - ${startTime} )) )\e[38;5;39m!\n\n\e[0m"
+    printf "\e[38;5;39m obtained $(wc -l < ${checkpointsListFilename}) files in \e[38;5;48m$(SecondsToTimeString $(( $(date +%s) - ${startTime} )) )\e[38;5;39m!\n\n\e[0m"
 
     #Remove remote prefix from file lines because it will be put in rsync command in order to get
     #the folder structure created on the local folder in case
-    sed -i 's@'"${remotePrefix[$(whoami)_${remoteName}]}/"'@@g' "${configurationListFilename}"
+    sed -i 's@'"${remotePrefix[$(whoami)_${remoteName}]}/"'@@g' "${checkpointsListFilename}"
     #Copy the files from remote
     printf "\e[38;5;39m Syncronizing with the remote...\e[0m"
     startTime=$(date +%s)
     if [[ ${useDestinationPermissions} = 'TRUE' ]]; then
-        rsync -"${rsyncOptions}" --no-p --no-g --chmod=ugo=rwX --files-from="${configurationListFilename}" "${remoteName}:${remotePrefix[$(whoami)_${remoteName}]}" .
+        rsync -"${rsyncOptions}" --no-p --no-g --chmod=ugo=rwX --files-from="${checkpointsListFilename}" "${remoteName}:${remotePrefix[$(whoami)_${remoteName}]}" .
     else
-        rsync -"${rsyncOptions}" --perms --files-from="${configurationListFilename}" "${remoteName}:${remotePrefix[$(whoami)_${remoteName}]}" .
+        rsync -"${rsyncOptions}" --perms --files-from="${checkpointsListFilename}" "${remoteName}:${remotePrefix[$(whoami)_${remoteName}]}" .
     fi
     printf "\e[38;5;39m ...done in \e[38;5;48m$(SecondsToTimeString $(( $(date +%s) - ${startTime} )) )\e[38;5;39m!\n\e[0m"
 
@@ -244,7 +268,7 @@ EOF
         if [[ ${cleanAllFolders} = 'TRUE' ]]; then
             readarray -d '' listOfFoldersToBeCleaned < <(find . -type d -links 2 -print0)
         else
-            readarray -t listOfFoldersToBeCleaned < "${configurationListFilename}"
+            readarray -t listOfFoldersToBeCleaned < "${checkpointsListFilename}"
             listOfFoldersToBeCleaned=( "${listOfFoldersToBeCleaned[@]%/*}" )
         fi
         printf "\e[38;5;39m Checkpoints to be checked and cleaned in ${#listOfFoldersToBeCleaned[@]} folders...\e[0m\n\n"
@@ -301,10 +325,14 @@ EOF
     fi
 
     cd "${expectedPosition}"
-    mv "${configurationListFilename}" "${configurationListsFolderGlobalPath}" || exit -2
+
+    subfolderName="$(date +'%Y_%m')_${remoteName}_$(whoami)"
+    mkdir -p "${configurationListsFolderGlobalPath}/${subfolderName}"    || exit -2
+    mkdir -p "${synchronizationOutputFolderGlobalPath}/${subfolderName}" || exit -2
+    mv "${checkpointsListFilename}" "${configurationListsFolderGlobalPath}/${subfolderName}" || exit -2
     if [[ ${redirectOutpuTtoFiles} = 'TRUE' ]]; then
-        mv "${standardOutputFilename}" "${synchronizationOutputFolderGlobalPath}" || exit -2
-        mv "${standardErrorFilename}"  "${synchronizationOutputFolderGlobalPath}" || exit -2
+        mv "${standardOutputFilename}" "${synchronizationOutputFolderGlobalPath}/${subfolderName}" || exit -2
+        mv "${standardErrorFilename}"  "${synchronizationOutputFolderGlobalPath}/${subfolderName}" || exit -2
         #Restore stdout and stderr for following iteration
         exec 1>&3 2>&4
     fi
