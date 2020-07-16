@@ -737,7 +737,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
                 echo
                 for f in RUNNING PENDING; do
                     echo "${f}:"
-                    squeue -h -p $1 -t $f | awk '{print $4}' | sort | uniq -c
+                    squeue -h -p $1 -t $f --format '%u  %D' | awk '{user[$1]++; nodes[$1]+=$2}END{for(u in user){printf "%20s: %3d jobs  -> %3d nodes in total\n", u, user[u], nodes[u]}}'
                     echo
                 done && unset -v 'f'
             fi
