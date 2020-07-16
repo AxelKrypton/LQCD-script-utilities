@@ -106,7 +106,6 @@ else
     dataFileMustExist='TRUE'
 fi
 
-
 #Having loaded PathManagement.sh we get for free all the parameters variables and functionalities
 CheckWilsonStaggeredVariables
 #Build path regex for later
@@ -228,13 +227,36 @@ do
     #           available on the cluster and avoid to copy back a prng/conf for which there is not the correspondent conf/prng.
     printf "\n\e[38;5;39m Obtaining list of files from remote...\e[0m"
     startTime=$(date +%s)
-    ssh "${remoteName}" 'bash -s' > "${checkpointsListFilename}" << EOF
+    case "${softwareName}" in
+        CL2QCD )
+            ssh "${remoteName}" 'bash -O extglob -s' > "${checkpointsListFilename}" << EOF
 for BETA in ${remotePrefix[$(whoami)_${remoteName}]}/${NFLAVOUR_PREFIX}*/${CHEMPOT_PREFIX}*/${MASS_PREFIX}*/${NTIME_PREFIX}*/${NSPACE_PREFIX}*/${BETA_PREFIX}*; do
-if [[ \$BETA =~ ^${remotePrefix[$(whoami)_${remoteName}]}${pathRegex//\\/}$ ]]; then
-    ls \$BETA | grep "^\(prng\|conf\|data\).[[:digit:]]\+$" | sort -t '.' -k2n | awk '{printf "%s ", \$0; if(\$0 ~ /^prng/){printf "\n"}}' | tac | awk -v beta="\$BETA" 'NF==2{printf "%s\n%s\n", beta"/"\$1, beta"/"\$2; exit} NF==3{printf "%s\n%s\n%s\n", beta"/"\$1, beta"/"\$2, beta"/"\$3; exit}'
-fi
+    if [[ \$BETA =~ ^${remotePrefix[$(whoami)_${remoteName}]}${pathRegex//\\/}$ ]]; then
+        basename -a \$(printf "%s\n" \$BETA/@(conf|prng).+([0-9])) |\
+                 sort -t '.' -k2nr |\
+                 awk 'BEGIN{FS="."} NR==1{tr=\$2} {if(\$2!=tr){printf "\n"}; tr=\$2} {printf "%s ", \$0}END{printf "\n"}' |\
+                 awk -v beta="\$BETA" 'NF==2{printf "%s\n%s\n", beta"/"\$1, beta"/"\$2; exit}'
+    fi
 done
 EOF
+            ;;
+        openQCD-FASTSUM )
+            ssh "${remoteName}" 'bash -O extglob -s' > "${checkpointsListFilename}" << EOF
+for BETA in ${remotePrefix[$(whoami)_${remoteName}]}/${NFLAVOUR_PREFIX}*/${CHEMPOT_PREFIX}*/${MASS_PREFIX}*/${NTIME_PREFIX}*/${NSPACE_PREFIX}*/${BETA_PREFIX}*; do
+    if [[ \$BETA =~ ^${remotePrefix[$(whoami)_${remoteName}]}${pathRegex//\\/}$ ]]; then
+        basename -a \$(printf "%s\n" \$BETA/@(conf|prng|data).+([0-9])) |\
+                 sort -t '.' -k2nr |\
+                 awk 'BEGIN{FS="."} NR==1{tr=\$2} {if(\$2!=tr){printf "\n"}; tr=\$2} {printf "%s ", \$0}END{printf "\n"}' |\
+                 awk -v beta="\$BETA" 'NF==3{printf "%s\n%s\n%s\n", beta"/"\$1, beta"/"\$2, beta"/"\$3; exit}'
+    fi
+done
+EOF
+            ;;
+        * )
+            printf "\n\e[0;91m Unknown software but this branch should not be entered! Aborting...\n\n\e[0m"
+            exit -1
+            ;;
+    esac
     printf "\e[38;5;39m obtained $(wc -l < ${checkpointsListFilename}) files in \e[38;5;48m$(SecondsToTimeString $(( $(date +%s) - ${startTime} )) )\e[38;5;39m!\n\n\e[0m"
 
     #Remove remote prefix from file lines because it will be put in rsync command in order to get
