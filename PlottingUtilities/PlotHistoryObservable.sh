@@ -67,6 +67,7 @@ while [ "$1" != "" ]; do
 	  printf "\n\e[0;32m"
 	  echo "Call the script $0 with the following optional arguments:"
 	  echo "  -h | --help"
+	  echo "  -f | --filename         ->    data filename, default = $DATAFILE_NAME"
 	  echo "  -a | --useAbsoluteValue ->    plot absolute value of y-column"
 	  echo "  -x | --columnXaxis      ->    default value = $COLUMN_X_AXIS"
 	  echo "  -y | --columnYaxis      ->    default value = $COLUMN_Y_AXIS"
@@ -76,6 +77,9 @@ while [ "$1" != "" ]; do
 	  printf "\n\e[0m"
 	  exit
 	  shift;;
+      -f | --filename )
+          DATAFILE_NAME=$2
+          shift ;;
       -x | --columnXaxis )
           COLUMN_X_AXIS=$2
           shift ;;
