@@ -93,7 +93,7 @@ function AliasesHelper(){
         ["OverviewJobs"]="RUNNING and PENDING jobs on a specified partition are counted and a report with the amount of jobs per user is printed."
         ["Walltime"]="Given the number of trajectories to be done and the seconds required to do one trajectory, the total walltime is calculated and printed."
         ["CalculateGapsInTrajectoriesBetweenStoredConfigurations"]="A summary about frequency of stored configurations is constructed, considering the beta folders given as command line arguments."
-        ["DeleteConfPrngDataNotEvery"]="The first argument is mandatory and it has to be an integer which determines which checkpoints will be kept (those whose trajectory number is multiple of the given number). A second integer specifies how many last checkpoints to keep. From the third argument on, beta folder can be specified, otherwise all \"b{5,6}*\" folder are considered."
+        ["DeleteCheckpointsNotEvery"]="The first argument is mandatory and it has to be an integer which determines which checkpoints will be kept (those whose trajectory number is multiple of the given number). A second integer specifies how many last checkpoints to keep. From the third argument on, beta folder can be specified, otherwise all \"b{5,6}*\" folder are considered."
         ["ListOfTrashFolders"]="Find down in the tree from the invoking position all the \"Trash*\" folders and print their global paths."
         ["ListOfTrashFoldersWithSizes"]="Find down in the tree from the invoking position all the \"Trash*\" folders and print their global paths with their sizes."
         ["SizeOfTrashFolders"]="Find down in the tree from the invoking position all the \"Trash*\" folders and print their total size."
@@ -113,7 +113,7 @@ function AliasesHelper(){
         ['FIT_ALIASES']='BinderFit BruteForceFit FilterFitResults SetUpForBruteForceFit SelectBestFits ChooseReweightingFolders QuantitativeCollapse PlotBestFits GetFilteringProcedure GetSelectingBestFitProcedure'
         ['PYTHON_ALIASES']='PLASMA GetSynchronizationCommand GetAnalysisPbpCommand GetAnalysisPolyImWithZeroMeanCommand GetAnalysisPolySqCommand GetReweightingPbpCommand GetReweightingPolyImWithZeroMeanCommand GetReweightingPolySqSkewCommand GetFindBetaCPbpCommand GetFindBetaCPolySqCommand GetPlotScalingPolySqCommand GetPlotScalingPbpCommand GetPlotScalingPolyImWithZeroMeanCommand HasFileDifferentNumberOfEntriesPerLine CheckNumberOfEntriesPerLine RemoveLinesWithNumberOfColumnsDifferentFrom'
         ['GO_ALIASES']='PickUpFolder goStaggered goWilson go'
-        ['JOB_ALIASES']='cdw JobInfo Acceptance LastAcceptance FillInMissingLines ClusterUsage ReportOnCorrelatorFiles ReportOnScaleSettingFiles CountJobs OverviewJobs Walltime CalculateGapsInTrajectoriesBetweenStoredConfigurations DeleteConfPrngDataNotEvery ListOfTrashFolders ListOfTrashFoldersWithSizes SizeOfTrashFolders CompleteFolderName GetOutputFilePath FindLastStandardOutput FindMissingTrajectories TimeTr ShowStd FindHighestDH CheckCl2qcdOutput'
+        ['JOB_ALIASES']='cdw JobInfo Acceptance LastAcceptance FillInMissingLines ClusterUsage ReportOnCorrelatorFiles ReportOnScaleSettingFiles CountJobs OverviewJobs Walltime CalculateGapsInTrajectoriesBetweenStoredConfigurations DeleteCheckpointsNotEvery ListOfTrashFolders ListOfTrashFoldersWithSizes SizeOfTrashFolders CompleteFolderName GetOutputFilePath FindLastStandardOutput FindMissingTrajectories TimeTr ShowStd FindHighestDH CheckCl2qcdOutput'
         ['ROOTHIST_ALIASES']='CreateRootHistograms'
     )
 
@@ -773,58 +773,83 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         printf '\n\e[0m'
     }
 
-    DEFINED_FUNCTIONS+=( 'DeleteConfPrngDataNotEvery' )
-    function DeleteConfPrngDataNotEvery() {
-		local REMAINING_NR="4"
-		local USAGE_STRING="\e[31m Usage: $0 <value of which multiples will be deleted> <number of last checkpoints to keep> <beta directories ... >\e[0m\n"
-        if [[ ! $1 =~ ^[1-9][0-9]*$ ]]; then
-	        echo "Invalid frequency or frequency not given as first parameter!" 1>&2
-			echo -e $USAGE_STRING 1>&2
-	        return
+    DEFINED_FUNCTIONS+=( 'DeleteCheckpointsNotEvery' )
+    function DeleteCheckpointsNotEvery() {
+        if ! shopt -q extglob; then
+            printf "\n\e[91m Extended glob needed to run \"${FUNCNAME}\". Please activate it via \"shopt -s extglob\".\e[0m\n\n" 1>&2
+            return
         fi
-		local FREQUENCY=$1 && shift
-		if [[ "$1" =~ ^[1-9][0-9]*$ ]]; then
-            if [ "$1" -eq 0 ]; then
+        local keepNumber allowedGap foldersArray folder confirm file counter initialPosition listOfConfigurations trNumber
+		keepNumber='10'
+        initialPosition="$(pwd)"
+        if [[ ! $1 =~ ^[1-9][0-9]*$ ]]; then
+	        printf "\n\e[91m Invalid checkpoints gap or not given as first parameter! Usage:\e[0m\n\n" 1>&2
+			printf "\e[93m ${FUNCNAME} <value of which not-multiples will be deleted> <number of last checkpoints to keep> <beta directories ... >\e[0m\n\n" 1>&2
+	        return
+        else
+            allowedGap="$1"; shift
+        fi
+		if [[ $1 =~ ^[1-9][0-9]*$ ]]; then
+            if [ $1 -eq 0 ]; then
                 printf "\n\e[91m Please specify a valid POSITIVE number as second argument ...\e[0m\n\n" 1>&2 && return
             fi
-            REMAINING_NR=$1 && shift #Here we assume beta to have a prefix like "b"
+            keepNumber="$1"; shift
 		fi
-        echo ''
-        printf "\e[36m Actual position: \e[1m$(pwd)\n\e[22m"
-        printf "\e[38;5;202m All conf.XXXXX, prng.XXXXX and data.XXXXX with XXXXX \e[1mnot multiple of $FREQUENCY\e[22m will be deleted (except the last ${REMAINING_NR}). Proceed (Y/N)?\e[0m "
-        local CONFIRM="";
-        while read CONFIRM; do
-	        if [ "$CONFIRM" = "Y" ]; then break; elif [ "$CONFIRM" = "N" ]; then echo '' && return; else  printf "\n\e[0;33m Please enter Y (yes) or N (no): \e[0m"; fi
+        foldersArray=( "$@" )
+        if [[ ${#foldersArray[@]} -eq 0 ]]; then
+            if compgen -G "b*/" >/dev/null; then
+                foldersArray=( b*/ ) #Here we assume beta to have a prefix like "b"
+            fi
+        fi
+        if [[ ${#foldersArray[@]} -ne 0 ]]; then
+            printf "\n\e[93m The following folders will be considered:\e[0m\n" 1>&2
+            printf "\e[96m%s\e[0m\n" "${foldersArray[@]}" | columns -I '    ' --by-column
+        else
+            printf "\n\e[93m No folder to be considered!\e[0m\n\n" 1>&2
+            return
+        fi
+        printf "\n\e[36m Actual position: \e[1m${initialPosition}\n\e[22m"
+        printf "\e[93m All conf.XXXXX, prng.XXXXX and data.XXXXX with XXXXX \e[1;91mnot multiple of $allowedGap\e[22;93m will be deleted, \e[1;92mexcept the last ${keepNumber}\e[22;93m. Proceed (Y/N)?\e[0m "
+        while read confirm; do
+	        if [[ "${confirm}" = "Y" ]]; then
+                echo ''; break
+            elif [[ "${confirm}" = "N" ]]; then
+                echo '' && return
+            else
+                printf "\n\e[0;33m Please enter Y (yes) or N (no): \e[0m"
+            fi
+        done
+        for folder in "${foldersArray[@]}"; do
+			cd "${initialPosition}"
+			if [[ -d "${folder}" ]]; then
+				printf "  \e[0;92m${folder}\e[0m\n"
+				cd "${folder}"
+                listOfConfigurations=()
+                if compgen -G "conf.+([0-9])" >/dev/null; then
+                    listOfConfigurations=( conf.+([0-9]) )
+                else
+                    continue
+                fi
+                readarray -d $'\0' -t listOfConfigurations < <(printf '%s\0' "${listOfConfigurations[@]}" | sort -zVr)
+                counter=0
+                for file in "${listOfConfigurations[@]}"; do
+                    (( counter++ ))
+                    if [[ ${counter} -le ${keepNumber} ]]; then
+                        continue
+                    fi
+					trNumber=${file##*.*(0)} #Remove leading zeros as well if any
+				    if [[ ${trNumber} =~ ^[1-9][0-9]*$ ]]; then
+                        if(( trNumber % allowedGap != 0 )); then
+						    rm -f "${file}" "${file/conf/prng}" "${file/conf/data}"
+					    fi
+                    fi
+				done
+            else
+                printf "  \e[93mFolder \e[91m${folder}\e[93m not found, skipping it!\e[0m\n"
+            fi
         done
         echo ''
-        local BETA_ARRAY=( $@ )
-        [ ${#BETA_ARRAY[@]} -eq 0 ] && BETA_ARRAY=( $(ls -d b{5,6}*/ 2>/dev/null) )
-        for BETA in ${BETA_ARRAY[@]}; do
-			if [ -d $BETA ]; then
-				printf "  \e[0;32m$BETA\e[0m\n"
-				cd $BETA
-                local LAST_CONF_NOT_TO_DELETE=($(ls conf.* | grep -o "conf.[[:digit:]]\+$" | sort -V | tail -n$REMAINING_NR))
-                (
-				    #Start a subshell in order to source "locally"
-                    source ${HOME}/Script/UtilityFunctions.sh
-				    for FILE in conf.????? conf.?????? conf.???????; do
-					    #echo "checking $FILE..."
-					    if ! ElementInArray $FILE ${LAST_CONF_NOT_TO_DELETE[@]}
-					    then
-					        local NUM=$(grep -o "[[:digit:]]*" <<< $FILE)
-					        if [ ${NUM:+x} ]; then
-						        [ $(awk -v freq="$FREQUENCY" '{print $1%freq}' <<< $NUM) -ne 0 ] && rm -f $FILE ${FILE/conf/prng}
-						        [ $(awk -v freq="$FREQUENCY" '{print $1%freq}' <<< $NUM) -ne 0 ] && rm -f $FILE ${FILE/conf/data}
-					        fi
-					    fi
-				    done
-                )
-				cd ..
-            else
-                printf "  \e[1;31m$BETA\e[22m folder not found, skipping it!\e[0m\n"
-            fi
-        done && unset -v 'BETA'
-        echo ''
+        cd "${initialPosition}"
     }
 
     DEFINED_FUNCTIONS+=( 'ListOfTrashFolders' )
