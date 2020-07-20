@@ -761,15 +761,34 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
 
     DEFINED_FUNCTIONS+=( 'CalculateGapsInTrajectoriesBetweenStoredConfigurations' )
     function CalculateGapsInTrajectoriesBetweenStoredConfigurations(){
-        local BETA_ARRAY=( $@ )
-        for INDEX in ${!BETA_ARRAY[@]}; do [ ! -d ${BETA_ARRAY[$INDEX]} ] && unset -v "BETA_ARRAY[$INDEX]"; done && unset -v 'INDEX'
-        local LONGEST_BETA_STRING=$(tr ' ' '\n' <<< "${BETA_ARRAY[@]}" | awk '{print length}' | sort -n | tail -n1)
-        printf "\n"; printf "%0.s " $(seq 1 $LONGEST_BETA_STRING); printf "      \e[1;38;5;129mGap [nr. of times]\n"
-        for BETA in ${BETA_ARRAY[@]}; do
-            printf "\n  \e[38;5;129m\e[1m%${LONGEST_BETA_STRING}s\e[0m\e[38;5;199m" "$BETA"
-            ls $BETA | grep "^conf.[[:digit:]]\+$" | grep -o "[[:digit:]]\+" | sort -n | \
-                awk 'BEGIN{printf "    "}NR==1{tr=$1}NR>1{countGaps[$1-tr]++; tr=$1}END{for(i in countGaps){printf "%d [%d]   ", i, countGaps[i]}; printf"\n"}'
-        done && unset -v 'BETA'
+        if ! shopt -q extglob; then
+            printf "\n\e[91m Extended glob needed to run \"${FUNCNAME}\". Please activate it via \"shopt -s extglob\".\e[0m\n\n" 1>&2
+            return
+        fi
+        local foldersArray longestName index folder
+        foldersArray=( "${@%/}" )
+        longestName=''
+        for index in "${!foldersArray[@]}"; do
+            if [[ ! -d "${foldersArray[index]}" ]]; then
+                printf "  \e[93mFolder \e[91m${folder}\e[93m not found, skipping it!\e[0m\n"
+                unset -v 'foldersArray[index]'
+            else
+                if [[ ${#foldersArray[index]} -gt ${#longestName} ]]; then
+                    longestName="${foldersArray[index]}"
+                fi
+            fi
+        done
+        printf "\n ${longestName//?/ }     \e[1;92mGap [nr. of times]\n"
+        for folder in "${foldersArray[@]}"; do
+            printf "\n  \e[94m\e[1m%${#longestName}s\e[0m\e[96m" "${folder}"
+            printf "%s\n" $(basename -a $(compgen -G "${folder}/conf.+([0-9])" | sort -V) 2>/dev/null)|\
+                grep -o "[[:digit:]]\+$" |\
+                awk\
+                    'BEGIN{printf "    "}
+                     NR==1{tr=$1}
+                     NR>1{countGaps[$1-tr]++; tr=$1}
+                     END{for(i in countGaps){printf "%d [%d]   ", i, countGaps[i]; gaps++}; if(gaps==0){printf "No gaps"}; printf"\n"}'
+        done
         printf '\n\e[0m'
     }
 
@@ -779,12 +798,13 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
             printf "\n\e[91m Extended glob needed to run \"${FUNCNAME}\". Please activate it via \"shopt -s extglob\".\e[0m\n\n" 1>&2
             return
         fi
-        local keepNumber allowedGap foldersArray folder confirm file counter initialPosition listOfConfigurations trNumber
+        local keepNumber allowedGap foldersArray folder confirm file counter\
+              longestName initialPosition listOfConfigurations trNumber
 		keepNumber='10'
         initialPosition="$(pwd)"
         if [[ ! $1 =~ ^[1-9][0-9]*$ ]]; then
 	        printf "\n\e[91m Invalid checkpoints gap or not given as first parameter! Usage:\e[0m\n\n" 1>&2
-			printf "\e[93m ${FUNCNAME} <value of which not-multiples will be deleted> <number of last checkpoints to keep> <beta directories ... >\e[0m\n\n" 1>&2
+			printf "\e[93m ${FUNCNAME}\n    <value of which not-multiples will be deleted>\n    <number of last checkpoints to keep>\n    <beta directories ... >\e[0m\n\n" 1>&2
 	        return
         else
             allowedGap="$1"; shift
@@ -795,58 +815,81 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
             fi
             keepNumber="$1"; shift
 		fi
-        foldersArray=( "$@" )
+        foldersArray=( "${@%/}" )
         if [[ ${#foldersArray[@]} -eq 0 ]]; then
             if compgen -G "b*/" >/dev/null; then
                 foldersArray=( b*/ ) #Here we assume beta to have a prefix like "b"
+                foldersArray=( "${foldersArray[@]%/}" )
             fi
         fi
-        if [[ ${#foldersArray[@]} -ne 0 ]]; then
-            printf "\n\e[93m The following folders will be considered:\e[0m\n" 1>&2
-            printf "\e[96m%s\e[0m\n" "${foldersArray[@]}" | columns -I '    ' --by-column
-        else
+        printf "\n\e[1;92m Actual position: \e[22;96m${initialPosition}\n\e[0m"
+        if [[ ${#foldersArray[@]} -eq 0 ]]; then
             printf "\n\e[93m No folder to be considered!\e[0m\n\n" 1>&2
             return
         fi
-        printf "\n\e[36m Actual position: \e[1m${initialPosition}\n\e[22m"
-        printf "\e[93m All conf.XXXXX, prng.XXXXX and data.XXXXX with XXXXX \e[1;91mnot multiple of $allowedGap\e[22;93m will be deleted, \e[1;92mexcept the last ${keepNumber}\e[22;93m. Proceed (Y/N)?\e[0m "
+        longestName=''
+        for index in "${!foldersArray[@]}"; do
+            if [[ ! -d "${foldersArray[index]}" ]]; then
+                printf "  \e[93mFolder \e[91m${folder}\e[93m not found, skipping it!\e[0m\n"
+                unset -v 'foldersArray[index]'
+            else
+                if [[ ${#foldersArray[index]} -gt ${#longestName} ]]; then
+                    longestName="${foldersArray[index]}"
+                fi
+            fi
+        done
+        printf "\n \e[1;93mPresent situation\e[22m of the considered fodlers:\n"
+        CalculateGapsInTrajectoriesBetweenStoredConfigurations "${foldersArray[@]}"
+        printf " \e[1;93mHow the gaps would look like afterwards\e[22m:\n"
+        printf "\n ${longestName//?/ }     \e[1;91mGap [nr. of times]\n"
+        for folder in "${foldersArray[@]}"; do
+            printf "\n  \e[94m\e[1m%${#longestName}s\e[0m\e[93m" "${folder}"
+            #Assume no space in configuration names -> reasonable
+            #Let word splitting split configuration names and remove "conf." and leading zeros
+            #ATTENTION: reverse ordering is needed to skip first n checkpoints in awk
+            printf "%s\n" $(basename -a $(compgen -G "${folder}/conf.+([0-9])" | sort -Vr) 2>/dev/null)|\
+                grep -o "[[:digit:]]\+$" |\
+                awk -v gap="${allowedGap}" -v skip="${keepNumber}"\
+                    'BEGIN{printf "    "}
+                     NR==1{tr=$1; next}
+                     NR<=skip{countGaps[tr-$1]++; tr=$1; next}
+                     NR>skip{if($1%gap==0){countGaps[tr-$1]++; tr=$1}}
+                     END{for(i in countGaps){printf "%d [%d]   ", i, countGaps[i]; gaps++}; if(gaps==0){printf "No gaps"}; printf"\n"}'
+        done
+        printf "\n\n\e[96m All {conf,prng,data}.XXXXX with XXXXX \e[1;91mnot multiple of $allowedGap\e[22;96m will be deleted, \e[1;92mexcept the last ${keepNumber}\e[22;96m.\n\n"
+        printf " \e[93mDo you want to proceed (Y/N)?\e[0m "
         while read confirm; do
 	        if [[ "${confirm}" = "Y" ]]; then
                 echo ''; break
             elif [[ "${confirm}" = "N" ]]; then
                 echo '' && return
             else
-                printf "\n\e[0;33m Please enter Y (yes) or N (no): \e[0m"
+                printf "\e[0;93m Please enter Y (yes) or N (no): \e[0m"
             fi
         done
         for folder in "${foldersArray[@]}"; do
-			cd "${initialPosition}"
-			if [[ -d "${folder}" ]]; then
-				printf "  \e[0;92m${folder}\e[0m\n"
-				cd "${folder}"
-                listOfConfigurations=()
-                if compgen -G "conf.+([0-9])" >/dev/null; then
-                    listOfConfigurations=( conf.+([0-9]) )
-                else
+            #Here folders exist, just cd into them
+            cd "${initialPosition}/${folder}"
+            printf "  \e[0;92m${folder}\e[0m\n"
+            #Assume no space in configuration names -> reasonable
+            #ATTENTION: reverse ordering is here CRUCIAL to later keep first n checkpoints!!!
+            listOfConfigurations=( $(compgen -G "conf.+([0-9])" | sort -Vr) )
+            if [[ ${#listOfConfigurations[@]} -eq 0 ]]; then
+                continue
+            fi
+            counter=0
+            for file in "${listOfConfigurations[@]}"; do
+                (( counter++ ))
+                if [[ ${counter} -le ${keepNumber} ]]; then
                     continue
                 fi
-                readarray -d $'\0' -t listOfConfigurations < <(printf '%s\0' "${listOfConfigurations[@]}" | sort -zVr)
-                counter=0
-                for file in "${listOfConfigurations[@]}"; do
-                    (( counter++ ))
-                    if [[ ${counter} -le ${keepNumber} ]]; then
-                        continue
+                trNumber=${file##*.*(0)} #Remove leading zeros as well if any
+                if [[ ${trNumber} =~ ^[1-9][0-9]*$ ]]; then
+                    if(( trNumber % allowedGap != 0 )); then
+                        rm -f "${file}" "${file/conf/prng}" "${file/conf/data}"
                     fi
-					trNumber=${file##*.*(0)} #Remove leading zeros as well if any
-				    if [[ ${trNumber} =~ ^[1-9][0-9]*$ ]]; then
-                        if(( trNumber % allowedGap != 0 )); then
-						    rm -f "${file}" "${file/conf/prng}" "${file/conf/data}"
-					    fi
-                    fi
-				done
-            else
-                printf "  \e[93mFolder \e[91m${folder}\e[93m not found, skipping it!\e[0m\n"
-            fi
+                fi
+            done
         done
         echo ''
         cd "${initialPosition}"
