@@ -839,30 +839,32 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
             fi
         done
         printf "\n \e[1;96mPresent situation\e[0m and \e[1;93moverview after deletion\e[0m of the considered folders:\n"
-        printf "\n ${longestName//?/ }     \e[1;92mGap [nr. of times]\n"
+        printf "\n ${longestName//?/ }     \e[1;92mGap [nr. of times]\n\n"
         for folder in "${foldersArray[@]}"; do
             #Assume no space in configuration names -> reasonable
             #Let word splitting split configuration names and remove "conf." and leading zeros
-            printf "\n  \e[94m\e[1m%${#longestName}s\e[0m\e[96m" "${folder}"
-            printf "%s\n" $(basename -a $(compgen -G "${folder}/conf.+([0-9])" | sort -V) 2>/dev/null)|\
-                grep -o "[[:digit:]]\+$" |\
-                awk\
-                    'BEGIN{printf "    "}
-                     NR==1{tr=$1; next}
-                     {countGaps[$1-tr]++; tr=$1}
-                     END{for(i in countGaps){printf "%5d %5s   ", i, "["countGaps[i]"]"; gaps++}; if(gaps==0){printf "No gaps"}; printf"\n"}'
             #ATTENTION: Here reverse ordering is needed to skip first n checkpoints in awk
-            printf "  \e[94m\e[1m%${#longestName}s\e[0m\e[93m" ''
             printf "%s\n" $(basename -a $(compgen -G "${folder}/conf.+([0-9])" | sort -Vr) 2>/dev/null)|\
                 grep -o "[[:digit:]]\+$" |\
-                awk -v gap="${allowedGap}" -v skip="${keepNumber}"\
-                    'BEGIN{printf "    "}
-                     NR==1{tr=$1; next}
-                     NR<=skip{countGaps[tr-$1]++; tr=$1; next}
-                     NR>skip{if($1%gap==0){countGaps[tr-$1]++; tr=$1}}
-                     END{for(i in countGaps){printf "%5d %5s   ", i, "["countGaps[i]"]"; gaps++}; if(gaps==0){printf "No gaps"}; printf"\n"}'
+                awk -v gap="${allowedGap}" -v skip="${keepNumber}" -v labelWidth="${#longestName}" -v dir="${folder}"\
+                    'NR==1{trOld=$1; trNew=$1; next}
+                     {countOldGaps[trOld-$1]++; trOld=$1}
+                     NR<=skip{countNewGaps[trNew-$1]++; trNew=$1}
+                     NR>skip{if($1%gap==0){countNewGaps[trNew-$1]++; trNew=$1}}
+                     END{
+                       folderWillChange=0
+                       for(i in countOldGaps){if( !(i in countNewGaps) || countOldGaps[i] != countNewGaps[i] ){folderWillChange=1; break}}
+                       if(folderWillChange==0){
+                         for(i in countNewGaps){if( !(i in countOldGaps) || countOldGaps[i] != countNewGaps[i]){folderWillChange=1; break}}
+                       }
+                       if(folderWillChange==1){printf "\033[1;91m"}else{printf "\033[1;94m"}
+                       printf "  %"labelWidth"s\033[0m    \033[96m", dir
+                       for(i in countOldGaps){printf "%5d %5s   ", i, "["countOldGaps[i]"]"; gapsOld++}; if(gapsOld==0){printf "No gaps"}; printf"\033[0m\n"
+                       printf "  %"labelWidth"s    \033[93m", ""
+                       for(i in countNewGaps){printf "%5d %5s   ", i, "["countNewGaps[i]"]"; gapsNew++}; if(gapsNew==0){printf "No gaps"}; printf"\033[0m\n\n"
+                     }'
         done
-        printf "\n\e[96m All {conf,prng,data}.XXXXX with XXXXX \e[1;91mnot multiple of $allowedGap\e[22;96m will be deleted, \e[1;92mexcept the last ${keepNumber}\e[22;96m.\n"
+        printf "\e[96m All {conf,prng,data}.XXXXX with XXXXX \e[1;91mnot multiple of $allowedGap\e[22;96m will be deleted, \e[1;92mexcept the last ${keepNumber}\e[22;96m.\n"
         printf " \e[93mDo you want to proceed (Y/N)?\e[0m "
         while read confirm; do
 	        if [[ "${confirm}" = "Y" ]]; then
