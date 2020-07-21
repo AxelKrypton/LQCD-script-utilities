@@ -799,7 +799,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
             return
         fi
         local keepNumber allowedGap foldersArray folder confirm file counter\
-              longestName initialPosition listOfConfigurations trNumber
+              longestName initialPosition listOfConfigurations trNumber deleted
 		keepNumber='10'
         initialPosition="$(pwd)"
         if [[ ! $1 =~ ^[1-9][0-9]*$ ]]; then
@@ -868,13 +868,14 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         printf "\e[93m Content of \e[91mred folders\e[93m above would change after deletion. Do you want to proceed (Y/N)?\e[0m "
         while read confirm; do
 	        if [[ "${confirm}" = "Y" ]]; then
-                echo ''; break
+                break
             elif [[ "${confirm}" = "N" ]]; then
-                echo '' && return
+                return
             else
                 printf "\e[0;93m Please enter Y (yes) or N (no): \e[0m"
             fi
         done
+        printf '\n'
         for folder in "${foldersArray[@]}"; do
             #Here folders exist, just cd into them
             cd "${initialPosition}/${folder}"
@@ -883,9 +884,11 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
             #ATTENTION: reverse ordering is here CRUCIAL to later keep first n checkpoints!!!
             listOfConfigurations=( $(compgen -G "conf.+([0-9])" | sort -Vr) )
             if [[ ${#listOfConfigurations[@]} -eq 0 ]]; then
+                printf " \e[93mno configurations found!\e[0m\n"
                 continue
             fi
             counter=0
+            deleted=0
             for file in "${listOfConfigurations[@]}"; do
                 (( counter++ ))
                 if [[ ${counter} -le ${keepNumber} ]]; then
@@ -895,12 +898,13 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
                 if [[ ${trNumber} =~ ^[1-9][0-9]*$ ]]; then
                     if(( trNumber % allowedGap != 0 )); then
                         rm -f "${file}" "${file/conf/prng}" "${file/conf/data}"
+                        (( deleted++ ))
                     fi
                 fi
             done
-            printf " \e[96mdone!\e[0m\n"
+            printf " \e[96mdone (deleted \e[1m${deleted}\e[22m checkpoints)!\e[0m\n"
         done
-        echo ''
+        printf '\n'
         cd "${initialPosition}"
     }
 
