@@ -838,15 +838,21 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
                 fi
             fi
         done
-        printf "\n \e[1;93mPresent situation\e[22m of the considered fodlers:\n"
-        CalculateGapsInTrajectoriesBetweenStoredConfigurations "${foldersArray[@]}"
-        printf " \e[1;93mHow the gaps would look like afterwards\e[22m:\n"
-        printf "\n ${longestName//?/ }     \e[1;91mGap [nr. of times]\n"
+        printf "\n \e[1;96mPresent situation\e[0m and \e[1;93moverview after deletion\e[0m of the considered folders:\n"
+        printf "\n ${longestName//?/ }     \e[1;92mGap [nr. of times]\n"
         for folder in "${foldersArray[@]}"; do
-            printf "\n  \e[94m\e[1m%${#longestName}s\e[0m\e[93m" "${folder}"
             #Assume no space in configuration names -> reasonable
             #Let word splitting split configuration names and remove "conf." and leading zeros
-            #ATTENTION: reverse ordering is needed to skip first n checkpoints in awk
+            printf "\n  \e[94m\e[1m%${#longestName}s\e[0m\e[96m" "${folder}"
+            printf "%s\n" $(basename -a $(compgen -G "${folder}/conf.+([0-9])" | sort -V) 2>/dev/null)|\
+                grep -o "[[:digit:]]\+$" |\
+                awk\
+                    'BEGIN{printf "    "}
+                     NR==1{tr=$1; next}
+                     {countGaps[$1-tr]++; tr=$1}
+                     END{for(i in countGaps){printf "%5d %5s   ", i, "["countGaps[i]"]"; gaps++}; if(gaps==0){printf "No gaps"}; printf"\n"}'
+            #ATTENTION: Here reverse ordering is needed to skip first n checkpoints in awk
+            printf "  \e[94m\e[1m%${#longestName}s\e[0m\e[93m" ''
             printf "%s\n" $(basename -a $(compgen -G "${folder}/conf.+([0-9])" | sort -Vr) 2>/dev/null)|\
                 grep -o "[[:digit:]]\+$" |\
                 awk -v gap="${allowedGap}" -v skip="${keepNumber}"\
@@ -854,9 +860,9 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
                      NR==1{tr=$1; next}
                      NR<=skip{countGaps[tr-$1]++; tr=$1; next}
                      NR>skip{if($1%gap==0){countGaps[tr-$1]++; tr=$1}}
-                     END{for(i in countGaps){printf "%d [%d]   ", i, countGaps[i]; gaps++}; if(gaps==0){printf "No gaps"}; printf"\n"}'
+                     END{for(i in countGaps){printf "%5d %5s   ", i, "["countGaps[i]"]"; gaps++}; if(gaps==0){printf "No gaps"}; printf"\n"}'
         done
-        printf "\n\n\e[96m All {conf,prng,data}.XXXXX with XXXXX \e[1;91mnot multiple of $allowedGap\e[22;96m will be deleted, \e[1;92mexcept the last ${keepNumber}\e[22;96m.\n\n"
+        printf "\n\e[96m All {conf,prng,data}.XXXXX with XXXXX \e[1;91mnot multiple of $allowedGap\e[22;96m will be deleted, \e[1;92mexcept the last ${keepNumber}\e[22;96m.\n"
         printf " \e[93mDo you want to proceed (Y/N)?\e[0m "
         while read confirm; do
 	        if [[ "${confirm}" = "Y" ]]; then
@@ -870,7 +876,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         for folder in "${foldersArray[@]}"; do
             #Here folders exist, just cd into them
             cd "${initialPosition}/${folder}"
-            printf "  \e[0;92m${folder}\e[0m\n"
+            printf "  \e[96mCleaning folder \e[92m${folder}\e[96m...\e[0m"
             #Assume no space in configuration names -> reasonable
             #ATTENTION: reverse ordering is here CRUCIAL to later keep first n checkpoints!!!
             listOfConfigurations=( $(compgen -G "conf.+([0-9])" | sort -Vr) )
@@ -890,6 +896,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
                     fi
                 fi
             done
+            printf " \e[96mdone!\e[0m\n"
         done
         echo ''
         cd "${initialPosition}"
