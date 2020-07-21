@@ -865,7 +865,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
                      }'
         done
         printf "\e[96m All {conf,prng,data}.XXXXX with XXXXX \e[1;91mnot multiple of $allowedGap\e[22;96m will be deleted, \e[1;92mexcept the last ${keepNumber}\e[22;96m.\n"
-        printf " \e[93mDo you want to proceed (Y/N)?\e[0m "
+        printf "\e[93m Content of \e[91mred folders\e[93m above would change after deletion. Do you want to proceed (Y/N)?\e[0m "
         while read confirm; do
 	        if [[ "${confirm}" = "Y" ]]; then
                 echo ''; break
