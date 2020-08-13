@@ -270,7 +270,7 @@ EOF
     else
         rsync -"${rsyncOptions}" --perms --files-from="${checkpointsListFilename}" "${remoteName}:${remotePrefix[$(whoami)_${remoteName}]}" .
     fi
-    printf "\e[38;5;39m ...done in \e[38;5;48m$(SecondsToTimeString $(( $(date +%s) - ${startTime} )) )\e[38;5;39m!\n\e[0m"
+    printf "\e[38;5;39m ...done in \e[38;5;48m$(SecondsToTimeString $(( $(date +%s) - ${startTime} )) )\e[38;5;39m!\n\n\e[0m"
 
     #-------------------------------------------------------------------------------------------------------#
     if [[ ${removeOlderFiles} = 'TRUE' ]]; then
@@ -292,8 +292,9 @@ EOF
         else
             readarray -t listOfFoldersToBeCleaned < "${checkpointsListFilename}"
             listOfFoldersToBeCleaned=( "${listOfFoldersToBeCleaned[@]%/*}" )
+            readarray -d $'\0' -t listOfFoldersToBeCleaned < <(printf '%s\0' "${listOfFoldersToBeCleaned[@]}" | sort -z | uniq -z)
         fi
-        printf "\e[38;5;39m Checkpoints to be checked and cleaned in ${#listOfFoldersToBeCleaned[@]} folders...\e[0m\n\n"
+        printf "\e[38;5;39m Checkpoints to be checked and cleaned in ${#listOfFoldersToBeCleaned[@]} folders...\e[0m\n"
         for folder in "${listOfFoldersToBeCleaned[@]}"; do
             cd "${expectedPosition}" # To come back to the correct position in case of 'continue'
             if [[ $(basename "${folder}") =~ ^$(basename "${configurationListsFolderGlobalPath}") ]]; then
