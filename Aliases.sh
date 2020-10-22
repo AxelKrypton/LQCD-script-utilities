@@ -16,7 +16,7 @@ function __static__PrintHelp(){
     printf '    --unsetMyVariables    ->    Unset the variables the user has allocated him/herself\n'
     printf '\n'
     printf "\e[93m"
-    printf "  Use the \e[1;4;96mAliasesHelper\e[21;24;93m function to get help about the loaded aliases. You can\n"
+    printf "  Use the \e[1;4;96mAliasesHelper\e[22;24;93m function to get help about the loaded aliases. You can\n"
     printf "  run it as such or you can specify one or more functions to get help about them only.\n"
     printf '\n'
     printf "\e[96m"
@@ -175,7 +175,7 @@ function AliasesHelper(){
             while read selectedIndices; do #Here selectedIndices is a variable
                 [ "${selectedIndices}" = '' ] && printf "\e[u\e[1A" && continue
                 if [[ ! ${selectedIndices} =~ ^[0-9]+([,\-][0-9]+)*$ ]]; then
-                    printf "\n\e[1;91m Invalid input!\e[21;96m Please, insert the function numbers: \e[0m\e[s"; continue
+                    printf "\n\e[1;91m Invalid input!\e[22;96m Please, insert the function numbers: \e[0m\e[s"; continue
                 fi
                 #Here selectedIndices becomes an array!
                 selectedIndices=( $(awk 'BEGIN{RS=","}/\-/{split($0, res, "-"); if(res[1]<=res[2]){for(i=res[1]; i<=res[2]; i++){printf "%d\n", i}}else{for(i=res[1]; i>=res[2]; i--){printf "%d\n", i}}; next}{printf "%d\n", $0}' <<< "${selectedIndices}") )
@@ -187,7 +187,7 @@ function AliasesHelper(){
             done
             echo ''
             for index in ${selectedIndices[@]}; do
-                printf " \e[1;93m%${longestLabel}s\e[24m:\e[21;36m " "${availableFunctions[$index]}"
+                printf " \e[1;93m%${longestLabel}s\e[24m:\e[22;36m " "${availableFunctions[$index]}"
                 if ElementInArray ${availableFunctions[$index]} ${!functionsHelp[@]}; then
                     echo ${functionsHelp["${availableFunctions[$index]}"]} | fold -s -w $((COLUMNS*7/10)) | awk -v nSpc=${longestLabel} 'BEGIN{spaces=sprintf("%*s", nSpc, "")} NR==1{print $0} NR>1{print spaces "   " $0}' # https://stackoverflow.com/a/25408074
                 else
@@ -202,7 +202,7 @@ function AliasesHelper(){
             done
             echo ''
             for func in $@; do
-                printf " \e[1;93m%${longestLabel}s\e[24m:\e[21;36m " "${func}"
+                printf " \e[1;93m%${longestLabel}s\e[24m:\e[22;36m " "${func}"
                 if ElementInArray ${func} ${!functionsHelp[@]}; then
                     echo ${functionsHelp["${func}"]} | fold -s -w $((COLUMNS*5/10)) | awk -v nSpc=${longestLabel} 'BEGIN{spaces=sprintf("%*s", nSpc, "")} NR==1{print $0} NR>1{print spaces "   " $0}' # https://stackoverflow.com/a/25408074
                 else
