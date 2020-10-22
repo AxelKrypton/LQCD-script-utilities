@@ -662,7 +662,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
 
     DEFINED_FUNCTIONS+=( 'Acceptance' )
     function Acceptance(){
-        awk '{ sum+=\$9} END {printf \"Accepted %d over %d (%lf%%)\n\", sum, NR, 100*sum/(NR)}' "$1"
+        awk '{ sum+=$9} END {printf "Accepted %d over %d (%lf%%)\n", sum, NR, 100*sum/(NR)}' "$1"
     }
 
     DEFINED_FUNCTIONS+=( 'LastAcceptance' )
