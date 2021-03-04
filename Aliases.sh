@@ -219,6 +219,16 @@ function AliasesHelper(){
 #============================================================================================================================#
 #============================================================================================================================#
 
+# We want to make sure that the sourcing process of this script stops
+# immediately when it is not sourced in an interactive shell and this
+# is meant to aboid that sourcing this script in a shell login file
+# breaks e.g. operations over ssh like scp or rsync. This happens for
+# example because of usage of extended glob which is by default on in
+# an interactive shell, but it is not in non-interactive ones.
+if [[ $- != *i* ]]; then
+    return
+fi
+
 #Variable for setup which alias to source
 LOAD_GO_ALIASES="FALSE"
 LOAD_PYTHON_ALIASES="FALSE"
