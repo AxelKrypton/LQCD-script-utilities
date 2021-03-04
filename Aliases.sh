@@ -609,18 +609,23 @@ if [ $LOAD_GO_ALIASES = "TRUE" ]; then
         for parameter in "${givenParameters[@]}"; do
             availableFolders=( $(printf "%s\n" "${availableFolders[@]}" | grep "/${parameter}") )
         done
-        if [[ ${#availableFolders[@]} -eq 0 ]]; then
-            printf "\e[93m\n No folder matching the specified parameters found!\n\n\e[0m"
-            cd "${OLDPWD}"
-        else
-            PS3=$(printf "\n\e[96mWhich folder do you want to change to? \e[0m")
-            select destination in "${availableFolders[@]}"; do
-                if [[ -d "${destination}" ]]; then
-                    break
-                fi
-            done
-            printf '\n'; cd "${destination}"; OLDPWD="${initialPosition}"
-        fi
+        case ${#availableFolders[@]} in
+            0)
+                printf "\e[93m\n No folder matching the specified parameters found!\n\n\e[0m"
+                cd "${OLDPWD}"
+                ;;
+            1)
+                destination="${availableFolders[0]}"
+                ;;
+            *)
+                PS3=$(printf "\n\e[96mWhich folder do you want to change to? \e[0m")
+                select destination in "${availableFolders[@]}"; do
+                    if [[ -d "${destination}" ]]; then
+                        break
+                    fi
+                done
+        esac
+        printf '\n'; cd "${destination}"; OLDPWD="${initialPosition}"
     }
 
 fi
