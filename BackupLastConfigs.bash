@@ -126,6 +126,7 @@ else
     if [[ ${STAGGERED} = 'TRUE' ]]; then
         expectedPosition="${staggeredConfigurationPathPrefix}/Checkpoints"
         #Each user can put here the remote prefix if she/he does not want to give it via command line
+        remotePrefix["sciarra_hlr"]="/scratch/latticeqcd/sciarra/Staggered"
         remotePrefix["sciarra_lcsc"]="/lustre/lcsc/asciarra/StaggeredProject"
         remotePrefix["kaiser_lcsc"]="/lustre/lcsc/rekaiser/StaggeredProject"
     elif [[ ${WILSON} = 'TRUE' ]]; then
