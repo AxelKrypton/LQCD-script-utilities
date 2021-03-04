@@ -63,12 +63,13 @@ function AliasesHelper(){
         ["GetSelectingBestFitProcedure"]="Return command to smartly invoke the script to select the best fits out of the bunch created via the filtering procedure."
         ["PLASMA"]="Alias to run PLASMA."
         ["GetSynchronizationCommand"]="Return standard invocation of PLASMA in synchronisation mode. Remote host name has to be passed as option."
-        ["GetAnalysisPbpCommand"]="Return standard invokation of PLASMA to analyse the chiral condensate."
+        ["GetAnalysisPbpCommand"]="Return standard invokation of PLASMA to analyse the chiral condensate. The number of inversions can be optionally specified (default: 16)."
         ["GetAnalysisPolyImWithZeroMeanCommand"]="Return standard invokation of PLASMA to analyse the Polyakov loop with zero mean."
         ["GetAnalysisPolySqCommand"]="Return standard invokation of PLASMA to analyse the square norm of the Polyakov loop."
         ["GetReweightingPbpCommand"]="Return standard invokation of PLASMA to reweight the chiral condensate. It either needs betaMin, betaMax and the resolution in beta or just the latter (in this case betaMin and betaMax are the first and the last line of the file \"betas\")"
         ["GetReweightingPolyImWithZeroMeanCommand"]="Return standard invokation of PLASMA to reweight the Polyakov loop with zero mean. It either needs betaMin, betaMax and the resolution in beta or just the latter (in this case betaMin and betaMax are the first and the last line of the file \"betas\")"
         ["GetReweightingPolySqSkewCommand"]="Return standard invokation of PLASMA to reweight the square norm of the Polyakov loop. It either needs betaMin, betaMax and the resolution in beta or just the latter (in this case betaMin and betaMax are the first and the last line of the file \"betas\")"
+        ["MakeReweightingOverlapHistogram"]="Return commands to reweight and produce the overlap histogram. The first argument must be the observable name ('pbp' or 'polySq'). Then, it either needs betaMin, betaMax and the resolution in beta or just the latter (in this case betaMin and betaMax are the first and the last line of the file \"betas\")"
         ["GetFindBetaCPbpCommand"]="Return standard invokation of PLASMA to extract the critical beta from the chiral condensate."
         ["GetFindBetaCPolySqCommand"]="Return standard invokation of PLASMA to extract the critical beta from the square norm of the Polyakov loop."
         ["GetPlotScalingPolySqCommand"]="Return standard invokation of PLASMA to create the scaling plots of the square norm of the Polyakov loop. It needs the ns values as arguments."
@@ -80,7 +81,7 @@ function AliasesHelper(){
         ["PickUpFolder"]="Given an optional prefix, all folders (matching the given prefix) are listed. The user has to select one to cd into. If the prefix terminates with \"/\" then it is intended as a full folder name (still pattern matching is performed)."
         ['goStaggered']="Move to staggered folder"
         ['goWilson']="Move to Wilson folder"
-        ["go"]="Interactive function to move to data folder. It goes either to staggered or to Wilson folders and explores the tree asking to which folder to cd. Parameters different from \"s\" or \"S\" and \"w\" or \"W\" (which can be used to choose between staggered and Wilson, respectively) are interpred as prefix of folder names. If they identify unanbiguous folders at a given step, then such a folder is chosen at that step and such a prefix is not used any more."
+        ["go"]="Interactive function to move to data folder. It goes either to staggered or to Wilson folders and explores the tree asking to which folder to cd. Only folders containing Nf, mui, mass/k, nt, ns physical parameters are considered.  Parameters different from \"s\" or \"S\" and \"w\" or \"W\" (which can be used to choose between staggered and Wilson, respectively) are interpred as prefix of folder names and the existing found folders are filtered using these as input."
         ["cdw"]="Move into the work directory (scratch on clusters, phil-configs locally) -> $(alias cdw)."
         ["JobInfo"]="Invoke \"${HOME}/Script/MonitorSlurmJobs.sh\" script (DEPRECATED, use BaHaMAS if possible)."
         ["Acceptance"]="Calculate the average of the 9th field of a given file (meant to be a Monte Carlo acceptance)."
@@ -111,7 +112,7 @@ function AliasesHelper(){
     groupedFunctions=(
         ['GENERAL']='AliasesHelper'
         ['FIT_ALIASES']='BinderFit BruteForceFit FilterFitResults SetUpForBruteForceFit SelectBestFits ChooseReweightingFolders QuantitativeCollapse PlotBestFits GetFilteringProcedure GetSelectingBestFitProcedure'
-        ['PYTHON_ALIASES']='PLASMA GetSynchronizationCommand GetAnalysisPbpCommand GetAnalysisPolyImWithZeroMeanCommand GetAnalysisPolySqCommand GetReweightingPbpCommand GetReweightingPolyImWithZeroMeanCommand GetReweightingPolySqSkewCommand GetFindBetaCPbpCommand GetFindBetaCPolySqCommand GetPlotScalingPolySqCommand GetPlotScalingPbpCommand GetPlotScalingPolyImWithZeroMeanCommand HasFileDifferentNumberOfEntriesPerLine CheckNumberOfEntriesPerLine RemoveLinesWithNumberOfColumnsDifferentFrom'
+        ['PYTHON_ALIASES']='PLASMA GetSynchronizationCommand GetAnalysisPbpCommand GetAnalysisPolyImWithZeroMeanCommand GetAnalysisPolySqCommand GetReweightingPbpCommand GetReweightingPolyImWithZeroMeanCommand GetReweightingPolySqSkewCommand MakeReweightingOverlapHistogram GetFindBetaCPbpCommand GetFindBetaCPolySqCommand GetPlotScalingPolySqCommand GetPlotScalingPbpCommand GetPlotScalingPolyImWithZeroMeanCommand HasFileDifferentNumberOfEntriesPerLine CheckNumberOfEntriesPerLine RemoveLinesWithNumberOfColumnsDifferentFrom'
         ['GO_ALIASES']='PickUpFolder goStaggered goWilson go'
         ['JOB_ALIASES']='cdw JobInfo Acceptance LastAcceptance FillInMissingLines ClusterUsage ReportOnCorrelatorFiles ReportOnScaleSettingFiles CountJobs OverviewJobs Walltime CalculateGapsInTrajectoriesBetweenStoredConfigurations DeleteCheckpointsNotEvery ListOfTrashFolders ListOfTrashFoldersWithSizes SizeOfTrashFolders CompleteFolderName GetOutputFilePath FindLastStandardOutput FindMissingTrajectories TimeTr ShowStd FindHighestDH CheckCl2qcdOutput'
         ['ROOTHIST_ALIASES']='CreateRootHistograms'
@@ -351,7 +352,13 @@ if [ $LOAD_PYTHON_ALIASES = "TRUE" ]; then
 
     DEFINED_FUNCTIONS+=( 'GetAnalysisPbpCommand' )
     function GetAnalysisPbpCommand(){
-        echo "PLASMA A --analyzeWithJackknife --deactivatePlaq --deactivatePoly --activatePbp --inversionsPerConfig 8"
+        local inversions
+        if [[ "$1" == '' ]]; then
+            inversions=16
+        else
+            inversions=$1
+        fi
+        echo "PLASMA A --analyzeWithJackknife --analyzeSingleChains --deactivatePlaq --deactivatePoly --activatePbp --inversionsPerConfig ${inversions}"
     }
 
     DEFINED_FUNCTIONS+=( 'GetAnalysisPolyImWithZeroMeanCommand' )
@@ -366,63 +373,70 @@ if [ $LOAD_PYTHON_ALIASES = "TRUE" ]; then
 
     function __static__DefineBetaMinMaxResAndCheck(){
         if [ $# -eq 1 ]; then
-            BETA_MIN=$(head -n1 betas | cut -f1)
-            BETA_MAX=$(tail -n1 betas | cut -f1)
-            RESOLUTION=$1
+            betaMin=$(awk '{if($0 !~ /^[[:space:]]*#/){print $1; exit}}' betas)
+            betaMax=$(tac betas | awk '{if($0 !~ /^[[:space:]]*#/){print $1; exit}}')
+            rewResolution=$1
         elif [ $# -eq 3 ]; then
-            BETA_MIN=$1
-            BETA_MAX=$2
-            RESOLUTION=$3
+            betaMin=$1
+            betaMax=$2
+            rewResolution=$3
         else
             printf "\n\e[91m One or three arguments needed to reweight!\e[0m\n\n" 1>&2
             return 1
         fi
-        if [[ ! $BETA_MIN =~ [0-9][.][0-9]+ ]] || [[ ! $BETA_MAX =~ [0-9][.][0-9]+ ]]; then 
+        if [[ ! ${betaMin} =~ [0-9][.][0-9]+ ]] || [[ ! ${betaMax} =~ [0-9][.][0-9]+ ]]; then 
             printf "\n\e[91m Wrong format of beta min and beta max!\e[0m\n\n" 1>&2
             return 1
         fi
-        NUM_POINTS=$(bc <<< "($BETA_MAX-$BETA_MIN)/$RESOLUTION+1")
+        rewNumOfPoints=$(bc <<< "(${betaMax}-${betaMin})/${rewResolution}+1")
         return 0
     }
 
     DEFINED_FUNCTIONS+=( 'GetReweightingPbpCommand' )
     function GetReweightingPbpCommand(){
-        local BETA_MIN BETA_MAX RESOLUTION NUM_POINTS
+        local betaMin betaMax rewResolution rewNumOfPoints
         __static__DefineBetaMinMaxResAndCheck "$@" || return
-        echo -n '[ $(ls Nf?_mui*_nt*_ns??_reweighting 2>/dev/null | wc -l) -eq 0 ]'
-        echo -n ' && [ $(ls -d -1 Nf?_mui*_nt*_ns??_reweighting_pbp/ | wc -l) -eq 0 ]'
-        echo -n " && time PLASMA r --deactivatePlaq --deactivatePoly --activatePbp --inversionsPerConfig 8 --deactivateMean --deactivateSusc --doNotUseSimulatedPointsAsNewPoints -r $BETA_MIN $BETA_MAX -p $NUM_POINTS"
-        echo -n ' && [ $(ls -d -1 Nf?_mui*_nt*_ns??_reweighting/ | wc -l) -eq 1 ]'
-        echo -n ' && FOLDER="$(ls -d -1 Nf?_mui*_nt*_ns??_reweighting/)"'
-        echo -n ' && mv ${FOLDER%?} ${FOLDER%?}_pbp'
-        echo    ' && unset -v '"'FOLDER'"
+        echo "time PLASMA r --deactivatePlaq --deactivatePoly --activatePbp --inversionsPerConfig 16 --deactivateMean --deactivateSusc --doNotUseSimulatedPointsAsNewPoints -r ${betaMin} ${betaMax} -p $rewNumOfPoints"
     }
 
     DEFINED_FUNCTIONS+=( 'GetReweightingPolyImWithZeroMeanCommand' )
     function GetReweightingPolyImWithZeroMeanCommand(){
-        local BETA_MIN BETA_MAX RESOLUTION NUM_POINTS
+        local betaMin betaMax rewResolution rewNumOfPoints
         __static__DefineBetaMinMaxResAndCheck "$@" || return
         echo -n '[ $(ls Nf?_mui*_nt*_ns??_reweighting 2>/dev/null | wc -l) -eq 0 ]'
         echo -n ' && time PLASMA r --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_sq --deactivateMean --deactivateSusc --deactivateSkew --printEstimatorsToFile'
-        echo -n " --doNotUseSimulatedPointsAsNewPoints -r $BETA_MIN $BETA_MAX -p $NUM_POINTS"
+        echo -n " --doNotUseSimulatedPointsAsNewPoints -r ${betaMin} ${betaMax} -p $rewNumOfPoints"
         echo -n ' && [ $(ls -d -1 Nf?_mui*_nt*_ns??_reweighting/ | wc -l) -eq 1 ]'
         echo -n ' && FOLDER="$(ls -d -1 Nf?_mui*_nt*_ns??_reweighting/)"'
-        echo -n ' && mv ${FOLDER%?} ${FOLDER%?}_dBeta'$RESOLUTION
+        echo -n ' && mv ${FOLDER%?} ${FOLDER%?}_dBeta'${rewResolution}
         echo    ' && unset -v '"'FOLDER'"
     }
 
     DEFINED_FUNCTIONS+=( 'GetReweightingPolySqSkewCommand' )
     function GetReweightingPolySqSkewCommand(){
-        local BETA_MIN BETA_MAX RESOLUTION NUM_POINTS
+        local betaMin betaMax rewResolution rewNumOfPoints
         __static__DefineBetaMinMaxResAndCheck "$@" || return
-        echo -n '[ $(ls Nf?_mui*_nt*_ns??_reweighting 2>/dev/null | wc -l) -eq 0 ]'
-        echo -n ' && time PLASMA r --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_im_withZeroMean --deactivateMean --deactivateSusc'
-        echo -n " --doNotUseSimulatedPointsAsNewPoints -r $BETA_MIN $BETA_MAX -p $NUM_POINTS"
-        echo -n ' && [ $(ls -d -1 Nf?_mui*_nt*_ns??_reweighting/ | wc -l) -eq 1 ]'
-        echo -n ' && FOLDER="$(ls -d -1 Nf?_mui*_nt*_ns??_reweighting/)"'
-        echo -n ' && mv ${FOLDER%?} ${FOLDER%?}_poly_sq'
-        echo    ' && unset -v '"'FOLDER'"
+        echo "time PLASMA r --deactivatePlaq --deactivatePoly_re --deactivatePoly_im --deactivatePoly_im_abs --deactivatePoly_im_withZeroMean --deactivateMean --deactivateSusc --doNotUseSimulatedPointsAsNewPoints -r ${betaMin} ${betaMax} -p $rewNumOfPoints"
     }
+
+    DEFINED_FUNCTIONS+=( 'MakeReweightingOverlapHistogram' )
+    function MakeReweightingOverlapHistogram(){
+        local observable
+        observable="$1"; shift
+        case "${observable}" in
+            pbp )
+                echo -n "$(GetReweightingPbpCommand "$@") --doNotReweightData --doNotAnalyzeReweightedData"
+                ;;
+            polySq )
+                echo -n "$(GetReweightingPolySqSkewCommand "$@") --doNotReweightData --doNotAnalyzeReweightedData"
+                ;;
+            * )
+                printf "\n\e[91m Invalid observable specified, acceptable ones are 'pbp' or 'polySq'.\e[0m\n\n" 1>&2
+                return 1
+                ;;
+        esac
+        echo " && ${HOME}/Script/PlottingUtilities/PlotGaugeActionHistograms.sh"
+    }    
 
     DEFINED_FUNCTIONS+=( 'GetFindBetaCPbpCommand' )
     function GetFindBetaCPbpCommand(){
@@ -563,86 +577,50 @@ if [ $LOAD_GO_ALIASES = "TRUE" ]; then
     DEFINED_FUNCTIONS+=( 'go' )
     function go(){
         printf "\e[92m\nInitial position: \e[1m$(pwd)\n\e[0m"
-        local initialPosition givenParameters index availableFolders
+        local initialPosition givenParameters formulation index parameter massPrefix availableFolders destination
         initialPosition=$(pwd); givenParameters=( "$@" )
+        formulation=''
         for index in ${!givenParameters[@]}; do
             if [[ ${givenParameters[$index]} =~ ^[sS]$ ]]; then
-                eval goStaggered #https://stackoverflow.com/a/30993227
-                if [ $? -ne 0 ]; then
-                    cd "${initialPosition}" && return
-                fi
-                unset -v 'givenParameters[$index]'; break
+                formulation='Staggered'
+                break
             elif [[ ${givenParameters[$index]} =~ ^[wW]$ ]]; then
-                eval goWilson #https://stackoverflow.com/a/30993227
-                if [ $? -ne 0 ]; then
-                    cd "${initialPosition}" && return
-                fi
-                unset -v 'givenParameters[$index]'; break
+                formulation='Wilson'
+                break
             fi
         done
-        if [ $# -eq ${#givenParameters[@]} ]; then
-            local FORMULATION
+        if [[ ${formulation} = '' ]]; then
             PS3='Please enter your choice: '
-            select FORMULATION in "Staggered" "Wilson"; do
-                if [ "${FORMULATION}" =  "Staggered" ]; then
-                    eval goStaggered #https://stackoverflow.com/a/30993227
-                    if [ $? -ne 0 ]; then
-                        cd "${initialPosition}" && return
-                    fi
-                    break
-                elif [ "${FORMULATION}" =  "Wilson" ]; then
-                    eval goWilson #https://stackoverflow.com/a/30993227
-                    if [ $? -ne 0 ]; then
-                        cd "${initialPosition}" && return
-                    fi
+            select formulation in "Staggered" "Wilson"; do
+                if [[ "${formulation}" =~  ^(Staggered|Wilson)$ ]]; then
                     break
                 fi
             done
         fi
+        eval go${formulation} #https://stackoverflow.com/a/30993227
         givenParameters=( "${givenParameters[@]}" ) #Make array not sparse
-        while [ ${#givenParameters[@]} -gt 0 ] || [ $(ls -d !(b*|JobScripts|CodebaseCompilationFolder)/ 2>>/dev/null | wc -l) -gt 0 ]; do
-            if [ $(ls -d !(b*)/ 2>>/dev/null | wc -l) -eq 0 ]; then
-                if [ ${#givenParameters[@]} -gt 0 ]; then
-                    printf "\e[93m\n No sub-folders in the present directory, while ${#givenParameters[@]} given parameter(s) where unused (${givenParameters[*]}).\n\n\e[0m"
-                fi
-                return
-            fi
-            for index in ${!givenParameters[@]}; do
-                PickUpFolder ${givenParameters[$index]}
-                case $? in
-                    0)
-                        printf "\e[1A" #Move one line up to avoid too many blank lines
-                        unset -v 'givenParameters[$index]'
-                        givenParameters=( "${givenParameters[@]}" ) #Make array not sparse
-                        continue 2
-                        ;;
-                    1)
-                        cd "$initialPosition"
-                        __static__GiveWarningIfUnusedParameters; return 1
-                        ;;
-                    2)
-                        __static__GiveWarningIfUnusedParameters; return 2
-                        ;;
-                esac
-            done
-            PickUpFolder '!(b*|JobScripts)/'
-            case $? in
-                1)
-                    cd "$initialPosition"
-                    __static__GiveWarningIfUnusedParameters; return 1
-                    ;;
-                2)
-                    __static__GiveWarningIfUnusedParameters; return 2
-                    ;;
-                0)
-                    printf "\e[1A"
-                    ;;
-                *)
-                    ;;
-            esac
+        OLDPWD="${initialPosition}"
+        if [[ ${formulation} =  'Staggered' ]]; then
+            massPrefix='mass'
+        elif [[ ${formulation} =  'Wilson' ]]; then
+            massPrefix='k'
+        fi
+        availableFolders=( "${PWD}/Nf"[0-9]?(.[0-9])'/mui'@(0|PiT)"/${massPrefix}"[0-9][0-9][0-9][0-9]'/nt'[1-9]*([0-9])'/ns'[1-9]*([0-9])'/' )
+        for parameter in "${givenParameters[@]}"; do
+            availableFolders=( $(printf "%s\n" "${availableFolders[@]}" | grep "/${parameter}") )
         done
-        echo
-        return 0
+        if [[ ${#availableFolders[@]} -eq 0 ]]; then
+            printf "\e[93m\n No folder matching the specified parameters found!\n\n\e[0m"
+            cd "${OLDPWD}"
+        else
+            PS3=$(printf "\n\e[96mWhich folder do you want to change to? \e[0m")
+            select destination in "${availableFolders[@]}"; do
+                if [[ -d "${destination}" ]]; then
+                    break
+                fi
+            done
+            printf '\n'; cd "${destination}"; OLDPWD="${initialPosition}"
+        fi
     }
 
 fi
