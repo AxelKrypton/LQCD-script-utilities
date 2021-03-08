@@ -593,10 +593,10 @@ if [ $LOAD_GO_ALIASES = "TRUE" ]; then
         for index in ${!givenParameters[@]}; do
             if [[ ${givenParameters[$index]} =~ ^[sS]$ ]]; then
                 formulation='Staggered'
-                break
+                unset -v 'givenParameters[index]'; break
             elif [[ ${givenParameters[$index]} =~ ^[wW]$ ]]; then
                 formulation='Wilson'
-                break
+                unset -v 'givenParameters[index]'; break
             fi
         done
         if [[ ${formulation} = '' ]]; then
