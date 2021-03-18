@@ -81,7 +81,7 @@ function AliasesHelper(){
         ["PickUpFolder"]="Given an optional prefix, all folders (matching the given prefix) are listed. The user has to select one to cd into. If the prefix terminates with \"/\" then it is intended as a full folder name (still pattern matching is performed)."
         ['goStaggered']="Move to staggered folder"
         ['goWilson']="Move to Wilson folder"
-        ["go"]="Interactive function to move to data folder. It goes either to staggered or to Wilson folders and explores the tree asking to which folder to cd. Only folders containing Nf, mui, mass/k, nt, ns physical parameters are considered.  Parameters different from \"s\" or \"S\" and \"w\" or \"W\" (which can be used to choose between staggered and Wilson, respectively) are interpred as prefix of folder names and the existing found folders are filtered using these as input."
+        ["go"]="Interactive function to move to data folder. It goes either to staggered or to Wilson folders and explores the tree asking to which folder to cd. Only folders containing Nf, mui, mass/k, nt, ns physical parameters are considered.  Parameters different from \"s\" or \"S\" and \"w\" or \"W\" (which can be used to choose between staggered and Wilson, respectively) are interpred as prefix of folder names and the existing found folders are filtered using these as input. If the last command line argument is an integer number, this is treated as answer to which folder to change to (useful if the same go command was previously run)."
         ["cdw"]="Move into the work directory (scratch on clusters, phil-configs locally) -> $(alias cdw)."
         ["JobInfo"]="Invoke \"${HOME}/Script/MonitorSlurmJobs.sh\" script (DEPRECATED, use BaHaMAS if possible)."
         ["Acceptance"]="Calculate the average of the 9th field of a given file (meant to be a Monte Carlo acceptance)."
@@ -587,8 +587,13 @@ if [ $LOAD_GO_ALIASES = "TRUE" ]; then
     DEFINED_FUNCTIONS+=( 'go' )
     function go(){
         printf "\e[92m\nInitial position: \e[1m$(pwd)\n\e[0m"
-        local initialPosition givenParameters formulation index parameter massPrefix availableFolders destination
+        local initialPosition givenParameters answer formulation index parameter massPrefix availableFolders destination
         initialPosition=$(pwd); givenParameters=( "$@" )
+        answer=''
+        if [[ ${@: -1} =~ ^[0-9]+$ ]]; then
+            answer=${@: -1}
+            unset -v 'givenParameters[-1]'
+        fi
         formulation=''
         for index in ${!givenParameters[@]}; do
             if [[ ${givenParameters[$index]} =~ ^[sS]$ ]]; then
@@ -623,17 +628,29 @@ if [ $LOAD_GO_ALIASES = "TRUE" ]; then
             0)
                 printf "\e[93m\n No folder matching the specified parameters found!\n\n\e[0m"
                 cd "${OLDPWD}"
+                return
                 ;;
             1)
                 destination="${availableFolders[0]}"
                 ;;
             *)
-                PS3=$(printf "\n\e[96mWhich folder do you want to change to? \e[0m")
-                select destination in "${availableFolders[@]}"; do
-                    if [[ -d "${destination}" ]]; then
-                        break
+                if [[ ${answer} = '' ]]; then
+                    PS3=$(printf "\n\e[96mWhich folder do you want to change to? \e[0m")
+                    select destination in "${availableFolders[@]}"; do
+                        if [[ -d "${destination}" ]]; then
+                            break
+                        fi
+                    done
+                else
+                    if [[ ${answer} -gt ${#availableFolders[@]} ]]; then
+                        printf "\e[93m\n No folder available with given number!\n\n\e[0m"
+                        cd "${OLDPWD}"
+                        return
+                    else
+                        destination="${availableFolders[answer-1]}"
                     fi
-                done
+                fi
+                ;;
         esac
         printf '\n'; cd "${destination}"; OLDPWD="${initialPosition}"
     }
@@ -1069,7 +1086,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         fi
         less $FOLDER_FILE
         #Print jobid and node to screen
-        local JOBID=$(grep -o "[[:digit:]]\+" <<< "${FOLDER_FILE##*hmc}")
+        local JOBID=$(grep -o "[[:digit:]]\+" <<< "${FOLDER_FILE##*hmc}" | tail -n1)
         printf "\n\e[0;36m Job ID: ${JOBID}   "
         printf "$(grep "Host" JobScripts/*hmc*.${JOBID}.out)\n\n\e[0m"
     }
