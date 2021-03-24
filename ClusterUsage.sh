@@ -57,7 +57,7 @@ function PrintClusterUsageInformation(){
 #--------------------------------------------------------------------------------#
 
 #Variables to be changed, hardcoded for the moment
-USERS_LIST=( "cuteri" "sciarra" "aschoen" "ambrosio" )
+USERS_LIST=( "cuteri" "sciarra" "aschoen" "ambrosio" "kaiser")
 CLUSTER_NAME='LOEWE'
 PARTITION='gpu'
 REMOTE_NAME='uni'
