@@ -128,6 +128,7 @@ else
         #Each user can put here the remote prefix if she/he does not want to give it via command line
         remotePrefix["sciarra_lcsc"]="/lustre/lcsc/asciarra/StaggeredProject"
         remotePrefix["kaiser_lcsc"]="/lustre/lcsc/rekaiser/StaggeredProject"
+	remotePrefix["kaiser_hlr"]="/scratch/latticeqcd/kaiser/StaggeredProject"
     elif [[ ${WILSON} = 'TRUE' ]]; then
         expectedPosition="${wilsonConfigurationPathPrefix}/Checkpoints"
         #Each user can put here the remote prefix if she/he does not want to give it via command line

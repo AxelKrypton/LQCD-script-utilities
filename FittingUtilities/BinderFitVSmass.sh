@@ -468,6 +468,21 @@ function CreateGnuplotFit(){
             echo 'print sprintf("%.3f*%d^(%.4f)=%.3f",bfactor,'$VOLUME',ny,bfactor*'$VOLUME'**ny)'  >> $TMP_FILE_FOR_GNUPLOT
         done
     fi
+    echo 'set print "-"' >> $TMP_FILE_FOR_GNUPLOT
+    TMP_VAR1='print sprintf("Script & $%.6g \pm %.6g$ & $%.6g \pm %.6g$ '
+    TMP_VAR2='mc, mc_err/FIT_STDFIT, b, b_err/FIT_STDFIT'
+    if [ $FIT_TYPE = "cubic" ]; then
+	    TMP_VAR1="${TMP_VAR1}& $%.6g "'\pm'" %.6g$"
+	    TMP_VAR2="${TMP_VAR2}, b2, b2_err/FIT_STDFIT"
+    fi
+    if [ "$USECORRECTIONTERM" = "TRUE" ]; then
+	    echo "bfactor if succeeded"
+	    TMP_VAR1="${TMP_VAR1}& $%.6g "'\pm'" %.6g$"
+	    TMP_VAR2="${TMP_VAR2}, bfactor, bfactor_err/FIT_STDFIT"
+    fi
+    TMP_VAR1="${TMP_VAR1}& $%.6g$\","
+    TMP_VAR2="${TMP_VAR2}, FIT_STDFIT**2)"
+    echo "$TMP_VAR1$TMP_VAR2" >> $TMP_FILE_FOR_GNUPLOT    
 }
 
 function RunGnuplotScriptAndProducePdf(){
