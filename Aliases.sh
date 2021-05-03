@@ -101,7 +101,7 @@ function AliasesHelper(){
         ["CompleteFolderName"]="Given one or more beta string(s) of the BaHaMAS simulation status output, the folder name(s) is(are) reconstructed."
         ["GetOutputFilePath"]="Given a beta folder (possibly specified as beta string of the BaHaMAS simulation status output), the CL2QCD output filename is returned with the folder in front. The output file is hmc_output or rhmc_output depending if \"[wW]ilson\" or \"[sS]taggered\" is present in the path, respectively."
         ["FindLastStandardOutput"]="Given a beta folder (possibly specified as beta string of the BaHaMAS simulation status output), the last \"?hmc.*[.]out\" file in that folder is found. The \"?\" is empty or it is a \"r\" if \"[wW]ilson\" or \"[sS]taggered\" is present in the path, respectively."
-        ["FindMissingTrajectories"]="The \"${EDITOR:-default}\" is opened at the (R)HMC-output-file missing lines waiting for completion. This is done for all the specified folders (possibly specified as beta string of the BaHaMAS simulation status output) and for all the missing line points in the file. The output file is hmc_output or rhmc_output depending if \"[wW]ilson\" or \"[sS]taggered\" is present in the path, respectively."
+        ["FindMissingTrajectories"]="The \"${EDITOR:-default}\" is opened at the (R)HMC-output-file missing lines waiting for completion. This is done for all the specified folders (possibly specified as beta string of the BaHaMAS simulation status output) and for all the missing line points in the file. The output file is hmc_output or rhmc_output depending if \"[wW]ilson\" or \"[sS]taggered\" is present in the path, respectively. If '-q' is passed as first argument, no editor is open and only a status line is printed."
         ["TimeTr"]="Given a beta folder (possibly specified as beta string of the BaHaMAS simulation status output) and using the time column (10) of the (R)HMC output file, the average time per trajectory is calculated and printed with some typical simulation duration estimates. The output file is hmc_output or rhmc_output depending if \"[wW]ilson\" or \"[sS]taggered\" is present in the path, respectively. Trajectories with 0s as time are not considered in the mean."
         ["ShowStd"]="Given a beta folder (possibly specified as beta string of the BaHaMAS simulation status output), the last CL2QCD standard output file is displayed (it is found using the \"FindLastStandardOutput\" function). If instead a job-ID number is given as first argument the standard output of the jobscript is shown. The jobscript output must be called \"?hmc.<job-ID>.out\" and the folder with jobscripts must be \"Jobscripts\". The \"?\" is empty or it is a \"r\" if \"[wW]ilson\" or \"[sS]taggered\" is present in the path, respectively. If \"-e\" is given as second argument, the same actions are performed for the standard error."
         ["FindHighestDH"]="Given a beta folder (possibly specified as beta string of the BaHaMAS simulation status output), the 30 trajectories with largest DH are printed in order of trajectory number. If an integer N is specified as second argument, the N trajectories with largest DH are considered. The output file is obtained using the \"GetOutputFilePath\" function."
@@ -880,7 +880,7 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
 	        if [[ "${confirm}" = "Y" ]]; then
                 break
             elif [[ "${confirm}" = "N" ]]; then
-                return
+                echo; return
             else
                 printf "\e[0;93m Please enter Y (yes) or N (no): \e[0m"
             fi
@@ -1010,7 +1010,12 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
 
     DEFINED_FUNCTIONS+=( 'FindMissingTrajectories' )
     function FindMissingTrajectories(){
-        for ARGUMENT in $@; do
+        local reportOnly='FALSE'
+        if [[ $1 = '-q' ]]; then
+            reportOnly='TRUE'
+            shift
+        fi
+        for ARGUMENT in "$@"; do
             if [ -d $ARGUMENT ]; then
                 local FOLDER="$ARGUMENT"
             else
@@ -1032,9 +1037,12 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
                            END{if(arraylength==0){exit 0}
                                else{for(i in missTraj){print missTraj[i]}; exit 1}}' "$FOLDER_FILE") )
             if [ "${#TRAJ[@]}" -eq 0 ]; then
-                printf "\e[32m ...no missing trajectory found!\e[0m\n\n"
+                printf "\e[32m ...no missing trajectory found!\e[0m\n"
             else
                 printf "\e[38;5;202m ...found ${#TRAJ[@]} bunch(es) of missing trajectory(ies)!\e[0m\n"
+                if [[ ${reportOnly} = 'TRUE' ]]; then
+                    continue
+                fi
                 for VALUE in ${TRAJ[@]}; do
                     local LINE_NUMBER=$(grep -n "^[[:space:]]*$VALUE[[:space:]]" "$FOLDER_FILE" | cut -f1 -d':')
                     if [ -z ${EDITOR:+x} ]; then
@@ -1043,9 +1051,9 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
                         $EDITOR +$LINE_NUMBER $FOLDER_FILE
                     fi
                 done && unset -v 'VALUE'
-                printf "\n"
             fi
         done && unset -v 'ARGUMENT'
+        printf "\n"
     }
 
     DEFINED_FUNCTIONS+=( 'TimeTr' )
