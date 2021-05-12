@@ -15,6 +15,11 @@ COLUMN_X=1
 COLUMN_Y=2
 COLUMN_DY=3
 OUTPUT_FILENAME='PolynomialFit'
+SQUARE_PLOT='FALSE'
+SQUARE_SIZE=1
+LOG_X='FALSE'
+LOG_Y='FALSE'
+LOG_BASE=10
 EXTRAPOLATE_TO=()
 XRANGE=()
 LABEL_X="x"
@@ -39,6 +44,11 @@ if ElementInArray "--help" $@ || ElementInArray "-h" $@; then
 	printf "   -y | --columnY           ->   default value = $COLUMN_Y\n\t"
 	printf "   --dy | --columnDY        ->   default value = $COLUMN_DY\n\t"
     printf "   -e | --extrapolateTo     ->   extrapolate fitted quantity to provided value(s)\n\t"
+	printf "   --logX                   ->   use log scale on x-axis, default value = $LOG_X\n\t"
+	printf "   --logY                   ->   use log scale on y-axis, default value = $LOG_Y\n\t"
+	printf "   --logBase                ->   use given base for log scales, default value = $LOG_BASE\n\t"
+	printf "   --square                 ->   use square ratio for plot canvas, default value = $SQUARE_PLOT\n\t"
+	printf "   --squareSize             ->   square size for squared ratio, default value = $SQUARE_SIZE\n\t"
 	printf "   --xRange                 ->   requires two entries, default is gnuplot determined\n\t"
 	printf "   --xLabel                 ->   default value = $LABEL_X\n\t"
 	printf "   --yLabel                 ->   default value = $LABEL_Y\n\t"
@@ -82,6 +92,32 @@ while [ "$1" != "" ]; do
         --dy | --columnDY )
             if [[ $2 =~ [[:digit:]]+ ]]; then
                 COLUMN_DY=$2
+                shift
+            fi
+            shift
+            ;;
+        --square )
+            SQUARE_PLOT='TRUE'
+            shift
+            ;;
+        --squareSize )
+            if [[ $2 =~ ^[[:digit:]]+[.]?[[:digit:]]*$ ]]; then
+                SQUARE_SIZE=$2
+                shift
+            fi
+            shift
+            ;;
+        --logX )
+            LOG_X='TRUE'
+            shift
+            ;;
+        --logY )
+            LOG_Y='TRUE'
+            shift
+            ;;
+        --logBase )
+            if [[ $2 =~ [[:digit:]]+ ]]; then
+                LOG_BASE=$2
                 shift
             fi
             shift
@@ -183,6 +219,15 @@ echo 'set terminal lua tikz standalone preamble '"'"'\usepackage{amsmath, mathab
 echo 'set fit errorvariables covariancevariables # to get the errors' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 if [ $QUIET_MODE = 'TRUE' ]; then
     echo 'set fit quiet' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+fi
+if [ $SQUARE_PLOT = 'TRUE' ]; then
+    echo "set size square ${SQUARE_SIZE}" >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+fi
+if [ $LOG_X = 'TRUE' ]; then
+    echo "set logscale x ${LOG_BASE}" >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+fi
+if [ $LOG_Y = 'TRUE' ]; then
+    echo "set logscale y ${LOG_BASE}" >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 fi
 # Fit function: polynomial
 echo -n "f(x) = a0" >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
