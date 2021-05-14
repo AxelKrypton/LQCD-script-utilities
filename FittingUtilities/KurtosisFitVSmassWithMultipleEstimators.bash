@@ -26,23 +26,38 @@ fixKurtosisInfinity='TRUE'
 fixCriticalExponent='TRUE'
 
 # Variables for the script
+readonly reweightedDataDiskPath='/home/phil-configs/Staggered'
 readonly invokingDirectory="${PWD}"
 readonly temporaryDataForFit='dataToBeFitted.dat'
 readonly temporaryGnuplotScript='gnuplotFitScript.plt'
 readonly observable='pbp'
 temporaryWorkingDirectory=''
-fileWithGatheredKurtosisData='pbp_BinderCumulantAtBetaC.dat'
-numberFlavours=''
+fileWithGatheredKurtosisData="${observable}_BinderCumulantAtBetaC.dat"
 volumes=()
 massParameterValues=()
+massVolumesPairs=()
 fitLowerBound=''
 fitUpperBound=''
+nfValue=''
+muValue='0'
+ntValue=''
+declare -A bootstrapEstimatorsFiles
 
 # Output utilities
 function FatalAndExit()
 {
-    printf "\n  \e[1;91mERROR:\e[22m $@\e[0m\n" 1>&2
+    printf "\n  \e[1;91mFATAL:\e[22m $@\e[0m\n" 1>&2
     exit 1
+}
+
+function Error()
+{
+    printf "\n  \e[1;91mERROR:\e[22m $@\e[0m\n" 1>&2
+}
+
+function Warning()
+{
+    printf "\n  \e[1;93mWARNING:\e[22m $@\e[0m\n" 1>&2
 }
 
 function Info()
@@ -82,10 +97,9 @@ if ElementInArray "--help" $@ || ElementInArray "-h" $@; then
            "  These are in the end combined in the standard way, e.g. with eq. (3.41) of Barkema's book." ""
     printf "\n  \e[38;5;11m\e[1m%s:\e[22m\n"\
            "Further option to the script"
-    printf "\n  \e[38;5;14m%s"\
+    printf "\n  \e[38;5;14m%s\e[0m"\
            " -j   | --jackknife               -> Use Jackknife approach                                "\
            " -b   | --bootstrap               -> Use bootstrap approach                                "\
-           "--nf  | --numberOfFlavours        -> The number of flavours to which data refers           "\
            " -f   | --dataFilename            -> default: ${fileWithGatheredKurtosisData}              "\
            "--mc  | --criticalMass            -> default: ${criticalMass}                              "\
            "--nu  | --criticalExponent        -> default: ${criticalExponent}                          "\
@@ -95,8 +109,12 @@ if ElementInArray "--help" $@ || ElementInArray "-h" $@; then
            "--doNotFixB4                      -> If given, B4(m,ns=inf) is extracted as fit parameters."\
            "                                     The initial value for the fit is set by --a0.         "\
            "--doNotfixNu                      -> If given, nu is extracted as fit parameters.          "\
-           "                                     The initial value for the fit is set by --nu.         "
-    printf "\e[0m\n\n"
+           "                                     The initial value for the fit is set by --nu.         "\
+           ''
+    printf "\n  \e[38;5;229m%s\e[0m"\
+           "--nf  | --nFlavour                -> mandatory for bootstrap                               "\
+           "--nt  | --nTime                   -> mandatory for bootstrap                               "
+    printf "\n"
     exit 3
 fi
 
@@ -117,11 +135,7 @@ while [ $# -gt 0 ]; do
             fileWithGatheredKurtosisData="$2"
             shift
             ;;
-        --nf | --numberOfFlavours)
-            numberFlavours="$2"
-            shift
-            ;;
-        --mc | --criticalMass)
+       --mc | --criticalMass)
             criticalMass="$2"
             shift
             ;;
@@ -147,6 +161,22 @@ while [ $# -gt 0 ]; do
             observable="$2"
             shift
             ;;
+        --nf | --nFlavour)
+            if [[ $2 =~ ^[0-9]([.][0-9])?$ ]]; then
+                nfValue="$2"
+            else
+                FatalAndExit "Value of option $1 wrongly specified."
+            fi
+            shift
+            ;;
+        --nt | --nTime)
+            if [[ $2 =~ ^[1-9][0-9]*$ ]]; then
+                ntValue="$2"
+            else
+                FatalAndExit "Value of option $1 wrongly specified."
+            fi
+            shift
+            ;;
 	    * )
             FatalAndExit "Invalid option \e[1m$1\e[0;91m (see help for further information)."
             ;;
@@ -165,6 +195,9 @@ elif [[ ${useJackknife} = 'TRUE' ]]; then
     outputFilename+='_JackknifeEstimators.dat'
 elif [[ ${useBootstrap} = 'TRUE' ]]; then
     outputFilename+='_BootstrapEstimators.dat'
+    if [[ ${nfValue} = '' || ${muValue} = '' || ${ntValue} = '' ]]; then
+        FatalAndExit 'Options --nf and --nt must be specified for booststrap method.'
+    fi
 fi
 if [[ -f "${outputFilename}" ]]; then
     FatalAndExit "Output data file \"${outputFilename}\" already existing."
@@ -191,18 +224,16 @@ function DetermineFitRanges()
 
 function ReadDataFile()
 {
-    volumes=( $(awk '$0 !~ /^([[:space:]]*#|$)/ {print $2}' "${fileWithGatheredKurtosisData}" | sort -un) ) 
-    massParameterValues=( $(awk '$0 !~ /^([[:space:]]*#|$)/ {print $1}' "${fileWithGatheredKurtosisData}" | sort -un) ) 
+    volumes=(             $(awk '$0 !~ /^([[:space:]]*#|$)/ {print $2}'      "${fileWithGatheredKurtosisData}" | sort -n | uniq) ) 
+    massParameterValues=( $(awk '$0 !~ /^([[:space:]]*#|$)/ {print $1}'      "${fileWithGatheredKurtosisData}" | sort -n | uniq) ) 
+    massVolumesPairs=(    $(awk '$0 !~ /^([[:space:]]*#|$)/ {print $1"_"$2}' "${fileWithGatheredKurtosisData}" | sort -V | uniq) ) 
 }
 
+# NOTE: Here we assume that the data-to-be-fitted file exists!
 function CreateGnuplotFit() # Version 5 or later assumed!
 {
     local fileWithDataToBeFitted index fitCommand
     fileWithDataToBeFitted="$1"
-
-    if [[ ! -f "${fileWithDataToBeFitted}" ]]; then
-        FatalAndExit "Temporary data-to-be-fitted file \"${fileWithDataToBeFitted}\" not found."
-    fi
 
     # Redirect stdout to gnuplot file
     exec 3>&1 1>"${temporaryGnuplotScript}"
@@ -292,6 +323,13 @@ function PrintHeaderToOutputFile()
            'Q' > "${outputFilename}"
 }
 
+function PrintResultToOutputAndToOutputFile()
+{
+    printf '%s' "$1" >> "${outputFilename}"
+    printf '\e[92m%s\e[0m' "$1"
+}
+
+#=============================================================================================================================#
 
 function CountNotEmptyUncommentedLines() # use '#' as comment symbol
 {
@@ -356,6 +394,164 @@ function CalculateJaccknifeMeanAndErrorOfColumn()
 
 #=============================================================================================================================#
 
+function GetEstimatorFileGlobalpathAndCheckIfItExists()
+{
+    local mass volume fileGlobalPath
+    mass="${1#0.}"
+    volume="$2"
+    fileGlobalPath="${reweightedDataDiskPath}/Nf${nfValue}/mui0/mass${mass}/nt${ntValue}/ns${volume}/Nf${nfValue}_mui0_mass${mass}_nt${ntValue}_ns${volume}_reweighting/Nf${nfValue}_mui0_mass${mass}_nt${ntValue}_ns${volume}_${observable}_reweighted_estimators.dat"
+    printf "${fileGlobalPath}"
+    if [[ -f "${fileGlobalPath}" ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+function BuildListOfReweightingBootstrapEstimatorsFiles()
+{
+    local index pair file mass volume filesNotFound
+    filesNotFound=()
+    for index in "${!massVolumesPairs[@]}"; do
+        pair="${massVolumesPairs[index]}"
+        mass="${pair%_*}"
+        volume="${pair#*_}"
+        file=$(GetEstimatorFileGlobalpathAndCheckIfItExists "${mass}" "${volume}")
+        if [[ $? -eq 0 ]]; then
+            bootstrapEstimatorsFiles["${pair}"]="${file}"
+        else
+            filesNotFound+=( "${file}" )
+            # TODO (?): unset pair and implement skipping mechanism if files are not found.
+        fi
+    done
+    if [[ ${#filesNotFound[@]} -ne 0 ]]; then
+        Error 'The following estimators files were not found:'
+        printf '\t\e[38;5;202m %s\e[0m\n' "${filesNotFound[@]}"
+        FatalAndExit 'Impossible to continue.'
+    fi
+}
+
+function GetNumberOfBootstrapEstimators()
+{
+    local file estimatorNumbers number
+    estimatorNumbers=()
+    for file in "${bootstrapEstimatorsFiles[@]}"; do
+        estimatorNumbers+=( $(tail -n1 "${file}" | awk 'END{print $1}' ) )
+    done
+    readarray -d $'\0' -t estimatorNumbers < <(printf '%s\0' "${estimatorNumbers[@]}" | sort -z | uniq -z)
+    if [[ ${#estimatorNumbers[@]} -gt 1 ]]; then
+        Warning " Different numer of bootstrap estimators found, using minimum one (last discarded)."
+        for number in "${estimatorNumbers[@]}"; do
+            if [[ ${number} < ${estimatorNumbers[0]} ]]; then
+                estimatorNumbers[0]=${number}
+            fi
+        done
+    fi
+    printf "$((estimatorNumbers[0] + 1))"
+}
+
+function GetKurtosisAtZeroSkewnessForEstimator()
+{
+    local number pair file
+    number="$1"
+    pair="$2"
+    file="${bootstrapEstimatorsFiles[${pair}]}"
+    awk -v estimator="${number}" '
+        function abs(v) {return v < 0 ? -v : v}
+        BEGIN{lastB3=0; found=0}
+        $1 == estimator{
+            if(lastB3*$7<0)
+            {
+                B4 = (abs(lastB3)<abs($7)) ? lastB4 : $9
+                found++
+            }
+            lastB3=$7
+            lastB4=$9
+        }
+        END{print B4; if(found==1){exit 0}else{exit 1}}' "${file}"
+    # The return value of the function is that of awk (last executed command)
+}
+
+function ReplaceKurtosisInTemporaryFileToBeFitted()
+{
+    local fileWithDataToBeFitted pair newKurtosis
+    fileWithDataToBeFitted="$1"
+    pair="$2"
+    newKurtosis="$3"
+    awk -i inplace\
+        -v mass="${pair%_*}"\
+        -v volume="${pair#*_}"\
+        -v newB4="${newKurtosis}"\
+        '
+        $0 ~ /^([[:space:]]*#|$)/ { print $0; next }
+        {
+            if($1 == mass && $2 == volume)
+                $6=newB4
+            print $0
+        }
+        ' "${fileWithDataToBeFitted}"
+}
+
+function DrawProgressBarHeader()
+{
+    local index
+    printf '\n   0%%'
+    for((index=20; index<100; index+=20)); do
+        printf '%0.s ' {1..17}
+        printf '%d%%' "${index}"
+    done
+    printf '%0.s ' {1..17}
+    printf '100%%\n'
+}
+
+# This function relies on the caller variable 'progressBarUpdatePercentage'
+function DrawProgressBar()
+{
+    local doneNumber totalNumber donePercentage doneString remainingTimeEstimate
+    doneNumber="$1"
+    totalNumber="$2"
+    if [[ ! -v startTime ]]; then
+        startTime=$(date +'%s')
+    fi
+    donePercentage=$(( doneNumber * 100 / totalNumber ))
+    doneString="   ($(printf "%${#totalNumber}d" "${doneNumber}" )/${totalNumber})"
+    if [[ ${donePercentage} -ge ${progressBarUpdatePercentage} ]]; then
+        (( progressBarUpdatePercentage++ ))
+        if [[ ${donePercentage} -eq 0 ]]; then
+            progressBar="   [$(printf '%0.s.' {1..100})]${doneString}\r"
+        elif [[ ${donePercentage} -eq 100 ]]; then
+            progressBar="   [$(printf '%0.s=' {1..100})]${doneString}\r"
+        else
+			remainingTimeEstimate=$(bc -l <<< "($(date +%s) - ${startTime})/${donePercentage}*(100-${donePercentage})" | awk '{printf "%5d", $1}')
+            progressBar="   [$(printf '%0.s=' $(seq 1 ${donePercentage}))$(printf '%0.s.' $(seq 1 $((100-${donePercentage}))))]${doneString}   ${remainingTimeEstimate} sec. to end\e[K\r"
+        fi
+        printf "${progressBar}"
+    fi
+}
+
+function CalculateBootstrapErrorOfColumn()
+{
+    local filename column
+    filename="$1"
+    column="$2"
+    if [[ ! -f "${filename}" ]]; then
+        FatalAndExit "File \"${filename}\" not found in function \"${FUNCNAME}\"."
+    fi
+    if [[ ! ${column} =~ ^[1-9][0-9]*$ ]]; then
+        FatalAndExit "Invalid column number passed to function \"${FUNCNAME}\"."
+    fi
+    awk -v col="${column}"\
+        '
+        NR>1 {
+            sum+=$col
+            sumsq+=($col)^2
+            counter++
+        }
+        END{ printf "%.6e", sqrt(sumsq/counter-(sum/counter)^2)}' "${filename}"
+}
+
+#=============================================================================================================================#
+
 CreateAndMoveTotemporaryWorkingDirectory
 ReadDataFile
 DetermineFitRanges
@@ -363,11 +559,14 @@ PrintHeaderToOutputFile
 
 if [[ ${useJackknife} = 'TRUE' ]]; then
     numberOfJackknifeEstimators=$(CountNotEmptyUncommentedLines "${fileWithGatheredKurtosisData}")
+    CreateGnuplotFit "${temporaryDataForFit}"
     for((index=1; index<=numberOfJackknifeEstimators; index++)); do
         cp "${fileWithGatheredKurtosisData}" "${temporaryDataForFit}"
         CommentNthNotEmptyUncommentedLines "${temporaryDataForFit}" ${index}
-        CreateGnuplotFit "${temporaryDataForFit}"
         gnuplot "${temporaryGnuplotScript}" >> "${outputFilename}"
+        if [[ $? -ne 0 ]]; then
+            FatalAndExit "Error in fit to produce Jackknife estimator number ${index}."
+        fi
     done
     mcResult=(   $(CalculateJaccknifeMeanAndErrorOfColumn "${outputFilename}" 5)  ) # Use word splitting to split value and error
     chi2Result=( $(CalculateJaccknifeMeanAndErrorOfColumn "${outputFilename}" 10) )
@@ -377,11 +576,45 @@ if [[ ${useJackknife} = 'TRUE' ]]; then
            'm_c' "${mcResult[0]}" "${mcResult[1]}"\
            'chi2/ndf' "${chi2Result[0]}" "${chi2Result[1]}"\
            'Q' "${QResult[0]}" "${QResult[1]}"
-    printf '%s' "${resultString}" >> "${outputFilename}"
-    printf '\e[92m%s\e[0m' "${resultString}"
 fi
 
 if [[ ${useBootstrap} = 'TRUE' ]]; then
-    FatalAndExit 'Bootstrap method not yet implemented'
+    startTime=$(date +'%s')
+    CreateGnuplotFit "${temporaryDataForFit}"
+    BuildListOfReweightingBootstrapEstimatorsFiles
+    numberOfBootstrapEstimators=$(GetNumberOfBootstrapEstimators)
+    progressBarUpdatePercentage=0
+    DrawProgressBarHeader
+    for((index=0; index<numberOfBootstrapEstimators; index++)); do
+        cp "${fileWithGatheredKurtosisData}" "${temporaryDataForFit}"
+        for pair in "${massVolumesPairs[@]}"; do
+            newKurtosis=$(GetKurtosisAtZeroSkewnessForEstimator "${index}" "${pair}")
+            if [[ $? -ne 0 ]]; then
+                Error "Unable to find kurtosis at zero of the skewness for bootstrap estimator ${index} and mass_volume = ${pair} in reweighted data."
+                FatalAndExit "Either no or not unique zero of the skewness found."
+            fi
+            ReplaceKurtosisInTemporaryFileToBeFitted "${temporaryDataForFit}" "${pair}" "${newKurtosis}"
+        done
+        gnuplot "${temporaryGnuplotScript}" >> "${outputFilename}"
+        if [[ $? -ne 0 ]]; then
+            FatalAndExit "Error in fit to produce bootstrap estimator number ${index}."
+        fi
+        DrawProgressBar "${index}" "${numberOfBootstrapEstimators}"
+    done
+    DrawProgressBar "${numberOfBootstrapEstimators}" "${numberOfBootstrapEstimators}"
+    printf "\n\n\e[96m Bootstrap estimators produced in $(( $(date +'%s') - startTime )) seconds!\n\e[0m"
+
+    # Fit original data for central value
+    cp "${fileWithGatheredKurtosisData}" "${temporaryDataForFit}"
+    centralValuesFit=( $(gnuplot "${temporaryGnuplotScript}") ) # use word splitting to split results
+    mcResult=(   "${centralValuesFit[4]}"  $(CalculateBootstrapErrorOfColumn "${outputFilename}" 5)  )
+    chi2Result=( "${centralValuesFit[9]}"  $(CalculateBootstrapErrorOfColumn "${outputFilename}" 10) )
+    QResult=(    "${centralValuesFit[10]}" $(CalculateBootstrapErrorOfColumn "${outputFilename}" 11) )
+    printf -v resultString\
+           "\n# Bootstrap analysis result:\n#\n#%12s = %s ± %s\n#%12s = %s ± %s\n#%12s = %s ± %s\n#\n"\
+           'm_c' "${mcResult[0]}" "${mcResult[1]}"\
+           'chi2/ndf' "${chi2Result[0]}" "${chi2Result[1]}"\
+           'Q' "${QResult[0]}" "${QResult[1]}"
 fi
 
+PrintResultToOutputAndToOutputFile "${resultString}"
