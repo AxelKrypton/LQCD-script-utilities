@@ -141,7 +141,11 @@ if [ -f $EXTRACTED_DATA_FILENAME ]; then
 fi
 
 #Extract data
-printf "%-12s%-10s%-25s%-25s%-25s%-25s%-25s\n" "#$MASS_PREFIX" "ns" "betaC" "Skewness" "errorSkew" "Kurtosis" "errorKurtosis" > $EXTRACTED_DATA_FILENAME
+printf "%-12s%-10s%-25s%-25s%-25s%-25s%-25s%-25s%-25s\n" "#$MASS_PREFIX" "ns" "betaC" "skew" "errorSkew" "Kurtosis" "errorKurtosis" "deltaBetaLow" "deltaBetaHigh" > $EXTRACTED_DATA_FILENAME
+
+[ ${#MASS_PARAMETER_ARRAY[@]} -eq 0 ] && ExtractAvailableMassParameterValues
+
+echo "mass paramter array: ${MASS_PARAMETER_ARRAY[@]}"
 
 for MASS in ${MASS_PARAMETER_ARRAY[@]}; do
     ExtractAvailableVolumes $MASS
@@ -156,8 +160,8 @@ for MASS in ${MASS_PARAMETER_ARRAY[@]}; do
                     MASS_VALUE="0.${MASS}"
                 fi
                 printf "%-12s%-10s" "${MASS_VALUE}" "${VOL}" >> $EXTRACTED_DATA_FILENAME
-                awk 'END{printf "%-25s%-25s%-25s%-25s%-25s\n", $1, $6, $7, $8, $9}' $FOLDER/$FILENAME >> $EXTRACTED_DATA_FILENAME
-                printf "\e[96m Extracted data from \"$FILENAME\" file!\e[0m\n"
+                awk 'END{printf "%-25s%-25s%-25s%-25s%-25s%-25s%-25s\n", $1, $6, $7, $8, $9, $10, $11}' $FOLDER/$FILENAME >> $EXTRACTED_DATA_FILENAME
+                printf "\e[96m Extracted data from \"$FOLDER/$FILENAME\" file!\e[0m\n"
             else
                 printf "\e[93m File \"$FILENAME\" not found, skipping it!\e[0m\n"
             fi
