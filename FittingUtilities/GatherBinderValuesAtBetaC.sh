@@ -47,13 +47,13 @@ do
             ;;
         -h)
             printf '\n  \e[1;4;95mAvailble options\e[24m:\n'
-            printf '\n\e[21;96m'
+            printf '\n\e[22;96m'
             printf "    --nf            ->  the number of flavours   [default: extracted from path, prefix \"${NFLAVOUR_PREFIX}\"]\n"
             printf "    --mui           ->  chemical potential value [default: extracted from path, prefix \"${CHEMPOT_PREFIX}\"]\n"
             printf "    --nt            ->  temporal lattice extent  [default: extracted from path, prefix \"${NTIME_PREFIX}\"]\n"
             printf "    --mass          ->  list of mass values      [default: all existing ones,   prefix \"${MASS_PREFIX}\"]\n"
             printf '                        Use spaces to separate mass values and use format as they appear in folder names.\n'
-            printf "    --obs           ->  observable to be used, e.g. poly_sq, poly_im --> \e[1;93mMandatory option\e[21;96m\n"
+            printf "    --obs           ->  observable to be used, e.g. poly_sq, poly_im --> \e[1;93mMandatory option\e[22;96m\n"
             printf "    --useKurtosis   ->  extract beta_c from reweighted kurtosis instead of from the reweighted skewness\n"
             printf '\n\e[0m'
             exit
@@ -109,7 +109,7 @@ if [ ${#MASS_PARAMETER_ARRAY[@]} -eq 0 ]; then
     fi
 fi
 
-printf '\n \e[1;4;95mScript setup\e[24m:\e[21;96m\n\n'
+printf '\n \e[1;4;95mScript setup\e[24m:\e[22;96m\n\n'
 printf "%+16s: %s\n" 'Path to data' $PATH_TO_DATA
 printf "%+16s: %s\n" ${NFLAVOUR_PREFIX} $NFLAVOUR
 printf "%+16s: %s\n" ${NTIME_PREFIX}  $NTIME
@@ -120,7 +120,7 @@ printf '\n\e[0m'
 
 function ExtractAvailableVolumes(){
     #The reason for the following implementation is to have the volumes in the array sorted.
-    VOLUMES_VALUES=( $(ls $PATH_TO_DATA/$MASS_PREFIX$1/$NTIME_PREFIX$NTIME | grep -o "$NSPACE_PREFIX$NSPACE_REGEX" | grep -o "$NSPACE_REGEX") )
+    VOLUMES_VALUES=( $(ls $PATH_TO_DATA/$MASS_PREFIX$1/$NTIME_PREFIX$NTIME | grep -o "^$NSPACE_PREFIX$NSPACE_REGEX$" | grep -o "$NSPACE_REGEX") )
 }
 
 function GetBetaCFolderName(){
