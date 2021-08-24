@@ -66,7 +66,7 @@ function AliasesHelper(){
         ["GetAnalysisPbpCommand"]="Return standard invokation of PLASMA to analyse the chiral condensate. The number of inversions can be optionally specified (default: 16)."
         ["GetAnalysisPolyImWithZeroMeanCommand"]="Return standard invokation of PLASMA to analyse the Polyakov loop with zero mean."
         ["GetAnalysisPolySqCommand"]="Return standard invokation of PLASMA to analyse the square norm of the Polyakov loop."
-        ["GetReweightingPbpCommand"]="Return standard invokation of PLASMA to reweight the chiral condensate. It either needs betaMin, betaMax and the resolution in beta or just the latter (in this case betaMin and betaMax are the first and the last line of the file \"betas\")"
+        ["GetReweightingPbpCommand"]="Return standard invokation of PLASMA to reweight the chiral condensate. It either needs betaMin, betaMax and the resolution in beta or just the latter (in this case betaMin and betaMax are the first and the last line of the file \"betas\"). The number of inversions can be optionally specified (default: 16)."
         ["GetReweightingPolyImWithZeroMeanCommand"]="Return standard invokation of PLASMA to reweight the Polyakov loop with zero mean. It either needs betaMin, betaMax and the resolution in beta or just the latter (in this case betaMin and betaMax are the first and the last line of the file \"betas\")"
         ["GetReweightingPolySqSkewCommand"]="Return standard invokation of PLASMA to reweight the square norm of the Polyakov loop. It either needs betaMin, betaMax and the resolution in beta or just the latter (in this case betaMin and betaMax are the first and the last line of the file \"betas\")"
         ["MakeReweightingOverlapHistogram"]="Return commands to reweight and produce the overlap histogram. The first argument must be the observable name ('pbp' or 'polySq'). Then, it either needs betaMin, betaMax and the resolution in beta or just the latter (in this case betaMin and betaMax are the first and the last line of the file \"betas\")"
@@ -404,9 +404,15 @@ if [ $LOAD_PYTHON_ALIASES = "TRUE" ]; then
 
     DEFINED_FUNCTIONS+=( 'GetReweightingPbpCommand' )
     function GetReweightingPbpCommand(){
-        local betaMin betaMax rewResolution rewNumOfPoints
-        __static__DefineBetaMinMaxResAndCheck "$@" || return
-        echo "time PLASMA r --deactivatePlaq --deactivatePoly --activatePbp --inversionsPerConfig 16 --deactivateMean --deactivateSusc --doNotUseSimulatedPointsAsNewPoints -r ${betaMin} ${betaMax} -p $rewNumOfPoints"
+        local options inversions betaMin betaMax rewResolution rewNumOfPoints
+        inversions=16
+        options=("$@")
+        if [[ $# -eq 2 || $# -eq 4 ]]; then
+            inversions="${options[${#options[@]}-1]}"
+            unset -v 'options[${#options[@]}-1]'
+        fi
+        __static__DefineBetaMinMaxResAndCheck "${options[@]}" || return
+        echo "time PLASMA r --deactivatePlaq --deactivatePoly --activatePbp --inversionsPerConfig ${inversions} --deactivateMean --deactivateSusc --doNotUseSimulatedPointsAsNewPoints -r ${betaMin} ${betaMax} -p $rewNumOfPoints"
     }
 
     DEFINED_FUNCTIONS+=( 'GetReweightingPolyImWithZeroMeanCommand' )
