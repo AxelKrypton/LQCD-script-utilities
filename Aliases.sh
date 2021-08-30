@@ -412,7 +412,7 @@ if [ $LOAD_PYTHON_ALIASES = "TRUE" ]; then
             unset -v 'options[${#options[@]}-1]'
         fi
         __static__DefineBetaMinMaxResAndCheck "${options[@]}" || return
-        echo "time PLASMA r --deactivatePlaq --deactivatePoly --activatePbp --inversionsPerConfig ${inversions} --deactivateMean --deactivateSusc --doNotUseSimulatedPointsAsNewPoints -r ${betaMin} ${betaMax} -p $rewNumOfPoints"
+        echo "time PLASMA r --deactivatePlaq --deactivatePoly --activatePbp --inversionsPerConfig ${inversions} --deactivateMean --deactivateSusc --doNotUseSimulatedPointsAsNewPoints --printEstimatorsToFile -r ${betaMin} ${betaMax} -p $rewNumOfPoints"
     }
 
     DEFINED_FUNCTIONS+=( 'GetReweightingPolyImWithZeroMeanCommand' )
