@@ -27,8 +27,27 @@ else
     REPLACEMENT_FOR_ACCEPTANCE_COLUMN=''
 fi
 
-BACKUP_FILE="${INPUT_FILE}_$(date +'%F_%H%M')"
+TOTAL_NUMBER_OF_MISSING_LINES=( $(awk 'NR==1{tr=$1}END{missing=$1-tr+1-NR; percent=missing/($1-tr); if(percent > 0.01){error=1}; print missing" "100*percent" "error}' ${INPUT_FILE}) )
+if [[ ${TOTAL_NUMBER_OF_MISSING_LINES[0]} -eq 0 ]]; then
+    echo -e "\n\e[92m No missing lines in \"${INPUT_FILE}\" file.\e[0m\n"
+    exit
+else
+    echo -e "\n\e[93m Found ${TOTAL_NUMBER_OF_MISSING_LINES[0]} missing lines, ${TOTAL_NUMBER_OF_MISSING_LINES[1]}% of expected lines.\e[0m\n"
+fi
 
+if [[ ${TOTAL_NUMBER_OF_MISSING_LINES[2]} -eq 1 ]]; then
+	echo -en "\e[91m More than 1% missing line. Fill in file anyway? [Y/N] \e[0m"
+	CONFIRM="";
+	while read CONFIRM; do
+		if [ "$CONFIRM" = "Y" ]; then
+			break
+		elif [ "$CONFIRM" = "N" ]; then
+			echo; exit
+		fi
+	done
+fi
+
+BACKUP_FILE="${INPUT_FILE}_$(date +'%F_%H%M')"
 cp $INPUT_FILE $BACKUP_FILE
 
 TMP_FILE="temporaryFile"
