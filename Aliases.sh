@@ -86,7 +86,8 @@ function AliasesHelper(){
         ["JobInfo"]="Invoke \"${HOME}/Script/MonitorSlurmJobs.sh\" script (DEPRECATED, use BaHaMAS if possible)."
         ["Acceptance"]="Calculate the average of the 9th field of a given file (meant to be a Monte Carlo acceptance)."
         ["LastAcceptance"]="Invoke \"${HOME}/Script/AcceptanceLastTrajectories.sh\" script."
-        ["FillInMissingLines"]="Invoke \"${HOME}/Script/FillInMissingLinesOutputFile.sh\" script."
+        ["FillInMissingLinesOutput"]="Invoke \"${HOME}/Script/FillInMissingLinesOutputFile.sh\" script for CL2QCD output files."
+        ["FillInMissingLinesPbp"]="Invoke \"${HOME}/Script/FillInMissingLinesOutputFile.sh\" script for CL2QCD pbp files."
         ["ClusterUsage"]="Invoke the \"${HOME}/Script/ClusterUsage.sh\" script with the \"--doNotUpdateFiles\" option."
         ["ReportOnCorrelatorFiles"]="Count number of \"conf.*corr\" files in \"b?.????_s*Chain\" folders and make a report."
         ["ReportOnScaleSettingFiles"]="Count number of \"conf.*.nersc\" and \"flow.conf.*.nersc\" files in \"b?.????_s*Chain\" folders and make a report."
@@ -114,7 +115,7 @@ function AliasesHelper(){
         ['FIT_ALIASES']='BinderFit BruteForceFit FilterFitResults SetUpForBruteForceFit SelectBestFits ChooseReweightingFolders QuantitativeCollapse PlotBestFits GetFilteringProcedure GetSelectingBestFitProcedure'
         ['PYTHON_ALIASES']='PLASMA GetSynchronizationCommand GetAnalysisPbpCommand GetAnalysisPolyImWithZeroMeanCommand GetAnalysisPolySqCommand GetReweightingPbpCommand GetReweightingPolyImWithZeroMeanCommand GetReweightingPolySqSkewCommand MakeReweightingOverlapHistogram GetFindBetaCPbpCommand GetFindBetaCPolySqCommand GetPlotScalingPolySqCommand GetPlotScalingPbpCommand GetPlotScalingPolyImWithZeroMeanCommand HasFileDifferentNumberOfEntriesPerLine CheckNumberOfEntriesPerLine RemoveLinesWithNumberOfColumnsDifferentFrom'
         ['GO_ALIASES']='PickUpFolder goStaggered goWilson go'
-        ['JOB_ALIASES']='cdw JobInfo Acceptance LastAcceptance FillInMissingLines ClusterUsage ReportOnCorrelatorFiles ReportOnScaleSettingFiles CountJobs OverviewJobs Walltime CalculateGapsInTrajectoriesBetweenStoredConfigurations DeleteCheckpointsNotEvery ListOfTrashFolders ListOfTrashFoldersWithSizes SizeOfTrashFolders CompleteFolderName GetOutputFilePath FindLastStandardOutput FindMissingTrajectories TimeTr ShowStd FindHighestDH CheckCl2qcdOutput'
+        ['JOB_ALIASES']='cdw JobInfo Acceptance LastAcceptance FillInMissingLinesOutput FillInMissingLinesPbp ClusterUsage ReportOnCorrelatorFiles ReportOnScaleSettingFiles CountJobs OverviewJobs Walltime CalculateGapsInTrajectoriesBetweenStoredConfigurations DeleteCheckpointsNotEvery ListOfTrashFolders ListOfTrashFoldersWithSizes SizeOfTrashFolders CompleteFolderName GetOutputFilePath FindLastStandardOutput FindMissingTrajectories TimeTr ShowStd FindHighestDH CheckCl2qcdOutput'
         ['ROOTHIST_ALIASES']='CreateRootHistograms'
     )
 
@@ -686,9 +687,14 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         ${HOME}/Script/AcceptanceLastTrajectories.sh "$@"
     }
 
-    DEFINED_FUNCTIONS+=( 'FillInMissingLines' )
-    function FillInMissingLines(){
-        ${HOME}/Script/FillInMissingLinesOutputFile.sh "$@"
+    DEFINED_FUNCTIONS+=( 'FillInMissingLinesOutput' )
+    function FillInMissingLinesOutput(){
+        ${HOME}/Script/FillInMissingLinesOutputFile.sh 'output' "$@"
+    }
+
+    DEFINED_FUNCTIONS+=( 'FillInMissingLinesPbp' )
+    function FillInMissingLinesPbp(){
+        ${HOME}/Script/FillInMissingLinesOutputFile.sh 'pbp' "$@"
     }
 
     DEFINED_FUNCTIONS+=( 'ClusterUsage' )

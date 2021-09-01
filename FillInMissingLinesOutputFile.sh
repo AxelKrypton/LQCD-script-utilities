@@ -1,10 +1,31 @@
 #!/bin/bash
 
-[ $# -eq 0 ] && echo "Usage: $0 <filename>" && exit
+if [[ $# -ne 2 ]]; then
+    echo "Usage: $0 (output|pbp) <filename>"
+    exit
+elif [[ ! $1 =~ ^(output|pbp)$ ]]; then
+    echo "First argument to the script must be either 'output' or 'pbp'."
+    echo "Usage: $0 (output|pbp) <filename>"
+    exit
+else
+    TYPE_OF_FILE="$1"
+    shift
+fi
 
 INPUT_FILE=$1
 
 [ ! -f $INPUT_FILE ] && echo -e "\e[91mSpecified file does not exist. Exiting...\e[0m" && exit
+
+NUMBER_OF_COLUMNS=$(awk 'NR==1{print NF}' $INPUT_FILE)
+if [[ ${TYPE_OF_FILE} = 'output' ]]; then
+    if [[ ${NUMBER_OF_COLUMNS} -ne 10 && ${NUMBER_OF_COLUMNS} -ne 13 ]]; then
+        echo -e "\e[91mSpecified file does not seem to be a CL2QCD output file with 10 or 13 columns. Exiting...\e[0m"
+        exit
+    fi
+    REPLACEMENT_FOR_ACCEPTANCE_COLUMN='a[9]=0;'
+else
+    REPLACEMENT_FOR_ACCEPTANCE_COLUMN=''
+fi
 
 BACKUP_FILE="${INPUT_FILE}_$(date +'%F_%H%M')"
 
@@ -55,8 +76,8 @@ for((INDEX=0; INDEX < $NR_ENTRIES; INDEX++)); do
 	head -n$LINE_NR $INPUT_FILE > $TMP_FILE
 	for((i=1; i<=${NR_MISSING_LINES[$INDEX]}; i++)); do
         IDENTATION_SPACE="$(sed -n $LINE_NR'p' $INPUT_FILE | grep -o "^[[:space:]]*")"
-        #Note that the split function with forth argument is supported only by GNU awk.
-        sed -n $LINE_NR'p' $INPUT_FILE | awk -v increment=$i -v space="$IDENTATION_SPACE" '{split($0, a, FS, seps); a[1]+=increment; a[9]=0; printf "%s", space; for (i=1;i<=NF;i++) printf("%s%s", a[i], seps[i]); print ""}'  >> $TMP_FILE
+        #Note that the split function with four arguments is supported only by GNU awk.
+        sed -n $LINE_NR'p' $INPUT_FILE | awk -v increment=$i -v space="$IDENTATION_SPACE" '{split($0, a, FS, seps); a[1]+=increment;'"${REPLACEMENT_FOR_ACCEPTANCE_COLUMN}"' printf "%s", space; for (i=1;i<=NF;i++) printf("%s%s", a[i], seps[i]); print ""}'  >> $TMP_FILE
 	done
 	NR_LINES_FROM_BOTTOM=$(($(wc -l < $INPUT_FILE)-$LINE_NR))
 	tail -n$(($NR_LINES_FROM_BOTTOM)) $INPUT_FILE >> $TMP_FILE
