@@ -87,9 +87,25 @@ if [ "$OBSERVABLE" = "" ] || ! ElementInArray $OBSERVABLE ${AVAILABLE_OBSERVABLE
     printf "\e[0m"
 fi
 
-[ "$NFLAVOUR" = "" ] && ReadSingleParameterFromPath $PWD $NFLAVOUR_PREFIX
-[ "$NTIME" = "" ] && ReadSingleParameterFromPath $PWD $NTIME_PREFIX
-[ "$CHEMPOT" = "" ] && ReadSingleParameterFromPath $PWD $CHEMPOT_PREFIX
+function TryToExtractValueOfParameterFromPwd()
+{
+    local prefix regex result
+    prefix="$1"
+    regex="$2"
+    if ! ( ReadSingleParameterFromPath ${PWD} ${prefix} &> /dev/null); then
+        result=( $(grep -o "${prefix}${regex}" <<< "${PWD}") )
+        if [[ ${#result[@]} -ne 1 ]]; then
+            printf "\n\e[0;91m Unable to recover \"${prefix}\" from the path \"${PWD}\". Aborting...\n\n\e[0m"
+            exit 1
+        fi
+        result=${result[0]/#${prefix}/}
+    fi
+    declare -gr ${PARAMETER_VARIABLE_NAMES[${prefix}]}="${result}"
+}
+
+[ "$NFLAVOUR" = "" ] && TryToExtractValueOfParameterFromPwd "${NFLAVOUR_PREFIX}" "${NFLAVOUR_REGEX}"
+[ "$NTIME" = "" ]    && TryToExtractValueOfParameterFromPwd "${NTIME_PREFIX}"    "${NTIME_REGEX}"
+[ "$CHEMPOT" = "" ]  && TryToExtractValueOfParameterFromPwd "${CHEMPOT_PREFIX}"  "${CHEMPOT_REGEX}"
 CheckParametersExtractedFromPath $NFLAVOUR_PREFIX $CHEMPOT_PREFIX $NTIME_PREFIX
 
 PATH_TO_DATA=$PATH_TO_DATA$(GetParametersPath $NFLAVOUR_PREFIX $CHEMPOT_PREFIX)
