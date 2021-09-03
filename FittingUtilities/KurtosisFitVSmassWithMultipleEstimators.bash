@@ -584,17 +584,24 @@ if [[ ${useBootstrap} = 'TRUE' ]]; then
     BuildListOfReweightingBootstrapEstimatorsFiles
     numberOfBootstrapEstimators=$(GetNumberOfBootstrapEstimators)
     progressBarUpdatePercentage=0
+    declare -A problematicBootstrapEstimators
+    numberOfProblematicBootstrapEstimators=0
     DrawProgressBarHeader
     for((index=0; index<numberOfBootstrapEstimators; index++)); do
+        skipFit='FALSE'
         cp "${fileWithGatheredKurtosisData}" "${temporaryDataForFit}"
         for pair in "${massVolumesPairs[@]}"; do
             newKurtosis=$(GetKurtosisAtZeroSkewnessForEstimator "${index}" "${pair}")
             if [[ $? -ne 0 ]]; then
-                Error "Unable to find kurtosis at zero of the skewness for bootstrap estimator ${index} and mass_volume = ${pair} in reweighted data."
-                FatalAndExit "Either no or not unique zero of the skewness found."
+                problematicBootstrapEstimators["${pair}"]+="${index} "
+                skipFit='TRUE'
             fi
             ReplaceKurtosisInTemporaryFileToBeFitted "${temporaryDataForFit}" "${pair}" "${newKurtosis}"
         done
+        if [[ ${skipFit} = 'TRUE' ]]; then
+            (( numberOfProblematicBootstrapEstimators++ ))
+            continue
+        fi
         gnuplot "${temporaryGnuplotScript}" >> "${outputFilename}"
         if [[ $? -ne 0 ]]; then
             FatalAndExit "Error in fit to produce bootstrap estimator number ${index}."
@@ -604,6 +611,16 @@ if [[ ${useBootstrap} = 'TRUE' ]]; then
     DrawProgressBar "${numberOfBootstrapEstimators}" "${numberOfBootstrapEstimators}"
     printf "\n\n\e[96m Bootstrap estimators produced in $(( $(date +'%s') - startTime )) seconds!\n\e[0m"
 
+    reportString="Unable to find kurtosis at zero of the skewness for ${numberOfProblematicBootstrapEstimators} bootstrap estimators in reweighted data:"
+    if [[ ${numberOfProblematicBootstrapEstimators} -ne 0 ]]; then
+        printf "\n\n${reportString}\n" >> "${outputFilename}"
+        Error "${reportString}"
+        for pair in "${!problematicBootstrapEstimators[@]}"; do
+            printf "%10s\e[93m${pair}  ->  ${problematicBootstrapEstimators[${pair}]}\e[0m\n" ''
+            printf "   ${pair}  ->  ${problematicBootstrapEstimators[${pair}]}\n" '' >> "${outputFilename}"
+        done
+    fi
+
     # Fit original data for central value
     cp "${fileWithGatheredKurtosisData}" "${temporaryDataForFit}"
     centralValuesFit=( $(gnuplot "${temporaryGnuplotScript}") ) # use word splitting to split results
@@ -611,10 +628,15 @@ if [[ ${useBootstrap} = 'TRUE' ]]; then
     chi2Result=( "${centralValuesFit[9]}"  $(CalculateBootstrapErrorOfColumn "${outputFilename}" 10) )
     QResult=(    "${centralValuesFit[10]}" $(CalculateBootstrapErrorOfColumn "${outputFilename}" 11) )
     printf -v resultString\
-           "\n# Bootstrap analysis result:\n#\n#%12s = %s ± %s\n#%12s = %s ± %s\n#%12s = %s ± %s\n#\n"\
+           "\n# Bootstrap analysis result ($((numberOfBootstrapEstimators - numberOfProblematicBootstrapEstimators)) estimators):\n#\n#%12s = %s ± %s\n#%12s = %s ± %s\n#%12s = %s ± %s\n#\n"\
            'm_c' "${mcResult[0]}" "${mcResult[1]}"\
            'chi2/ndf' "${chi2Result[0]}" "${chi2Result[1]}"\
            'Q' "${QResult[0]}" "${QResult[1]}"
+    printf '%1s%12s %-12s    %12s %-18s   %8s %-s\n'\
+           '#' 'm_c' 'm_c_error'   'chi2/ndf' 'chi2/ndf_error'  'Q' 'Q_error'\
+           ' ' "${mcResult[0]}" "${mcResult[1]}"\
+           "${chi2Result[0]}" "${chi2Result[1]}"\
+           "${QResult[0]}" "${QResult[1]}" > "${outputResultFilename}"
 fi
 
 PrintResultToOutputAndToOutputFile "${resultString}"
