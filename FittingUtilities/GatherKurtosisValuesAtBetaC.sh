@@ -136,7 +136,7 @@ printf '\n\e[0m'
 
 function ExtractAvailableVolumes(){
     #The reason for the following implementation is to have the volumes in the array sorted.
-    VOLUMES_VALUES=( $(ls $PATH_TO_DATA/$MASS_PREFIX$1/$NTIME_PREFIX$NTIME | grep -o "^$NSPACE_PREFIX$NSPACE_REGEX$" | grep -o "$NSPACE_REGEX") )
+    VOLUMES_VALUES=( $(ls -1 $PATH_TO_DATA/$MASS_PREFIX$1/$NTIME_PREFIX$NTIME | grep -o "^$NSPACE_PREFIX${NSPACE_REGEX%?}$" | grep -o "${NSPACE_REGEX%?}") )
 }
 
 function GetBetaCFolderName(){
@@ -160,8 +160,6 @@ fi
 printf "%-12s%-10s%-25s%-25s%-25s%-25s%-25s%-25s%-25s\n" "#$MASS_PREFIX" "ns" "betaC" "skew" "errorSkew" "Kurtosis" "errorKurtosis" "deltaBetaLow" "deltaBetaHigh" > $EXTRACTED_DATA_FILENAME
 
 [ ${#MASS_PARAMETER_ARRAY[@]} -eq 0 ] && ExtractAvailableMassParameterValues
-
-echo "mass paramter array: ${MASS_PARAMETER_ARRAY[@]}"
 
 for MASS in ${MASS_PARAMETER_ARRAY[@]}; do
     ExtractAvailableVolumes $MASS
