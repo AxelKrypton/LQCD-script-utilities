@@ -32,7 +32,7 @@ readonly temporaryDataForFit='dataToBeFitted.dat'
 readonly temporaryGnuplotScript='gnuplotFitScript.plt'
 readonly observable='pbp'
 temporaryWorkingDirectory=''
-fileWithGatheredKurtosisData="${observable}_BinderCumulantAtBetaC.dat"
+fileWithGatheredKurtosisData="${observable}_KurtosisAtBetaC.dat"
 volumes=()
 massParameterValues=()
 massVolumesPairs=()
@@ -199,14 +199,14 @@ elif [[ ${useBootstrap} = 'TRUE' ]]; then
         FatalAndExit 'Options --nf and --nt must be specified for booststrap method.'
     fi
 fi
+outputResultFilename="${outputFilename/%Estimators.dat/.dat}"
 if [[ -f "${outputFilename}" ]]; then
     FatalAndExit "Output data file \"${outputFilename}\" already existing."
 fi
-
-if [[ "${fileWithGatheredKurtosisData}" = '' ]]; then
-    fileWithGatheredKurtosisData="${observable}_BinderCumulantAtBetaC.dat"
-    Info "No data filename specified - using \"${fileWithGatheredKurtosisData}\""
+if [[ -f "${outputResultFilename}" ]]; then
+    FatalAndExit "Output data file \"${outputResultFilename}\" already existing."
 fi
+
 if [[ ! ${fileWithGatheredKurtosisData} =~ ^/ ]]; then
     fileWithGatheredKurtosisData="${invokingDirectory}/${fileWithGatheredKurtosisData}"
 fi

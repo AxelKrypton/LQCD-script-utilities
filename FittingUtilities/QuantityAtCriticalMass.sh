@@ -4,7 +4,7 @@
 #
 #   This script is suited to read the critical beta values with their errors and
 #   the critical mass with its error (from the output files of the
-#   GatherBinderValuesAtBetaC.sh and of the BinderFitVSmass.sh scripts respectively)
+#   GatherKurtosisValuesAtBetaC.sh and of the BinderFitVSmass.sh scripts respectively)
 #   and to perform three polynomialFits to extract the critical value of beta at the
 #    critical mass and its error.
 #
@@ -13,9 +13,9 @@
 #Variables connected to command line options
 POLYNOMIAL_DEGREE=1
 QUANT_NAME="betaC"
-QUANT_DATA_FILENAME='pbp_BinderCumulantAtBetaC.dat'
+QUANT_DATA_FILENAME='pbp_KurtosisAtBetaC.dat'
 AUX_QUANT_DATA_FILENAME='aux_'${QUANT_DATA_FILENAME}
-MC_DATA_FILENAME='BinderCumulant_pbp_Fit.dat'
+MC_DATA_FILENAME='Kurtosis_pbp_Fit.dat'
 MC=""
 MC_ERR=""
 TMP_FILE_FOR_GNUPLOT_SCRIPT='FileThatHopefullyDoesNotExist.plt'

@@ -2,7 +2,7 @@
 
 # This fit script is suited to perform a multi-branch LINEAR fit of some data contained in
 # the file FILE_WITH_DATA_TO_BE_FITTED. It is in particular fitting the Binder linearly
-# at different masses. The finite size scaling form used in the fit for the Binder Cumulant reads
+# at different masses. The finite size scaling form used in the fit for the kurtosis reads
 # 
 #          B4(m,ns) = B4(m,ns=inf) + a*(m-mc)*ns^(1/nu) + ...  :=  a0 + a1*x + ...
 #
@@ -56,7 +56,7 @@ function ElementInArray() {
 if ElementInArray "--help" $@ || ElementInArray "-h" $@; then
     printf "\n\t\e[38;5;202m"
     printf "This fit script is suited to perform a multi-branch LINEAR fit of the kurtosis vs mass.\n\t"
-    printf "The finite size scaling form used in the fit for the Binder Cumulant reads\n\t"
+    printf "The finite size scaling form used in the fit for the kurtosis reads\n\t"
     printf "B4(m,ns) = B4(m,ns=inf) + a*(m-mc)*ns^(1/nu) + ...  :=  a0 + a1*x + ...\n\t"
     printf "Initial values for the fit can be provided for all fit parameters.\n\t"
     printf "By default B4(m,ns=inf) and nu are fixed to their expected values of 1.604 and 0.6301 respectively.\n\t"
@@ -74,8 +74,8 @@ if ElementInArray "--help" $@ || ElementInArray "-h" $@; then
     printf "   --a0  | --B4infinity              -> default: 1.604                                                                         \n\t"
     printf "   --a1  | --linearCoefficient       -> default: 1                                                                             \n\t"
     printf "   --a2  | --cubicCoefficient        -> default: 1                                                                             \n\t"
-    printf "    -f   | --dataFilename            -> default: poly_sq_BinderCumulantAtBetaC.dat                                             \n\t"
-    printf "    -o   | --outputFilename          -> default: BinderCumulant_poly_sq_Fit.pdf                                                \n\t"
+    printf "    -f   | --dataFilename            -> default: poly_sq_KurtosisAtBetaC.dat                                                   \n\t"
+    printf "    -o   | --outputFilename          -> default: Kurtosis_poly_sq_Fit.pdf                                                      \n\t"
     printf "    -l   | --fitLowerBound           -> If not given, the lower bound will be determined to be 95%% of the minimal mass.       \n\t"
     printf "    -u   | --fitUpperBound           -> If not given, the upper bound will be determined to be 105%% of the maximal mass.      \n\t"
     printf "   --yr  | --fityRange               -> Sets y-range of fit. Option expects two numbers: yrange-low yrange-high                \n\t"
@@ -192,9 +192,9 @@ done
 OBSERVABLE=${OBSERVABLE:-"poly_sq"}
 
 if [ "$FIT_TYPE" = "linear" ]; then
-    OUTPUT_FILENAME="BinderCumulant_${OBSERVABLE}_Fit"
+    OUTPUT_FILENAME="Kurtosis_${OBSERVABLE}_Fit"
 elif [ "$FIT_TYPE" = "cubic" ]; then
-    OUTPUT_FILENAME="BinderCumulant_${OBSERVABLE}_cubic_Fit"
+    OUTPUT_FILENAME="Kurtosis_${OBSERVABLE}_cubic_Fit"
 fi
 
 if [ "$USECORRECTIONTERM" = "TRUE" ]; then
@@ -213,8 +213,8 @@ fi
 
 
 echo $FILE_WITH_DATA_TO_BE_FITTED
-[ "$FILE_WITH_DATA_TO_BE_FITTED" = "" ] && echo "No data filename specified - using ${OBSERVABLE}_BinderCumulantAtBetaC.dat"
-FILE_WITH_DATA_TO_BE_FITTED=${FILE_WITH_DATA_TO_BE_FITTED:-"${OBSERVABLE}_BinderCumulantAtBetaC.dat"}
+[ "$FILE_WITH_DATA_TO_BE_FITTED" = "" ] && echo "No data filename specified - using ${OBSERVABLE}_KurtosisAtBetaC.dat"
+FILE_WITH_DATA_TO_BE_FITTED=${FILE_WITH_DATA_TO_BE_FITTED:-"${OBSERVABLE}_KurtosisAtBetaC.dat"}
 
 [ ! -f "$FILE_WITH_DATA_TO_BE_FITTED" ] && echo "Specified data file ${FILE_WITH_DATA_TO_BE_FITTED} does NOT exist...exiting" && exit
 

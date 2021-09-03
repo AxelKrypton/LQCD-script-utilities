@@ -109,7 +109,7 @@ function TryToExtractValueOfParameterFromPwd()
 CheckParametersExtractedFromPath $NFLAVOUR_PREFIX $CHEMPOT_PREFIX $NTIME_PREFIX
 
 PATH_TO_DATA=$PATH_TO_DATA$(GetParametersPath $NFLAVOUR_PREFIX $CHEMPOT_PREFIX)
-EXTRACTED_DATA_FILENAME="${OBSERVABLE}_BinderCumulantAtBetaC.dat"
+EXTRACTED_DATA_FILENAME="${OBSERVABLE}_KurtosisAtBetaC.dat"
 
 if [ ${#MASS_PARAMETER_ARRAY[@]} -eq 0 ]; then
     MASS_PARAMETER_ARRAY=( $(ls -d ${PATH_TO_DATA}/${MASS_PREFIX}*/${NTIME_PREFIX}${NTIME}/ | grep -o "$MASS_PREFIX$MASS_REGEX" | grep -o "$MASS_REGEX") )
