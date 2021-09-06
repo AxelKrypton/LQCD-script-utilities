@@ -210,7 +210,7 @@ if [ "$PREFIX" = "" ]; then
 else
     OUTPUT_FILENAME="${OUTPUT_FILENAME}$PREFIX.tex"
 fi
-
+OUTPUT_FILENAME="$(date +'%Y-%m-%d')_${OUTPUT_FILENAME}"
 
 echo $FILE_WITH_DATA_TO_BE_FITTED
 [ "$FILE_WITH_DATA_TO_BE_FITTED" = "" ] && echo "No data filename specified - using ${OBSERVABLE}_KurtosisAtBetaC.dat"
@@ -491,11 +491,12 @@ function RunGnuplotScriptAndProducePdf(){
 }
 
 function CleanAuxiliaryFiles(){
-    rm $TMP_FILE_FOR_GNUPLOT
-    rm $OUTPUT_FILENAME
+    rm "${NAME_OF_TMP_FILE}"
+    rm "${TMP_FILE_FOR_GNUPLOT}"
+    rm "${OUTPUT_FILENAME}"
     rm fit.log
-    rm ${OUTPUT_FILENAME/.tex/.log}
-    rm ${OUTPUT_FILENAME/.tex/.aux}
+    rm "${OUTPUT_FILENAME/.tex/.log}"
+    rm "${OUTPUT_FILENAME/.tex/.aux}"
     local SUPPORT_GNUPLOT_LUATEX_FILES=("gnuplot-lua-tikz-common.tex"  "gnuplot-lua-tikz.sty"  "gnuplot-lua-tikz.tex"  "t-gnuplot-lua-tikz.tex")
     rm ${SUPPORT_GNUPLOT_LUATEX_FILES[@]}
 }
