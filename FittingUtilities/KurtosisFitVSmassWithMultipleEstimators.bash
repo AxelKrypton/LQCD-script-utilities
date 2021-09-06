@@ -611,22 +611,25 @@ if [[ ${useBootstrap} = 'TRUE' ]]; then
     DrawProgressBar "${numberOfBootstrapEstimators}" "${numberOfBootstrapEstimators}"
     printf "\n\n\e[96m Bootstrap estimators produced in $(( $(date +'%s') - startTime )) seconds!\n\e[0m"
 
-    reportString="Unable to find kurtosis at zero of the skewness for ${numberOfProblematicBootstrapEstimators} bootstrap estimators in reweighted data:"
-    if [[ ${numberOfProblematicBootstrapEstimators} -ne 0 ]]; then
-        printf "\n\n${reportString}\n" >> "${outputFilename}"
-        Error "${reportString}"
-        for pair in "${!problematicBootstrapEstimators[@]}"; do
-            printf "%10s\e[93m${pair}  ->  ${problematicBootstrapEstimators[${pair}]}\e[0m\n" ''
-            printf "   ${pair}  ->  ${problematicBootstrapEstimators[${pair}]}\n" '' >> "${outputFilename}"
-        done
-    fi
-
     # Fit original data for central value
     cp "${fileWithGatheredKurtosisData}" "${temporaryDataForFit}"
     centralValuesFit=( $(gnuplot "${temporaryGnuplotScript}") ) # use word splitting to split results
     mcResult=(   "${centralValuesFit[4]}"  $(CalculateBootstrapErrorOfColumn "${outputFilename}" 5)  )
     chi2Result=( "${centralValuesFit[9]}"  $(CalculateBootstrapErrorOfColumn "${outputFilename}" 10) )
     QResult=(    "${centralValuesFit[10]}" $(CalculateBootstrapErrorOfColumn "${outputFilename}" 11) )
+
+    # Report about broken estimators
+    reportString="Unable to find kurtosis at zero of the skewness for ${numberOfProblematicBootstrapEstimators} bootstrap estimators in reweighted data:"
+    if [[ ${numberOfProblematicBootstrapEstimators} -ne 0 ]]; then
+        printf "\n\n# ${reportString}\n" >> "${outputFilename}"
+        Error "${reportString}"
+        for pair in "${!problematicBootstrapEstimators[@]}"; do
+            printf "%10s\e[93m${pair}  ->  ${problematicBootstrapEstimators[${pair}]}\e[0m\n" ''
+            printf "#    ${pair}  ->  ${problematicBootstrapEstimators[${pair}]}\n" '' >> "${outputFilename}"
+        done
+    fi
+
+    # Report about result
     printf -v resultString\
            "\n# Bootstrap analysis result ($((numberOfBootstrapEstimators - numberOfProblematicBootstrapEstimators)) estimators):\n#\n#%12s = %s ± %s\n#%12s = %s ± %s\n#%12s = %s ± %s\n#\n"\
            'm_c' "${mcResult[0]}" "${mcResult[1]}"\
