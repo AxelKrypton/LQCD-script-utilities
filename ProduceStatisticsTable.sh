@@ -224,12 +224,15 @@ for d in "${PATHS_TO_TARVERSE[@]}" ; do
                     printf '\n\\midrule\n\\multirow{%d}{*}{%s}\n' "${NUMBER_OF_NF[${NFLAVOUR}]}" "${NFLAVOUR}"
                 elif [[ ${printedFlavour} != $NFLAVOUR ]]; then
                     printf '\\\\\n\\midrule\n\\multirow{%d}{*}{%s}\n' "${NUMBER_OF_NF[${NFLAVOUR}]}" "${NFLAVOUR}"
-                elif [[ $printedMass != '' && ${printedMass} != $MASS ]]; then
-                    printf '\\\\\n'
+                fi
+                if [[ $printedMass = '' || ${printedFlavour} != $NFLAVOUR ]]; then
+                    printf ' & 0.%s ' ${MASS}
+                elif [[ ${printedMass} != $MASS && ${printedFlavour} = $NFLAVOUR ]]; then
+                    printf '\\\\\n & 0.%s ' ${MASS}
                 fi
                 printedFlavour=$NFLAVOUR
                 printedMass=$MASS
-                printf '& 0.%s & %6s\sep %.0fk\sep %d\sep %d\sep %.1f ' ${MASS} $betaC $stat $bCount $zeroishSkew $maxSkewDiscrepancy
+                printf '& %6s\sep %.0fk\sep %d\sep %d\sep %.1f ' $betaC $stat $bCount $zeroishSkew $maxSkewDiscrepancy
             else
                 printf '%s\t%d\t%.1f\t0.%s\t%2d\t%6s\t%.0fk|%2d|%3.0f|%d|%.1f\n' ${NFLAVOUR} $NTIME $NFLAVOUR $MASS $NSPACE $betaC $stat $bCount $nIndepEvents $zeroishSkew $maxSkewDiscrepancy
             fi
