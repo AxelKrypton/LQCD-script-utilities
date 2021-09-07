@@ -181,9 +181,6 @@ if [[ ${PRINT_FOR_DRAFT} = 'TRUE' ]]; then
         NFLAVOUR=$(cut -d'/' -f1 <<< "${d}")
         (( NUMBER_OF_NF[${NFLAVOUR/${NFLAVOUR_PREFIX}/}]++ ))
     done
-    for NFLAVOUR in "${!NUMBER_OF_NF[@]}"; do
-        printf "NUMBER_OF_NF[${NFLAVOUR}]=${NUMBER_OF_NF[${NFLAVOUR}]}\n"
-    done | sort -V
 fi
 
 NOT_ROUNDED_STATISTICS=()
