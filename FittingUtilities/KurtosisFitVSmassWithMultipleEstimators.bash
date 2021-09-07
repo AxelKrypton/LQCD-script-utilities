@@ -617,6 +617,15 @@ if [[ ${useBootstrap} = 'TRUE' ]]; then
     mcResult=(   "${centralValuesFit[4]}"  $(CalculateBootstrapErrorOfColumn "${outputFilename}" 5)  )
     chi2Result=( "${centralValuesFit[9]}"  $(CalculateBootstrapErrorOfColumn "${outputFilename}" 10) )
     QResult=(    "${centralValuesFit[10]}" $(CalculateBootstrapErrorOfColumn "${outputFilename}" 11) )
+    a0Result=(   "${centralValuesFit[2]}"  $(CalculateBootstrapErrorOfColumn "${outputFilename}" 3) )
+    B4Result=( "${kurtosisInfinity}" '0.000000' )
+    nuResult=( "${criticalExponent}" '0.000000' )
+    if [[ ${fixKurtosisInfinity} = 'FALSE' ]]; then
+        B4Result=( "${centralValuesFit[0]}" $(CalculateBootstrapErrorOfColumn "${outputFilename}" 1) )
+    fi
+    if [[ ${fixCriticalExponent} = 'FALSE' ]]; then
+        nuResult=( "${centralValuesFit[6]}" $(CalculateBootstrapErrorOfColumn "${outputFilename}" 7) )
+    fi
 
     # Report about broken estimators
     reportString="Unable to find kurtosis at zero of the skewness for ${numberOfProblematicBootstrapEstimators} bootstrap estimators in reweighted data:"
@@ -635,9 +644,14 @@ if [[ ${useBootstrap} = 'TRUE' ]]; then
            'm_c' "${mcResult[0]}" "${mcResult[1]}"\
            'chi2/ndf' "${chi2Result[0]}" "${chi2Result[1]}"\
            'Q' "${QResult[0]}" "${QResult[1]}"
-    printf '%1s%12s %-12s    %12s %-18s   %8s %-s\n'\
-           '#' 'm_c' 'm_c_error'   'chi2/ndf' 'chi2/ndf_error'  'Q' 'Q_error'\
-           ' ' "${mcResult[0]}" "${mcResult[1]}"\
+    printf '%1s%-5s %-5s %12s %-12s    %12s %-12s    %12s %-12s    %12s %-12s    %12s %-18s   %8s %-s\n'\
+           '#' 'nf' 'nt' 'B4' 'B4_error' 'nu' 'nu_error' 'a0' 'a0_error'\
+           'm_c' 'm_c_error'   'chi2/ndf' 'chi2/ndf_error'  'Q' 'Q_error'\
+           ' ' "${nfValue}" "${ntValue}"\
+           "${B4Result[0]}" "${B4Result[1]}"\
+           "${nuResult[0]}" "${nuResult[1]}"\
+           "${a0Result[0]}" "${a0Result[1]}"\
+           "${mcResult[0]}" "${mcResult[1]}"\
            "${chi2Result[0]}" "${chi2Result[1]}"\
            "${QResult[0]}" "${QResult[1]}" > "${outputResultFilename}"
 fi
