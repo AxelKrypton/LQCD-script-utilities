@@ -20,7 +20,8 @@ CHEMPOT=""
 MASS=""
 NSPACE=""
 NTIME=""
-REQNTIME=""
+REQUESTED_NTIME=""
+REQUESTED_NFLAVOUR=""
 declare -A PARAMETER_VARIABLE_NAMES=([$NFLAVOUR_PREFIX]="NFLAVOUR" [$CHEMPOT_PREFIX]="CHEMPOT" [$MASS_PREFIX]="MASS" [$NTIME_PREFIX]="NTIME" [$NSPACE_PREFIX]="NSPACE")
 NFLAVOUR_REGEX='[[:digit:]]\(.[[:digit:]]\)\?'
 CHEMPOT_REGEX='\(0\|PiT\)'
@@ -39,7 +40,8 @@ BETA_FOLDER_REGEX=$BETA_PREFIX$BETA_FOLDER_SHORT_REGEX
 BETA_FOLDER_MERGED_REGEX=$BETA_PREFIX$BETA_REGEX
 PARAMETERS_PATH=""
 PARAMETERS_STRING=""
-ILL_FORMED_PATH="FALSE"
+ILL_FORMED_PATH='FALSE'
+PRINT_FOR_DRAFT='FALSE'
 
 #Parse command line parameters
 function ElementInArray() {
@@ -50,8 +52,10 @@ function ElementInArray() {
 
 if ElementInArray "--help" $@ || ElementInArray "-h" $@; then
     printf "\n\t\e[38;5;13m\e[1m"
-    printf "\e[4mThis script is meant to be used in the "Nf" folder. Possible options to the script\e[24m:\e[22m\n\n\t\e[38;5;10m"
+    printf "This script is meant to be used in the folder where the \"Nf\" directories are.\n\tPossible options to the script:\e[22m\n\n\t\e[38;5;10m"
     printf "   --nt          ->   The nt value for which the statistics should be produced\n\t"
+    printf "   --Nf          ->   The Nf value for which the statistics should be produced\n\t"
+    printf "   --draft       ->   Print in format for the draft\n\t"
     printf "\n\e[0m"
     exit 3
 fi
@@ -59,8 +63,24 @@ fi
 while [ "$1" != "" ]; do
     case $1 in
         --nt )
-            REQNTIME="$2"
+            if [[ $2 =~ ^${NTIME_REGEX//\\/}$ ]]; then
+                REQUESTED_NTIME="$2"
+            else
+                printf "\n\e[38;5;9m Option value \e[1m$2\e[22m invalid! Aborting...\n\n\e[0m"; exit -1 
+            fi
             shift 2
+            ;;
+        --Nf )
+            if [[ $2 =~ ^${NFLAVOUR_REGEX//\\/}$ ]]; then
+                REQUESTED_NFLAVOUR="$2"
+            else
+                printf "\n\e[38;5;9m Option value \e[1m$2\e[22m invalid! Aborting...\n\n\e[0m"; exit -1 
+            fi
+            shift 2
+            ;;
+        --draft )
+            PRINT_FOR_DRAFT='TRUE'
+            shift
             ;;
         * ) printf "\n\e[38;5;9m Option \e[1m$1\e[22m invalid! Aborting...\n\n\e[0m"; exit -1
     esac
@@ -140,13 +160,39 @@ function ReadParametersFromPath(){
     SetParametersPathAndString
 }
 
+shopt -s extglob
 
-for d in $PWD/*/*/*/* ; do
+echo
+if [[ ${REQUESTED_NTIME} = '' && ${REQUESTED_NFLAVOUR} = '' ]]; then
+    PATHS_TO_TARVERSE=( ${PWD}/${NFLAVOUR_PREFIX}[0-9][.][0-9]/${CHEMPOT_PREFIX}*/${MASS_PREFIX}*/${NTIME_PREFIX}*/${NSPACE_PREFIX}+([0-9]) )
+elif [[ ${REQUESTED_NTIME} != '' && ${REQUESTED_NFLAVOUR} = '' ]]; then
+    PATHS_TO_TARVERSE=( ${PWD}/${NFLAVOUR_PREFIX}[0-9][.][0-9]/${CHEMPOT_PREFIX}*/${MASS_PREFIX}*/${NTIME_PREFIX}${REQUESTED_NTIME}/${NSPACE_PREFIX}+([0-9]) )
+elif [[ ${REQUESTED_NTIME} = '' && ${REQUESTED_NFLAVOUR} != '' ]]; then
+    PATHS_TO_TARVERSE=( ${PWD}/${NFLAVOUR_PREFIX}${REQUESTED_NFLAVOUR}/${CHEMPOT_PREFIX}*/${MASS_PREFIX}*/${NTIME_PREFIX}*/${NSPACE_PREFIX}+([0-9]) )
+else
+    PATHS_TO_TARVERSE=( ${PWD}/${NFLAVOUR_PREFIX}${REQUESTED_NFLAVOUR}/${CHEMPOT_PREFIX}*/${MASS_PREFIX}*/${NTIME_PREFIX}${REQUESTED_NTIME}/${NSPACE_PREFIX}+([0-9]) )
+fi
+
+if [[ ${PRINT_FOR_DRAFT} = 'TRUE' ]]; then
+    declare -A NUMBER_OF_NF
+    # Assume no space in paths...
+    PIECES_OF_PATHS=( $(printf '%s\n' "${PATHS_TO_TARVERSE[@]}" | grep -o "${NFLAVOUR_PREFIX}${NFLAVOUR_REGEX}/${CHEMPOT_PREFIX}${CHEMPOT_REGEX}/${MASS_PREFIX}${MASS_REGEX}/${NTIME_PREFIX}${NTIME_REGEX}" | sort -u) )
+    for d in "${PIECES_OF_PATHS[@]}" ; do
+        NFLAVOUR=$(cut -d'/' -f1 <<< "${d}")
+        (( NUMBER_OF_NF[${NFLAVOUR/${NFLAVOUR_PREFIX}/}]++ ))
+    done
+    for NFLAVOUR in "${!NUMBER_OF_NF[@]}"; do
+        printf "NUMBER_OF_NF[${NFLAVOUR}]=${NUMBER_OF_NF[${NFLAVOUR}]}\n"
+    done | sort -V
+fi
+
+NOT_ROUNDED_STATISTICS=()
+for d in "${PATHS_TO_TARVERSE[@]}" ; do
     if [[ ! $d == *"scalingPlots" ]]; then
         ReadParametersFromPath $d
         [[ $ILL_FORMED_PATH == "TRUE" ]] && unset ILL_FORMED_PATH && unset PARAMETERS_STRING && continue
 
-        if [[ $NTIME == $REQNTIME ]] || [[ -z "$REQNTIME" ]]; then
+        if [[ $NTIME == $REQUESTED_NTIME ]] || [[ -z "$REQUESTED_NTIME" ]]; then
 
             stat=0
             bCount=0
@@ -155,30 +201,40 @@ for d in $PWD/*/*/*/* ; do
                 betaDirName=${bdir##*/}
                 betas+=($(grep -o $BETA_REGEX <<< $betaDirName))
                 if [[ $betaDirName =~ ^${BETA_FOLDER_MERGED_REGEX//\\/}$ ]]; then
+                    [[ ! -f $d/$betaDirName/$OUTPUT_FILE ]] && continue
                     stat=$((stat+$(wc -l < $d/$betaDirName/$OUTPUT_FILE)))
                     bCount=$((bCount+1))
                 fi
             done
-            statInt=$stat
-            stat=$((stat/1000))
-            modStat=$((stat%50))
-            stat=$((stat-modStat))
+            if [[ ! ${stat} =~ 000$ ]]; then
+                NOT_ROUNDED_STATISTICS+=( "${d}" )
+                continue
+            fi
+            (( stat/=1000 ))
 
             betaC="-"
             betaCFile="$d/${PARAMETERS_STRING}_betacEstimates/${PARAMETERS_STRING}_betaC_pbp_from_skewness_reweightedData.dat"
-            [[ -f $betaCFile ]] && betaC=$(printf "%.4f" $(awk 'NR==2{print $1}' $betaCFile))
+            [[ -f $betaCFile ]] && betaC=$(printf "%.6f" $(awk 'NR==2{print $1}' $betaCFile))
             observablesFile="$d/${PARAMETERS_STRING}_analysis/${PARAMETERS_STRING}_observables_pbp.dat"
             [[ -f $observablesFile ]] && nIndepEvents=$(awk '{if ($2=="merged") {sum += $28; count++}} END {  if (NR > 0) print sum / count ; }' $observablesFile)
             [[ -f $observablesFile ]] && zeroishSkew=$(awk -v bMin=${betas[0]} -v bMax=${betas[-1]} ' function abs(v) {return v < 0 ? -v : v} {if ($1==bMin && $2!="merged" && $18>=abs($17)) {occ++}; if ($1==bMax && $2!="merged" && $18>=abs($17)) { occ++};} END {  if (NR > 0) printf "%d", occ; }' $observablesFile)
             maxSkewDiscrepancyFile="$d/${PARAMETERS_STRING}_analysis/${PARAMETERS_STRING}_maxSigmaDiscrepancyForSkewness.dat"
             [[ -f $maxSkewDiscrepancyFile ]] && maxSkewDiscrepancy=$(awk '{if(min==""){min=max=$2}; if($2>max) {max=$2}; if($2< min) {min=$2};} END {printf "%.1f", max}' $maxSkewDiscrepancyFile)
 
-#Uncomment to print it in a suitable form for tables in the chiralPT draft
-#        [[ ! $printedMass == $MASS ]] && printf '\\\ \n& 0.%s ' $MASS && printedMass=$MASS
-#            printf '& %6s\sep %.0fk\sep %d\sep %d\sep %.1f ' $betaC $stat $bCount $zeroishSkew $maxSkewDiscrepancy
-
-#Uncomment for printing more information than needed for the table in the draft...
-             printf '%d\t%.1f\t0.%s\t%2d\t%6s\t%.0fk|%2d|%3.0f|%d|%.1f\n' $NTIME $NFLAVOUR $MASS $NSPACE $betaC $stat $bCount $nIndepEvents $zeroishSkew $maxSkewDiscrepancy
+            if [[ ${PRINT_FOR_DRAFT} = 'TRUE' ]]; then
+                if [[ $printedFlavour = '' ]]; then
+                    printf '\n\\midrule\n\\multirow{%d}{*}{%s}\n' "${NUMBER_OF_NF[${NFLAVOUR}]}" "${NFLAVOUR}"
+                elif [[ ${printedFlavour} != $NFLAVOUR ]]; then
+                    printf '\\\\\n\\midrule\n\\multirow{%d}{*}{%s}\n' "${NUMBER_OF_NF[${NFLAVOUR}]}" "${NFLAVOUR}"
+                elif [[ $printedMass != '' && ${printedMass} != $MASS ]]; then
+                    printf '\\\\\n'
+                fi
+                printedFlavour=$NFLAVOUR
+                printedMass=$MASS
+                printf '& 0.%s & %6s\sep %.0fk\sep %d\sep %d\sep %.1f ' ${MASS} $betaC $stat $bCount $zeroishSkew $maxSkewDiscrepancy
+            else
+                printf '%s\t%d\t%.1f\t0.%s\t%2d\t%6s\t%.0fk|%2d|%3.0f|%d|%.1f\n' ${NFLAVOUR} $NTIME $NFLAVOUR $MASS $NSPACE $betaC $stat $bCount $nIndepEvents $zeroishSkew $maxSkewDiscrepancy
+            fi
         fi
     fi
     unset PARAMETERS_STRING
@@ -187,5 +243,17 @@ for d in $PWD/*/*/*/* ; do
     unset MASS
     unset NSPACE
 done
-#printf '\\\ \n'
+if [[ ${PRINT_FOR_DRAFT} = 'TRUE' ]]; then
+    printf '\\\\\n\n'
+else
+    echo
+fi
+
+if [[ ${#NOT_ROUNDED_STATISTICS[@]} -gt 0 ]]; then
+    printf "\n \e[93mWARNING: Statistics of following volumes was not rounded and excluded from the table:\e[0m\n"
+    for d in "${NOT_ROUNDED_STATISTICS[@]}"; do
+        printf "         \e[96m${d}\e[0m\n"
+    done
+    echo
+fi
 
