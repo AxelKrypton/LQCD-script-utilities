@@ -185,6 +185,7 @@ fi
 
 NOT_ROUNDED_STATISTICS=()
 for d in "${PATHS_TO_TARVERSE[@]}" ; do
+    unset -v 'PARAMETERS_STRING' 'NFLAVOUR' 'CHEMPOT' 'MASS' 'NTIME' 'NSPACE'
     if [[ ! $d == *"scalingPlots" ]]; then
         ReadParametersFromPath $d
         [[ $ILL_FORMED_PATH == "TRUE" ]] && unset ILL_FORMED_PATH && unset PARAMETERS_STRING && continue
@@ -234,11 +235,6 @@ for d in "${PATHS_TO_TARVERSE[@]}" ; do
             fi
         fi
     fi
-    unset PARAMETERS_STRING
-    unset NTIME
-    unset NFLAVOUR
-    unset MASS
-    unset NSPACE
 done
 if [[ ${PRINT_FOR_DRAFT} = 'TRUE' ]]; then
     printf '\\\\\n\n'
