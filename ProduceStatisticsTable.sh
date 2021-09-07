@@ -205,13 +205,16 @@ for d in "${PATHS_TO_TARVERSE[@]}" ; do
             betas=()
             for bdir in $d/*; do
                 betaDirName=${bdir##*/}
-                betas+=($(grep -o $BETA_REGEX <<< $betaDirName))
-                if [[ $betaDirName =~ ^${BETA_FOLDER_MERGED_REGEX//\\/}$ ]]; then
-                    [[ ! -f $d/$betaDirName/$OUTPUT_FILE ]] && continue
-                    stat=$((stat+$(wc -l < $d/$betaDirName/$OUTPUT_FILE)))
-                    bCount=$((bCount+1))
+                if [[ ! $betaDirName =~ ^${BETA_FOLDER_MERGED_REGEX//\\/}$ ]]; then
+                    continue
                 fi
+                betas+=($(grep -o $BETA_REGEX <<< $betaDirName))
+                [[ ! -f $d/$betaDirName/$OUTPUT_FILE ]] && continue
+                stat=$((stat+$(wc -l < $d/$betaDirName/$OUTPUT_FILE)))
+                bCount=$((bCount+1))
             done
+            # Sort betas to use this assumption later in awk
+            readarray -d $'\0' -t betas < <(printf '%s\0' "${betas[@]}" | sort -z)
             if [[ ! ${stat} =~ 000$ ]]; then
                 NOT_ROUNDED_STATISTICS+=( "${d}" )
                 continue
@@ -223,7 +226,7 @@ for d in "${PATHS_TO_TARVERSE[@]}" ; do
             [[ -f $betaCFile ]] && betaC=$(printf "%.6f" $(awk 'NR==2{print $1}' $betaCFile))
             observablesFile="$d/${PARAMETERS_STRING}_analysis/${PARAMETERS_STRING}_observables_pbp.dat"
             [[ -f $observablesFile ]] && nIndepEvents=$(awk '{if ($2=="merged") {sum += $28; count++}} END {  if (NR > 0) print sum / count ; }' $observablesFile)
-            [[ -f $observablesFile ]] && zeroishSkew=$(awk -v bMin=${betas[0]} -v bMax=${betas[-1]} ' function abs(v) {return v < 0 ? -v : v} {if ($1==bMin && $2!="merged" && $18>=abs($17)) {occ++}; if ($1==bMax && $2!="merged" && $18>=abs($17)) { occ++};} END {  if (NR > 0) printf "%d", occ; }' $observablesFile)
+            [[ -f $observablesFile ]] && zeroishSkew=$(awk -v "bMin=${betas[0]}" -v "bMax=${betas[-1]}" ' function abs(v) {return v < 0 ? -v : v} {if ($1==bMin && $2!="merged" && $18>=abs($17)) {occ++}; if ($1==bMax && $2!="merged" && $18>=abs($17)) { occ++};} END {  if (NR > 0) printf "%d", occ; }' $observablesFile)
             maxSkewDiscrepancyFile="$d/${PARAMETERS_STRING}_analysis/${PARAMETERS_STRING}_maxSigmaDiscrepancyForSkewness.dat"
             [[ -f $maxSkewDiscrepancyFile ]] && maxSkewDiscrepancy=$(awk '{if(min==""){min=max=$2}; if($2>max) {max=$2}; if($2< min) {min=$2};} END {printf "%.1f", max}' $maxSkewDiscrepancyFile)
 
