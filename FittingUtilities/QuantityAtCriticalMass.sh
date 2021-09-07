@@ -1,12 +1,13 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #######################################################################################
 #
 #   This script is suited to read the critical beta values with their errors and
-#   the critical mass with its error (from the output files of the
-#   GatherKurtosisValuesAtBetaC.sh and of the BinderFitVSmass.sh scripts respectively)
-#   and to perform three polynomialFits to extract the critical value of beta at the
-#    critical mass and its error.
+#   the critical mass with its error from the output files of the
+#     - GatherKurtosisValuesAtBetaC.sh
+#     - KurtosisFitVSmassWithMultipleEstimators.bash
+#   scripts, respectively, and to perform three polynomialFits to extract the
+#   critical value of beta at the critical mass and its error.
 #
 #######################################################################################
 
@@ -15,7 +16,7 @@ POLYNOMIAL_DEGREE=1
 QUANT_NAME="betaC"
 QUANT_DATA_FILENAME='pbp_KurtosisAtBetaC.dat'
 AUX_QUANT_DATA_FILENAME='aux_'${QUANT_DATA_FILENAME}
-MC_DATA_FILENAME='Kurtosis_pbp_Fit.dat'
+MC_DATA_FILENAME='KurtosisFit_Bootstrap.dat'
 MC=""
 MC_ERR=""
 TMP_FILE_FOR_GNUPLOT_SCRIPT='FileThatHopefullyDoesNotExist.plt'
@@ -137,11 +138,6 @@ if [ ! -f $QUANT_DATA_FILENAME ]; then
     exit -1
 fi
 
-if [ ! -f $MC_DATA_FILENAME ]; then
-    printf "\n\e[0;31m File \"$MC_DATA_FILENAME\" not found! Aborting...\n\n\e[0m"
-    exit -1
-fi
-
 if [[ ! $POLYNOMIAL_DEGREE =~ ^[[:digit:]]+$  ]]; then
     printf "\n\e[0;31m The polynomial degree must be a positive integer! Aborting...\n\n\e[0m"
     exit -1
@@ -150,17 +146,23 @@ fi
 #==============================================================================================================
 #Read point where to extrapolate from the file containing the information on the critical mass and its error
 if [[ -z "$MC" ]]; then
-    echo "The critical mass and its error will be read from the file \"$MC_DATA_FILENAME\""
+    if [ ! -f $MC_DATA_FILENAME ]; then
+        printf "\n\e[0;31m File \"$MC_DATA_FILENAME\" not found! Aborting...\n\n\e[0m"
+        exit -1
+    fi
+    echo
+    echo "The critical mass and its error will be read from the second line of the file \"${MC_DATA_FILENAME}\""
     NF=$(awk 'NR==2{print $1}' $MC_DATA_FILENAME)
     NT=$(awk 'NR==2{print $2}' $MC_DATA_FILENAME)
-    MC=$(awk 'NR==2{print $11}' $MC_DATA_FILENAME)
-    MC_ERR=$(awk 'NR==2{print $12}' $MC_DATA_FILENAME)
+    MC=$(awk 'NR==2{print $9}' $MC_DATA_FILENAME)
+    MC_ERR=$(awk 'NR==2{print $10}' $MC_DATA_FILENAME)
+    printf '  %s = %s\n' 'Nf' "${NF}"  'nt' "${NT}"  'm_c' "${MC} +- ${MC_ERR}"
 fi
 if [[ -z "$MC_ERR" ]]; then
     MC_ERR=0
     EXTRAPOLATE_TO=($MC)
 else
-    EXTRAPOLATE_TO=($(printf '%.4f\n' "$(echo $MC - $MC_ERR | bc)") $MC $(printf '%.4f\n' "$(echo $MC + $MC_ERR | bc)"))
+    EXTRAPOLATE_TO=(  $(awk -v "mc=${MC}" -v "mcErr=${MC_ERR}" 'BEGIN{printf "%.12f  %.12f  %.12f", mc-mcErr, mc, mc+mcErr}')  )
 fi
 
 #==============================================================================================================
@@ -211,13 +213,13 @@ if [ ${#EXTRAPOLATE_TO[@]} -ne 0 ]; then
     echo 'set print "-"' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     echo 'print "Extrapolation to new points:\n'$LABEL_X'\t\t'$LABEL_Y'\t\t\t'$LABEL_DY'"' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     for NEW_POINT in ${EXTRAPOLATE_TO[@]}; do
-        echo 'print sprintf("%.4f\t\t%f\t\t%f\t\t", '$NEW_POINT', f('$NEW_POINT'), f_err('$NEW_POINT'))' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+        echo 'print sprintf("%.8f\t\t%f\t\t%f\t\t", '$NEW_POINT', f('$NEW_POINT'), f_err('$NEW_POINT'))' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     done
     echo 'print ""' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     echo 'set print "'$AUXILIARY_FILE'"' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     echo 'print "#'$LABEL_X'\t\t\t'$LABEL_Y'\t\t\t'$LABEL_DY'"' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     for NEW_POINT in ${EXTRAPOLATE_TO[@]}; do
-        echo 'print sprintf("%.4f\t\t%f\t\t%f\t\t", '$NEW_POINT', f('$NEW_POINT'), f_err('$NEW_POINT'))' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+        echo 'print sprintf("%.8f\t\t%f\t\t%f\t\t", '$NEW_POINT', f('$NEW_POINT'), f_err('$NEW_POINT'))' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     done
     echo 'set print' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 fi
@@ -231,18 +233,18 @@ function RunGnuplotScript(){
 }
 
 function ProcessGnuplotResults(){
-    EXTRQ=$(awk -v b=$(printf '%.4f\n' "$(echo $MC | bc)") '$1==b{print $2}' $AUXILIARY_FILE)
-    res=$(awk -v b=$(printf '%.4f\n' "$(echo $MC | bc)") '$1==b{print $3}' $AUXILIARY_FILE)
+    EXTRQ=$(awk -v "mc=${MC}" 'BEGIN{b=sprintf("%.8f", mc)} $1==b{print $2}' $AUXILIARY_FILE)
+    res=$(awk   -v "mc=${MC}" 'BEGIN{b=sprintf("%.8f", mc)} $1==b{print $3}' $AUXILIARY_FILE)
     if [[ ! $MC_ERR == 0 ]]; then
-        EXTRQ1=$(awk -v b1=$(printf '%.4f\n' "$(echo $MC - $MC_ERR | bc)") '$1==b1{print $2}' $AUXILIARY_FILE)
-        EXTRQ2=$(awk -v b2=$(printf '%.4f\n' "$(echo $MC + $MC_ERR | bc)") '$1==b2{print $2}' $AUXILIARY_FILE)
-        res=$(printf '%.4f\n' "$(bc -l <<< $EXTRQ1/2.-$EXTRQ2/2.)")
+        EXTRQ1=$(awk -v "mc=${MC}" -v "mcErr=${MC_ERR}" 'BEGIN{b1=sprintf("%.8f", mc-mcErr)} $1==b1{print $2}' $AUXILIARY_FILE)
+        EXTRQ2=$(awk -v "mc=${MC}" -v "mcErr=${MC_ERR}" 'BEGIN{b2=sprintf("%.8f", mc+mcErr)} $1==b2{print $2}' $AUXILIARY_FILE)
+        res=$(awk -v "mc=${MC}" -v "mcErr=${MC_ERR}" 'BEGIN{b1=sprintf("%.8f", mc-mcErr); b2=sprintf("%.8f", mc+mcErr)} $1==b1{extrQ1=$2} $1==b2{extrQ2=$2} END{printf "%.8f", 0.5*(extrQ2 - extrQ1)}' $AUXILIARY_FILE)
     fi
     printf 'Results for the critical beta\n'
-    printf '#mC\tmC_err\t%s\t%s_err\n' $QUANT_NAME $QUANT_NAME
-    printf '%.4f\t%.4f\t%.4f\t%.4f\n\n' $MC $MC_ERR $EXTRQ ${res#-}
+    printf '#%-12s %-12s %-12s %-12s\n' 'mC' 'mc_err' "$QUANT_NAME" "${QUANT_NAME}_err"
+    printf '%.8f    %.8f   %.8f   %.8f\n\n' $MC $MC_ERR $EXTRQ ${res}
     EXTRACTEDCRITICALQUANT=(${EXTRACTEDCRITICALQUANT[@]} $EXTRQ)
-    EXTRACTEDCRITICALERR=(${EXTRACTEDCRITICALQUANT[@]} ${res#-})
+    EXTRACTEDCRITICALERR=(${EXTRACTEDCRITICALQUANT[@]} ${res})
 }
 
 
@@ -262,11 +264,11 @@ function CrossCheckCriticalBetasForLargestNs(){
         printf "Cannot check the stability of the extracted result comparing the two largest ns values.\n"
     fi
     
-    printf 'Saving results for the largest ns...\n'
+    printf 'Saving results for the largest ns...\n\n'
     exec 3>&1 1>$OUTPUT_FILENAME
-    printf '#nf\tnt\tmC\tmC_err\t%s\t%s_err\n' $QUANT_NAME $QUANT_NAME
-    printf '%.1f\t%d\t%.4f\t%.4f\t%.4f\t%.4f\n' $NF $NT $MC $MC_ERR $EXTRQ ${EXTRACTEDCRITICALERR[-1]}
-    
+    printf '#%-5s %-5s  %-12s %-12s %-12s %-12s\n' 'Nf' 'nt' 'mC' 'mc_err' "$QUANT_NAME" "${QUANT_NAME}_err"
+    printf '%-5s  %-5s  %.8f   %.8f   %.8f   %.8f\n' $NF $NT $MC $MC_ERR $EXTRQ ${res}
+    exec 1>&3 3>&-
 }
 
 function ProcessInputFileForThePolynomialFit(){
