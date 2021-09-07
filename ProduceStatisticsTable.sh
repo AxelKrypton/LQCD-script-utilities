@@ -174,13 +174,21 @@ else
 fi
 
 if [[ ${PRINT_FOR_DRAFT} = 'TRUE' ]]; then
-    declare -A NUMBER_OF_NF
+    declare -A NUMBER_OF_NF VOLUMES_SETS
     # Assume no space in paths...
     PIECES_OF_PATHS=( $(printf '%s\n' "${PATHS_TO_TARVERSE[@]}" | grep -o "${NFLAVOUR_PREFIX}${NFLAVOUR_REGEX}/${CHEMPOT_PREFIX}${CHEMPOT_REGEX}/${MASS_PREFIX}${MASS_REGEX}/${NTIME_PREFIX}${NTIME_REGEX}" | sort -u) )
     for d in "${PIECES_OF_PATHS[@]}" ; do
         NFLAVOUR=$(cut -d'/' -f1 <<< "${d}")
         (( NUMBER_OF_NF[${NFLAVOUR/${NFLAVOUR_PREFIX}/}]++ ))
+        VOLUMES_SETS["${d//\//_}"]="$(printf '%s\n' "${PATHS_TO_TARVERSE[@]}" | grep "${d}" | grep -o "${NSPACE_PREFIX}${NSPACE_REGEX}$" | sed 's/^'"${NSPACE_PREFIX}"'//' | tr '\n' ' ')"
     done
+    printf '\e[93m%s\e[0m\n'\
+           ' The table for the draft prints aspec ratios in ascending order left to right and'\
+           ' you should guarantee yourself that no column is mismatched. Here in the following'\
+           ' the list of aspect ratios gathered on the same line:'
+    for d in "${!VOLUMES_SETS[@]}"; do
+        printf "\e[96m%26s:\e[0m %s\n" "${d}" "${VOLUMES_SETS[${d}]}"
+    done | sort
 fi
 
 NOT_ROUNDED_STATISTICS=()
