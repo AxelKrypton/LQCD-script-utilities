@@ -248,7 +248,7 @@ for d in "${PATHS_TO_TARVERSE[@]}" ; do
                 printedMass=$MASS
                 printf '& %-9s\sep %4sk\sep %d\sep %d\sep %.1f ' ${betaC/%+(0)/} $stat $bCount $zeroishSkew $maxSkewDiscrepancy
             else
-                printf '%s\t%d\t0.%s\t%2d\t%6s\t%4sk|%2d|%3.0f|%d|%.1f\n' ${NFLAVOUR} $NTIME $MASS $NSPACE $betaC $stat $bCount $nIndepEvents $zeroishSkew $maxSkewDiscrepancy
+                printf '%s\t%d\t0.%s\t%2d\t%6s\t%4sk | %2d | %3.0f | %d | %.1f\n' ${NFLAVOUR} $NTIME $MASS $NSPACE $betaC $stat $bCount $nIndepEvents $zeroishSkew $maxSkewDiscrepancy
             fi
         fi
     fi
@@ -265,5 +265,8 @@ if [[ ${#NOT_ROUNDED_STATISTICS[@]} -gt 0 ]]; then
         printf "         \e[96m${d}\e[0m\n"
     done
     echo
+    if [[ ${PRINT_FOR_DRAFT} = 'TRUE' ]]; then
+        printf '\n \e[93mWARNING: The first argument of \\multirow might be wrong if not-rounded statistics led to line skipping! \e[0m\n\n'
+    fi
 fi
 
