@@ -246,9 +246,9 @@ for d in "${PATHS_TO_TARVERSE[@]}" ; do
                 fi
                 printedFlavour=$NFLAVOUR
                 printedMass=$MASS
-                printf '& %-9s\sep %.0fk\sep %d\sep %d\sep %.1f ' ${betaC/%+(0)/} $stat $bCount $zeroishSkew $maxSkewDiscrepancy
+                printf '& %-9s\sep %4sk\sep %d\sep %d\sep %.1f ' ${betaC/%+(0)/} $stat $bCount $zeroishSkew $maxSkewDiscrepancy
             else
-                printf '%s\t%d\t0.%s\t%2d\t%6s\t%.0fk|%2d|%3.0f|%d|%.1f\n' ${NFLAVOUR} $NTIME $MASS $NSPACE $betaC $stat $bCount $nIndepEvents $zeroishSkew $maxSkewDiscrepancy
+                printf '%s\t%d\t0.%s\t%2d\t%6s\t%4sk|%2d|%3.0f|%d|%.1f\n' ${NFLAVOUR} $NTIME $MASS $NSPACE $betaC $stat $bCount $nIndepEvents $zeroishSkew $maxSkewDiscrepancy
             fi
         fi
     fi
