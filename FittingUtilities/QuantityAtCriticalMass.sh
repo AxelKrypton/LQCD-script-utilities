@@ -267,7 +267,7 @@ function CrossCheckCriticalBetasForLargestNs(){
     printf 'Saving results for the largest ns...\n\n'
     exec 3>&1 1>$OUTPUT_FILENAME
     printf '#%-5s %-5s  %-12s %-12s %-12s %-12s\n' 'Nf' 'nt' 'mC' 'mc_err' "$QUANT_NAME" "${QUANT_NAME}_err"
-    printf '%-5s  %-5s  %.8f   %.8f   %.8f   %.8f\n' $NF $NT $MC $MC_ERR $EXTRQ ${res}
+    printf '%-5s  %-5s  %.8f   %.8f   %.8f   %.8f\n' $NF $NT $MC $MC_ERR $EXTRQ ${EXTRACTEDCRITICALERR[-1]}
     exec 1>&3 3>&-
 }
 
