@@ -145,19 +145,21 @@ fi
 
 #==============================================================================================================
 #Read point where to extrapolate from the file containing the information on the critical mass and its error
+if [ ! -f $MC_DATA_FILENAME ]; then
+    printf "\n\e[0;31m File \"$MC_DATA_FILENAME\" not found! Aborting...\n\n\e[0m"
+    exit -1
+fi
+echo
+echo "The value of Nf and nt will be read from the second line of the file \"${MC_DATA_FILENAME}\""
+NF=$(awk 'NR==2{print $1}' $MC_DATA_FILENAME)
+NT=$(awk 'NR==2{print $2}' $MC_DATA_FILENAME)
 if [[ -z "$MC" ]]; then
-    if [ ! -f $MC_DATA_FILENAME ]; then
-        printf "\n\e[0;31m File \"$MC_DATA_FILENAME\" not found! Aborting...\n\n\e[0m"
-        exit -1
-    fi
     echo
     echo "The critical mass and its error will be read from the second line of the file \"${MC_DATA_FILENAME}\""
-    NF=$(awk 'NR==2{print $1}' $MC_DATA_FILENAME)
-    NT=$(awk 'NR==2{print $2}' $MC_DATA_FILENAME)
     MC=$(awk 'NR==2{print $9}' $MC_DATA_FILENAME)
     MC_ERR=$(awk 'NR==2{print $10}' $MC_DATA_FILENAME)
-    printf '  %s = %s\n' 'Nf' "${NF}"  'nt' "${NT}"  'm_c' "${MC} +- ${MC_ERR}"
 fi
+printf '  %s = %s\n' 'Nf' "${NF}"  'nt' "${NT}"  'm_c' "${MC} +- ${MC_ERR}"
 if [[ -z "$MC_ERR" ]]; then
     MC_ERR=0
     EXTRAPOLATE_TO=($MC)
