@@ -206,32 +206,30 @@ for d in "${PATHS_TO_TARVERSE[@]}" ; do
             stat=0
             bCount=0
             betas=()
-            for bdir in $d/*; do
-                betaDirName=${bdir##*/}
-                if [[ ! $betaDirName =~ ^${BETA_FOLDER_MERGED_REGEX//\\/}$ ]]; then
-                    continue
-                fi
-                betas+=($(grep -o $BETA_REGEX <<< $betaDirName))
-                [[ ! -f $d/$betaDirName/$OUTPUT_FILE ]] && continue
-                stat=$((stat+$(wc -l < $d/$betaDirName/$OUTPUT_FILE)))
-                bCount=$((bCount+1))
-            done
-            # Sort betas to use this assumption later in awk
-            readarray -d $'\0' -t betas < <(printf '%s\0' "${betas[@]}" | sort -z)
+            betaC="-"
+            betaCFile="$d/${PARAMETERS_STRING}_betacEstimates/${PARAMETERS_STRING}_betaC_pbp_from_skewness_reweightedData.dat"
+            if [[ -f $betaCFile ]]; then
+                betaC=$(printf "%.6f" $(awk 'NR==2{print $1}' $betaCFile))
+            fi
+
+            observablesFile="$d/${PARAMETERS_STRING}_analysis/${PARAMETERS_STRING}_observables_pbp.dat"
+            if [[ -f $observablesFile ]]; then
+                betas=( $(awk '{if ($2=="merged"){print $1}}' $observablesFile) )
+                readarray -d $'\0' -t betas < <(printf '%s\0' "${betas[@]}" | sort -z) # Sort betas to use this assumption later
+                stat=$(awk '{if ($2=="merged") {sum += $3}} END {print sum}' $observablesFile)
+                nIndepEvents=$(awk '{if ($2=="merged") {sum += $28; count++}} END {  if (NR > 0) print sum / count ; }' $observablesFile)
+                zeroishSkew=$(awk -v "bMin=${betas[0]}" -v "bMax=${betas[-1]}" ' function abs(v) {return v < 0 ? -v : v} {if ($1==bMin && $2!="merged" && $18>=abs($17)) {occ++}; if ($1==bMax && $2!="merged" && $18>=abs($17)) { occ++};} END {  if (NR > 0) printf "%d", occ; }' $observablesFile)
+            fi
             if [[ ! ${stat} =~ 000$ ]]; then
                 NOT_ROUNDED_STATISTICS+=( "${d}" )
                 continue
             fi
             (( stat/=1000 ))
 
-            betaC="-"
-            betaCFile="$d/${PARAMETERS_STRING}_betacEstimates/${PARAMETERS_STRING}_betaC_pbp_from_skewness_reweightedData.dat"
-            [[ -f $betaCFile ]] && betaC=$(printf "%.6f" $(awk 'NR==2{print $1}' $betaCFile))
-            observablesFile="$d/${PARAMETERS_STRING}_analysis/${PARAMETERS_STRING}_observables_pbp.dat"
-            [[ -f $observablesFile ]] && nIndepEvents=$(awk '{if ($2=="merged") {sum += $28; count++}} END {  if (NR > 0) print sum / count ; }' $observablesFile)
-            [[ -f $observablesFile ]] && zeroishSkew=$(awk -v "bMin=${betas[0]}" -v "bMax=${betas[-1]}" ' function abs(v) {return v < 0 ? -v : v} {if ($1==bMin && $2!="merged" && $18>=abs($17)) {occ++}; if ($1==bMax && $2!="merged" && $18>=abs($17)) { occ++};} END {  if (NR > 0) printf "%d", occ; }' $observablesFile)
             maxSkewDiscrepancyFile="$d/${PARAMETERS_STRING}_analysis/${PARAMETERS_STRING}_maxSigmaDiscrepancyForSkewness.dat"
-            [[ -f $maxSkewDiscrepancyFile ]] && maxSkewDiscrepancy=$(awk '{if(min==""){min=max=$2}; if($2>max) {max=$2}; if($2< min) {min=$2};} END {printf "%.1f", max}' $maxSkewDiscrepancyFile)
+            if [[ -f $maxSkewDiscrepancyFile ]]; then
+                maxSkewDiscrepancy=$(awk '{if(min==""){min=max=$2}; if($2>max) {max=$2}; if($2< min) {min=$2};} END {printf "%.1f", max}' $maxSkewDiscrepancyFile)
+            fi
 
             if [[ ${PRINT_FOR_DRAFT} = 'TRUE' ]]; then
                 if [[ $printedFlavour = '' ]]; then
@@ -246,9 +244,9 @@ for d in "${PATHS_TO_TARVERSE[@]}" ; do
                 fi
                 printedFlavour=$NFLAVOUR
                 printedMass=$MASS
-                printf '& %-9s\sep %4sk\sep %d\sep %d\sep %.1f ' ${betaC/%+(0)/} $stat $bCount $zeroishSkew $maxSkewDiscrepancy
+                printf '& %-9s\sep %4sk\sep %d\sep %d\sep %.1f ' ${betaC/%+(0)/} $stat ${#betas[@]} $zeroishSkew $maxSkewDiscrepancy
             else
-                printf '%s\t%d\t0.%s\t%2d\t%6s\t%4sk | %2d | %3.0f | %d | %.1f\n' ${NFLAVOUR} $NTIME $MASS $NSPACE $betaC $stat $bCount $nIndepEvents $zeroishSkew $maxSkewDiscrepancy
+                printf '%s\t%d\t0.%s\t%2d\t%6s\t%4sk | %2d | %3.0f | %d | %.1f\n' ${NFLAVOUR} $NTIME $MASS $NSPACE $betaC $stat ${#betas[@]} $nIndepEvents $zeroishSkew $maxSkewDiscrepancy
             fi
         fi
     fi
@@ -269,4 +267,3 @@ if [[ ${#NOT_ROUNDED_STATISTICS[@]} -gt 0 ]]; then
         printf '\n \e[93mWARNING: The first argument of \\multirow might be wrong if not-rounded statistics led to line skipping! \e[0m\n\n'
     fi
 fi
-
