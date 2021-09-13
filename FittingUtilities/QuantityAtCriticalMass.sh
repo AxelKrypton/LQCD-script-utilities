@@ -164,7 +164,7 @@ if [[ -z "$MC_ERR" ]]; then
     MC_ERR=0
     EXTRAPOLATE_TO=($MC)
 else
-    EXTRAPOLATE_TO=(  $(awk -v "mc=${MC}" -v "mcErr=${MC_ERR}" 'BEGIN{printf "%.12f  %.12f  %.12f", mc-mcErr, mc, mc+mcErr}')  )
+    EXTRAPOLATE_TO=(  $(awk -v "mc=${MC}" -v "mcErr=${MC_ERR}" 'BEGIN{printf "%.8f  %.8f  %.8f", mc-mcErr, mc, mc+mcErr}')  )
 fi
 
 #==============================================================================================================
