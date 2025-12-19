@@ -1,4 +1,24 @@
 function ProduceInverterJobscript_Loewe(){
+#
+#  Copyright (c) 2015 Christopher Czaban
+#  Copyright (c) 2016 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
     #-----------------------------------------------------------------#
     # This piece of script uses the variable
@@ -37,7 +57,7 @@ function ProduceInverterJobscript_Loewe(){
 
 	if [ -f "$FILE_WITH_WHICH_NODES_TO_EXCLUDE" ]; then
 		EXCLUDE_STRING=$(grep -oE '\-\-exclude=.*\[.*\]' $FILE_WITH_WHICH_NODES_TO_EXCLUDE 2>/dev/null)
-	elif [[ $FILE_WITH_WHICH_NODES_TO_EXCLUDE =~ : ]]; then 
+	elif [[ $FILE_WITH_WHICH_NODES_TO_EXCLUDE =~ : ]]; then
         EXCLUDE_STRING=$(ssh ${FILE_WITH_WHICH_NODES_TO_EXCLUDE%%:*} "grep -oE '\-\-exclude=.*\[.*\]' ${FILE_WITH_WHICH_NODES_TO_EXCLUDE#*:} 2>/dev/null")
 	fi
     if [ "$EXCLUDE_STRING" != "" ]; then
@@ -108,7 +128,7 @@ function ProduceInverterJobscript_Loewe(){
     fi
     echo "# Run jobs from different directories" >> $JOBSCRIPT_GLOBALPATH
     for INDEX in "${!BETA_FOR_JOBSCRIPT[@]}"; do
-        #The following check is done twice. During the creation of the jobscript for the case in which the $SRUN_COMMANDSFILE_FOR_INVERSION does not exist from the beginning on and 
+        #The following check is done twice. During the creation of the jobscript for the case in which the $SRUN_COMMANDSFILE_FOR_INVERSION does not exist from the beginning on and
         #in the jobscript itself for the case in which it exists during the creation of the jobscript but accidentally gets deleted later on after the creation.
         #if [ ! -e $workdir$INDEX/$SRUN_COMMANDSFILE_FOR_INVERSION ]; then #SHOULD BE LIKE THIS??
         if [ ! -e ${WORK_DIR_WITH_BETAFOLDERS}/$BETA_PREFIX${BETA_FOR_JOBSCRIPT[$INDEX]}/$SRUN_COMMANDSFILE_FOR_INVERSION ]; then #I THINK WORK_BETADIRECTORY has to be replaced!!!!
@@ -125,7 +145,7 @@ function ProduceInverterJobscript_Loewe(){
         echo "OLD_IFS=\$IFS" >> $JOBSCRIPT_GLOBALPATH
         echo "IFS=\$'\n'" >> $JOBSCRIPT_GLOBALPATH
         echo "for line in \$(cat \$workdir$INDEX/$SRUN_COMMANDSFILE_FOR_INVERSION); do" >> $JOBSCRIPT_GLOBALPATH
-        echo "IFS=\$OLD_IFS #Restore here old IFS to give separated options (and not only one)to CL2QCD!" >> $JOBSCRIPT_GLOBALPATH 
+        echo "IFS=\$OLD_IFS #Restore here old IFS to give separated options (and not only one)to CL2QCD!" >> $JOBSCRIPT_GLOBALPATH
         if [ $CLUSTER_NAME = "LOEWE" ]; then
             echo "  time srun -n 1 \$dir$INDEX/$INVERTER_FILENAME \$line --device=$INDEX 2>> \$dir$INDEX/\$errFile >> \$dir$INDEX/\$outFile " >> $JOBSCRIPT_GLOBALPATH
         elif [ $CLUSTER_NAME = "LCSC" ]; then

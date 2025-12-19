@@ -1,4 +1,23 @@
 #!/bin/bash
+#
+#  Copyright (c) 2014 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 # This script is to get the value of one INTEGER POSITIVE NUMERIC parameter from the input file
 # of tmLQCD. Let us call it "Param". The string that will be looked for can be:
@@ -7,9 +26,9 @@
 #   "Param="
 #
 # with, in case, some white spaces in front. If at least one char before the
-# allowed string is not a white space, the line is discarded. 
+# allowed string is not a white space, the line is discarded.
 # Of course, the input file is supposed to contain ONLY one valid line
-# from which the value will be extracted. 
+# from which the value will be extracted.
 #
 # IMPORTANT: The number is returned with the line
 #
@@ -21,16 +40,16 @@
 #
 #            in order to be able to recover the value afterwards from PARAM_READ.
 #            In the same fashion, in case of errors the variable ERROR_OCCURRED is set to 1.
-#                
 #
-# Note that if in the valid line, after the number there is a comment starting by 
+#
+# Note that if in the valid line, after the number there is a comment starting by
 # an hash (#), this script is still working.
 #
 # Note also that this scripts does not work if the parameter is 0.
 
 
 # Wrong arguments for the script => exit!
-if [ $# -ne 2 ]; then 
+if [ $# -ne 2 ]; then
     #printf "\nPlease use the following syntax:\n"
     #printf "\t\e[0;32m $0 <input_file> <Parameter>\e[0m\n\n"
     echo "export ERROR_OCCURRED=1"
@@ -39,7 +58,7 @@ else
     #
     # Check if input file is properly written. At the same time
     # we save which line of the output of the grep command contains
-    # the right Parameter. This is to read out the number more quickly 
+    # the right Parameter. This is to read out the number more quickly
     # later on.
     #
     numberGreppedLine_Param=$(grep -e "$2 =" -e "$2=" $1 | awk -v Param=$2 '\
@@ -92,7 +111,7 @@ END{
 BEGIN{digitsBeforeParam; equalPosition; hashPosition}
 {
   if(NR == line){
-    digitsBeforeParam = index($0, Param); 
+    digitsBeforeParam = index($0, Param);
     equalPosition = index(substr($0, digitsBeforeParam), "=");
     hashPosition = index(substr($0, digitsBeforeParam + equalPosition), "#");
     if(hashPosition == 0)
@@ -104,7 +123,7 @@ BEGIN{digitsBeforeParam; equalPosition; hashPosition}
 	#
 	# If ParamVal as number is 0 there was something wrong!
 	#
-	if [ $(($ParamVal)) -eq 0 ]; then 
+	if [ $(($ParamVal)) -eq 0 ]; then
 	    #echo "$2 is present in the input file but either has no number after = sign, or it is set to zero!"
 	    echo "export ERROR_OCCURRED=1"
 	    exit -1

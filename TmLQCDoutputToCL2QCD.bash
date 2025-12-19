@@ -1,4 +1,23 @@
 #!/bin/bash
+#
+#  Copyright (c) 2014 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 # This script is supposed to convert the output files of tmLQCD to that of CL2QCD.
 # It is not so trivial because tmLQCD saves polyakov loop and history data in
@@ -16,7 +35,7 @@
 #
 # Traj_num - Plaq_tot - dS - exp(dS) - CG_iter - CG_iter - Acc - Traj_time
 #     1          2       3      4         5         6       7        8
-# 
+#
 # and in polyakovloop_dir0
 #
 # Traj_num - dir - Poly_real - Poly_imag

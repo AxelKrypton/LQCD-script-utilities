@@ -1,4 +1,24 @@
 function ProduceSrunCommandsFileForInversionsPerBeta(){
+#
+#  Copyright (c) 2015 Christopher Czaban
+#  Copyright (c) 2016 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
     if [ "$CHEMPOT" != '0' ]; then
         printf "\n\e[0;91m Inversion of configuration with nonzero chemical potential not allowed!\n\n\e[0m"
@@ -7,9 +27,9 @@ function ProduceSrunCommandsFileForInversionsPerBeta(){
 
     if [ $(($NSPACE*$NSPACE*$NSPACE*$NTIME)) -lt $NUMBER_SOURCES_FOR_CORRELATORS ]; then
         printf "\n\e[0;91m Number of required sources bigger than available positions ($(($NSPACE*$NSPACE*$NSPACE*$NTIME)) <= $NUMBER_SOURCES_FOR_CORRELATORS)! Not allowed...\n\n\e[0m"
-        exit -1        
+        exit -1
     fi
-    
+
     ls $WORK_BETADIRECTORY | grep "^conf\.[[:digit:]]\{5\}" | awk -v ns="$NSPACE" \
                                                                   -v nt="$NTIME" \
                                                                   -v useCpu="false"   \
@@ -40,7 +60,7 @@ function ProduceSrunCommandsFileForInversionsPerBeta(){
             }
         }
         {
-            split($1,corr_name_array,"_"); 
+            split($1,corr_name_array,"_");
             conf_count[corr_name_array[1]]++;
             if(corr_name_array[2] ~ /^[[:digit:]]{1,2}$/)
             {
@@ -58,14 +78,14 @@ function ProduceSrunCommandsFileForInversionsPerBeta(){
                     {
                         conf_x_y_z_t_corr_key_new[new_corr_name];
                         conf_count[conf_nr]++;
-                    }            
+                    }
                 }
             }
 
             n = asorti(conf_x_y_z_t_corr_key_new, list_of_correlators_to_calculate);
             for(i = 1; i <= n; ++i)
             {
-                split(list_of_correlators_to_calculate[i], parts_of_correlator_name, "_"); 
+                split(list_of_correlators_to_calculate[i], parts_of_correlator_name, "_");
                 print "--sourcefile=" parts_of_correlator_name[1] " --use_cpu=" useCpu " --startcondition=" startcondition " --log-level=" logLevel " --ns=" ns " --nt=" nt " --source_x=" parts_of_correlator_name[2] " --source_y=" parts_of_correlator_name[3] " --source_z=" parts_of_correlator_name[4] " --source_t=" parts_of_correlator_name[5] " --beta=" beta " --corr_dir=" corrDir " --solver=" solver " --cgmax=" cgmax " --cg_iteration_block_size=" cgIterationBlockSize " --theta_fermion_temporal=" thetaFermionTemporal " --ferm_obs_corr_postfix=" "_" parts_of_correlator_name[2] "_" parts_of_correlator_name[3] "_" parts_of_correlator_name[4] "_" parts_of_correlator_name[5] "_corr" " " chemPotString " " options_discretization;
             }
         }' > $WORK_BETADIRECTORY/$SRUN_COMMANDSFILE_FOR_INVERSION

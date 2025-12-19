@@ -1,4 +1,24 @@
-#TODO: 
+#TODO:
+#
+#  Copyright (c) 2016 Christopher Czaban
+#  Copyright (c) 2016,2017 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 #*If a filtering option is specified wrongly, should the program exit or not? If not, should the error message rather be printed in the end?
 #*Is it necessary to implement the functionality where the script uses find the update the database?
 #*Coloured output?
@@ -16,16 +36,16 @@ function projectStatisticsDatabase(){
     local CURRENT_DIRECTORY=$(pwd)
 
     NF_C=$((2*1))
-    MU_C=$((2*2)) 
-    K_C=$((2*3)) 
-    NT_C=$((2*4)) 
-    NS_C=$((2*5)) 
-    BETA_C=$((2*6)) 
-    TRAJNO_C=$((2*7)) 
-    ACCRATE_C=$((2*8)) 
-    ACCRATE_LAST1K_C=$((2*9)) 
+    MU_C=$((2*2))
+    K_C=$((2*3))
+    NT_C=$((2*4))
+    NS_C=$((2*5))
+    BETA_C=$((2*6))
+    TRAJNO_C=$((2*7))
+    ACCRATE_C=$((2*8))
+    ACCRATE_LAST1K_C=$((2*9))
     MAX_ACTION_C=$((2*10))
-    STATUS_C=$((2*11)) 
+    STATUS_C=$((2*11))
     LASTTRAJ_C=$((2*12))
 
     declare -A COLUMNS=( [nfC]=$NF_C [muC]=$MU_C [kC]=$K_C [ntC]=$NT_C [nsC]=$NS_C [betaC]=$BETA_C [trajNoC]=$TRAJNO_C [accRateC]=$ACCRATE_C [accRateLast1KC]=$ACCRATE_LAST1K_C \
@@ -70,17 +90,17 @@ function projectStatisticsDatabase(){
     local READ_DIRECTORIES_FROM_FILE="FALSE"
     local FILTER_SPECIFIC_DATABASE_FILE="FALSE"
 
-    local FILTER_MU="FALSE"	
-    local FILTER_MASS="FALSE"	
-    local FILTER_NT="FALSE"	
-    local FILTER_NS="FALSE"	
-    local FILTER_BETA="FALSE"	
+    local FILTER_MU="FALSE"
+    local FILTER_MASS="FALSE"
+    local FILTER_NT="FALSE"
+    local FILTER_NS="FALSE"
+    local FILTER_BETA="FALSE"
     local FILTER_TYPE="FALSE"
-    local FILTER_TRAJNO="FALSE"	
-    local FILTER_ACCRATE="FALSE"	
-    local FILTER_ACCRATE_LAST1K="FALSE"	
+    local FILTER_TRAJNO="FALSE"
+    local FILTER_ACCRATE="FALSE"
+    local FILTER_ACCRATE_LAST1K="FALSE"
     local FILTER_MAX_ACTION="FALSE"
-    local FILTER_STATUS="FALSE"	
+    local FILTER_STATUS="FALSE"
     local FILTER_LASTTRAJ="FALSE"
 
     local UPDATE_WITH_FREQUENCY="FALSE"
@@ -109,7 +129,7 @@ function projectStatisticsDatabase(){
     local UPDATE_TIME=""
 
 
-    #If the option -l | --local is given, then the option -l is replaced by mu,mass,nt,ns options with local values 
+    #If the option -l | --local is given, then the option -l is replaced by mu,mass,nt,ns options with local values
     if ElementInArray "-l" $@ || ElementInArray "--local" $@;  then
         if ElementInArray "--$MASS_PARAMETER" $@ || ElementInArray "--mu" $@ || ElementInArray "--nt" $@ || ElementInArray "--ns" $@; then
             printf "\n\e[91m Option \e[1m-l | --local\e[21m not compatible with any of \e[1m--mu\e[21m, \e[1m--$MASS_PARAMETER\e[21m, \e[1m--nt\e[21m, \e[1m--ns\e[21m! Exiting...\e[0m\n\n"
@@ -183,7 +203,7 @@ function projectStatisticsDatabase(){
                             printf "\n\e[91m Option \e[1m$2\e[21m unrecognized! Exiting...\e[0m\n\n"
                             return
 						    ;;
-				    esac	
+				    esac
 			    done
 			    ;;
 		    --sum)
@@ -194,7 +214,7 @@ function projectStatisticsDatabase(){
 			    DISPLAY="TRUE"
 			    FILTER_NF="TRUE"
 			    while [[ $2 =~ ^[[:digit:]](\.[[:digit:]][[:digit:]]?)?$ ]]; do
-				    NF_ARRAY+=( $2 )	
+				    NF_ARRAY+=( $2 )
 				    shift
 			    done
 			    [ ${#NF_ARRAY[@]} -eq 0 ] && printf "\n\e[91m You did not correctly specify filtering values for \e[1m$1\e[21m option! Exiting...\e[0m\n\n" && return
@@ -203,7 +223,7 @@ function projectStatisticsDatabase(){
                 DISPLAY="TRUE"
 			    FILTER_MU="TRUE"
 			    while [[ $2 =~ ^[^-] ]];do
-				    case $2 in 
+				    case $2 in
 					    0)
 						    MU_ARRAY+=( 0 )
 						    shift
@@ -222,7 +242,7 @@ function projectStatisticsDatabase(){
 		    --$MASS_PARAMETER)
                 DISPLAY="TRUE"
 			    FILTER_MASS="TRUE"
-			    while [[ $2 =~ ^[[:digit:]]{4}$ ]]; do 
+			    while [[ $2 =~ ^[[:digit:]]{4}$ ]]; do
 				    MASS_ARRAY+=( $2 )
 				    shift
 			    done
@@ -231,7 +251,7 @@ function projectStatisticsDatabase(){
 		    --nt)
                 DISPLAY="TRUE"
 			    FILTER_NT="TRUE"
-			    while [[ $2 =~ ^[[:digit:]]{1,2}$ ]]; do 
+			    while [[ $2 =~ ^[[:digit:]]{1,2}$ ]]; do
 				    NT_ARRAY+=( $2 )
 				    shift
 			    done
@@ -240,7 +260,7 @@ function projectStatisticsDatabase(){
 		    --ns)
                 DISPLAY="TRUE"
 			    FILTER_NS="TRUE"
-			    while [[ $2 =~ ^[[:digit:]]{1,2}$ ]]; do 
+			    while [[ $2 =~ ^[[:digit:]]{1,2}$ ]]; do
 				    NS_ARRAY+=( $2 )
 				    shift
 			    done
@@ -248,8 +268,8 @@ function projectStatisticsDatabase(){
 			    ;;
 		    --beta)
                 DISPLAY="TRUE"
-			    FILTER_BETA="TRUE"	
-			    while [[ $2 =~ ^[[:digit:]]\.[[:digit:]]{4}$ ]]; do 
+			    FILTER_BETA="TRUE"
+			    while [[ $2 =~ ^[[:digit:]]\.[[:digit:]]{4}$ ]]; do
 				    BETA_ARRAY+=( $2 )
 				    shift
 			    done
@@ -257,9 +277,9 @@ function projectStatisticsDatabase(){
 			    ;;
 		    --type)
                 DISPLAY="TRUE"
-			    FILTER_TYPE="TRUE"	
+			    FILTER_TYPE="TRUE"
 			    while [[ $2 =~ ^[^-] ]];do
-				    case $2 in 
+				    case $2 in
 					    fC)
 						    TYPE_ARRAY+=( fC )
 						    shift
@@ -315,9 +335,9 @@ function projectStatisticsDatabase(){
                 ;;
 		    --status)
                 DISPLAY="TRUE"
-			    FILTER_STATUS="TRUE"	
+			    FILTER_STATUS="TRUE"
 			    while [[ $2 =~ ^[^-] ]];do
-				    case $2 in 
+				    case $2 in
 					    RUNNING)
 						    STATUS_ARRAY+=( RUNNING )
 						    shift
@@ -408,7 +428,7 @@ function projectStatisticsDatabase(){
 			    echo -e "  \e[4m\e[1mUpdating database\e[24m:\e[21m"
 			    echo -e "  \e[38;5;198m"
 			    echo -e "     -u | --update  -->  Specify this option to (re)create the database file."
-			    echo -e "                         Optionally" 
+			    echo -e "                         Optionally"
 			    echo -e "                         1) a sleep time can be specified after which the script repeatedly performs a database update."
 			    echo -e "                            The sleep time is a number followed by s = seconds, m = minutes, h = hours, d = days, e.g. --update 2h."
 			    echo -e "                         2) an update time can be specified at which the  script repeatedly performs a database update."
@@ -424,7 +444,7 @@ function projectStatisticsDatabase(){
 			    echo -e "                         a file with directories (abosulte paths) in which the script looks for data."
 			    echo -e "     "
 			    echo -e "             \e[38;5;34m\e[4m\e[1mDisplaying\e[24m:\e[21m\e[38;5;202m If you don't wish the script to use the latest database file, use this option to specify a file to display and filter."
-			    echo -e "     "            
+			    echo -e "     "
 			    echo -e "     -l | --local   -->  To use this option, the script should be called from a position such that mu, $MASS_PARAMETER, nt and ns can be extracted from the path."
 			    echo -e "                         This option will add to the given option the --mu, --$MASS_PARAMETER, --nt and --ns options with the values extracted from the path."
                 echo -e "                         At the moment it is not compatible with any of such an option."
@@ -441,7 +461,7 @@ function projectStatisticsDatabase(){
 			    echo -e "                         Which set to be displayed will be asked and can be choosen interactively."
                 echo -e "   "
                 echo -e "   "
-                echo -e "    \e[4m\e[1m\e[91mNOTE\e[24m:\e[21m\e[38;5;34m The \e[38;5;69mblue\e[38;5;34m, the \e[38;5;123mcyan\e[38;5;34m and the \e[38;5;198mpink\e[38;5;34m options are not compatible!"            
+                echo -e "    \e[4m\e[1m\e[91mNOTE\e[24m:\e[21m\e[38;5;34m The \e[38;5;69mblue\e[38;5;34m, the \e[38;5;123mcyan\e[38;5;34m and the \e[38;5;198mpink\e[38;5;34m options are not compatible!"
                 printf "\e[0m\n"
 			    return
 			    ;;
@@ -630,7 +650,7 @@ function projectStatisticsDatabase(){
 					 filterAccRateLast1K == "TRUE" {if(length(accRateLast1KHighValue) == 0 ? "100.00" : accRateLast1KHighValue < $(columnNameColumnNumber["accRateLast1KC"])){critFailedCounter--;}}
 
 					 filterLastTrajTime == "TRUE" {if(lastTrajTime > $(columnNameColumnNumber["lastTrajC"]) || $(columnNameColumnNumber["lastTrajC"]) == "------"){critFailedCounter--;}}
-					 
+
 					 statisticsSummary == "FALSE" && critFailedCounter == 0 {
 						printf(" "); #Aesthetics
 						for(i=1;i<=nrOfDisplayedColumns;i++){
@@ -666,7 +686,7 @@ function projectStatisticsDatabase(){
 							}
 
 							for(i=1;i<=lineCounter;i++){
-								split(dataRowArray[i],fieldsArray," ");	
+								split(dataRowArray[i],fieldsArray," ");
 								split(fieldsArray[columnNameColumnNumber["betaC"]],betaChainType,"_");
 								if(betaChainType[3] == "NC"){
 									newKey = fieldsArray[columnNameColumnNumber["nfC"]] "_" fieldsArray[columnNameColumnNumber["muC"]] "_" fieldsArray[columnNameColumnNumber["kC"]] "_" \
@@ -676,7 +696,7 @@ function projectStatisticsDatabase(){
 								if(betaChainType[3] == "NC"){
 									if(newKey != oldKey){
 										printf(" "); #Aesthetics
-										printf(statisticsFormatSpecString,statisticsSummaryArray[oldKey]); 
+										printf(statisticsFormatSpecString,statisticsSummaryArray[oldKey]);
 										oldKey=newKey;
 									}
 								}
@@ -703,7 +723,7 @@ function projectStatisticsDatabase(){
 						printf("\033[0m\n");
 					}
 		' $PROJECT_DATABASE_FILE
-        
+
         printf "\n Last update ended on \e[1m$(date -r $PROJECT_DATABASE_FILE +"%d.%m.%Y\e[21m at \e[1m%H:%M")\e[21m  \e[38;5;202m--->\e[38;5;207m  $PROJECT_DATABASE_FILE\n\n\e[0m"
     fi
 
@@ -724,7 +744,7 @@ function projectStatisticsDatabase(){
         for i in ${!PARAMETER_PREFIXES[@]}; do
 	        REGEX_STRING=$REGEX_STRING${PARAMETER_PREFIXES[$i]}${PARAMETER_REGEXES[$i]}/
         done
-        REGEX_STRING=${REGEX_STRING%/}		
+        REGEX_STRING=${REGEX_STRING%/}
 
         while :
         do
@@ -747,17 +767,17 @@ function projectStatisticsDatabase(){
 		    while read line
 		    do
 			    #printf "%+15s: %s\n" "line" "$line"
-			    if [[ "$line" =~ ^[^#] ]]; then 
+			    if [[ "$line" =~ ^[^#] ]]; then
 				    PARAMS=( $(echo $line | awk 'BEGIN{FS="/"}{print $(NF-4) " " $(NF-3) " " $(NF-2) " " $(NF-1) " " $(NF)}') )
 			    else
-				    continue 
+				    continue
 			    fi
-			    
+
 			    if [ -d $line ]; then
 			        printf "\t\e[38;5;208m\e[48;5;16mUpdating:\e[38;5;49m $line "
 				    cd $line
 			    else
-				    printf "\n\e[91m Directory \"$line\" skipped!\n\e[0m" 
+				    printf "\n\e[91m Directory \"$line\" skipped!\n\e[0m"
 				    continue
 			    fi
 
@@ -794,9 +814,9 @@ function projectStatisticsDatabase(){
 	        rm $TEMPORARY_DATABASE_FILE
 	        rm $TEMPORARY_FILE_WITH_DIRECTORIES
 
-	        if [ "$SLEEP_TIME" != "" ]; then 
+	        if [ "$SLEEP_TIME" != "" ]; then
                 printf "\n\t\e[1m\e[38;5;147mSleeping \e[38;5;86m$SLEEP_TIME\e[38;5;147m starting on $(date +"%d.%m.%Y at %H:%M:%S")\e[0m\n\n"
-	            sleep $SLEEP_TIME 
+	            sleep $SLEEP_TIME
 	        fi
 
 		    if [ "$SLEEP_TIME" = "" ] && [ "$UPDATE_TIME" = "" ]; then
@@ -859,7 +879,7 @@ criticalSituation = 0
 }
 {
 if($betaColorColumn == wrongBetaColor || $maxDsColorColumn == tooHighMaxDsColor){simOnBrokenGPU+=1; criticalSituation=1}
-if($trajNoColorColumn == toBeCleanedColor){filesToBeCleaned+=1} 
+if($trajNoColorColumn == toBeCleanedColor){filesToBeCleaned+=1}
 if($accRateColorColumn == tooLowAccColor){simTooLowAcc+=1; criticalSituation=1}
 if($accRateColorColumn == lowAccColor){simLowAcc+=1}
 if($accRateColorColumn == optimalAccColor){simOptimalAcc+=1}
@@ -874,8 +894,8 @@ if($statusColorColumn == runningColor){simRunning+=1}
 if($statusColorColumn == pendingColor){simPending+=1}
 if($lastTrajColorColumn == stuckColor){simStuck+=1; criticalSituation=1}
 if($lastTrajColorColumn == fineColor){simFine+=1}
-} 
-END{ 
+}
+END{
 def="\033[0m"
 red="\033[91m"
 darkOrange="\033[38;5;202m"
@@ -904,10 +924,10 @@ printf string[2] , (simLowAcc>0      ? darkOrange : green)   , bold, simLowAcc  
 printf string[3] , (simOptimalAcc==0  ? green : green)       , bold, simOptimalAcc   , (simOptimalAcc1K==0  ? green : green)     , bold, simOptimalAcc1K, lowAccThreshold, highAccThreshold
 printf string[4] , (simHighAcc>0     ? yellow : green)       , bold, simHighAcc      , (simHighAcc1K>0     ? yellow : green)     , bold, simHighAcc1K,    highAccThreshold, tooHighAccThreshold
 printf string[5] , (simTooHighAcc>0  ? lightOrange : green)  , bold, simTooHighAcc   , (simTooHighAcc1K>0  ? lightOrange : green), bold, simTooHighAcc1K, tooHighAccThreshold
-printf string[6] , green                                     , bold, simRunning      
-printf string[7] , (simPending>0     ? yellow : green)       , bold, simPending      
-printf string[8] , (simStuck>0     ? red : green)            , bold, simStuck        
-printf string[9] , green                                     , bold, simFine         
+printf string[6] , green                                     , bold, simRunning
+printf string[7] , (simPending>0     ? yellow : green)       , bold, simPending
+printf string[8] , (simStuck>0     ? red : green)            , bold, simStuck
+printf string[9] , green                                     , bold, simFine
 printf string[10], (filesToBeCleaned>0 ? lightOrange : green), bold, filesToBeCleaned
 
 if(criticalSituation ==1){exit 1}else{exit 0}
@@ -943,7 +963,7 @@ if(criticalSituation ==1){exit 1}else{exit 0}
                                              "Simulations with too high acceptance rate in last 1k trajectories"
                                              "Running simulations"
                                              "Pending simulations" )
-        
+
         printf "\e[38;5;118mWhich simulations would you like to show?\n\e[38;5;135m"
         PS3=$'\n\e[38;5;118mEnter the number corresponding to the desired set: \e[38;5;135m'
         select SIMULATION in "${POSSIBLE_SIMULATIONS_TO_SHOW[@]}"; do
@@ -994,7 +1014,7 @@ if(criticalSituation ==1){exit 1}else{exit 0}
                         local VALUES_TO_MATCH=( "${LOW_ACCEPTANCE_LISTSTATUS_COLOR/e/033}" )
                         ;;
                     "Simulations with optimal acceptance rate in last 1k trajectories")
-                        local COLUMNS_TO_FILTER=( "$((${COLUMNS[accRateLast1KC]} -1 ))" ) 
+                        local COLUMNS_TO_FILTER=( "$((${COLUMNS[accRateLast1KC]} -1 ))" )
                         local VALUES_TO_MATCH=( "${OPTIMAL_ACCEPTANCE_LISTSTATUS_COLOR/e/033}" )
                         ;;
                     "Simulations with high acceptance rate in last 1k trajectories")
@@ -1017,7 +1037,7 @@ if(criticalSituation ==1){exit 1}else{exit 0}
                 break
 	        fi
         done
-        printf "\n\e[0m"        
+        printf "\n\e[0m"
 
         for i in ${!COLUMNS_TO_FILTER[@]}
         do
@@ -1030,7 +1050,7 @@ if(criticalSituation ==1){exit 1}else{exit 0}
             __static__DisplayDatabaseFile <(sort $PROJECT_DATABASE_DIRECTORY/$TEMPORARY_DATABASE_FILE | uniq)
             printf "\n Last update ended on \e[1m$(date -r $PROJECT_DATABASE_FILE +"%d.%m.%Y\e[21m at \e[1m%H:%M")\e[21m  \e[38;5;202m--->\e[38;5;207m  $PROJECT_DATABASE_FILE\n\n\e[0m"
         fi
-        
+
         rm $PROJECT_DATABASE_DIRECTORY/$TEMPORARY_DATABASE_FILE
 
     fi

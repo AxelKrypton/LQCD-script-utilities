@@ -1,4 +1,23 @@
 #!/bin/bash
+#
+#  Copyright (c) 2015 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 # Script to merge several pbp files into one. It has to be run in the folder
 # where the pbp files are. The name of the files is by defaut conf.XXXXX_pbp.dat
@@ -76,7 +95,7 @@ function __static__isFileBroken(){
                                   {if(NF!=2){errorCode=2; exit}
                                    if($1 !~ /^[[:digit:]]+$/){errorCode=3; exit}
                                    if($2 !~ /^[+-]?[[:digit:]][.][[:digit:]]+[e][+-]?[[:digit:]]+$/){errorCode=4; exit}
-                                   pbpMerged = pbpMerged "   " $2 
+                                   pbpMerged = pbpMerged "   " $2
                                   }END{print errorCode"|"$1"|"pbpMerged}' $FILE)
     if [ ${FILE_PROCESS_RESULT%%|*} -ne 0 ]; then
 	return ${FILE_PROCESS_RESULT%%|*}
@@ -137,8 +156,8 @@ fi
 
 #MAIN part of the script
 if [[ "$SKIP_BROKEN_FILES" == "TRUE" ]]; then
-    BROKEN_FILENAMES=()	
-    EMPTY_FILENAMES=()	
+    BROKEN_FILENAMES=()
+    EMPTY_FILENAMES=()
     COUNTER=0
     PROGRESS_BAR_LAST_UPDATE=0
     START_TIME=`date +%s`

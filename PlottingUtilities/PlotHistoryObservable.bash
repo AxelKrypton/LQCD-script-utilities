@@ -1,4 +1,24 @@
 #!/bin/bash
+#
+#  Copyright (c) 2015,2016 Christopher Czaban
+#  Copyright (c) 2015,2017,2018,2020 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 # This script is intended to plot the history of any observable
 # of a data file. Run it with -h | --help to see the command line
@@ -86,7 +106,7 @@ while [ "$1" != "" ]; do
       -y | --columnYaxis )
           COLUMN_Y_AXIS=$2
           shift ;;
-      -b | --betaValues )  
+      -b | --betaValues )
           while [[ $2 =~ [[:digit:]]\.[[:digit:]]+ ]]; do
               BETAVALUES+=( $2 )
               shift
@@ -143,7 +163,7 @@ for BETA in ${BETAVALUES[@]}; do
 
     SCREEN_DIMENSTIONS=$(xdpyinfo  | grep dimensions | awk '{print $2}' | sed 's/x/,/g')
     echo "set term x11 $INDEX_WINDOW size $SCREEN_DIMENSTIONS" >> $GNUPLOT_TEMP_SCRIPT
-    add_plot 
+    add_plot
     INDEX_WINDOW=$(($INDEX_WINDOW + 1))
 done
 echo ""

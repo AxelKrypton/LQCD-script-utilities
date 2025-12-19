@@ -1,4 +1,24 @@
 function ParseCommandLineOption(){
+#
+#  Copyright (c) 2014 Alessandro Sciarra
+#  Copyright (c) 2015 Christopher Czaban
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
     while [ "$1" != "" ]; do
 	case $1 in
 	    -h | --help )
@@ -75,7 +95,7 @@ function ProduceJobScriptFile(){
     #-----------------------------------------------------------------#
     if [ $# -lt 1 ] || [ $# -gt $GPU_PER_NODE ]; then
 	printf "\n\e[0;31m  Wrong number of parameters given to \"ProduceJobScriptFile\" function. Aborting...\n\n\e[0m"
-	exit -1	
+	exit -1
     fi
     local BETAS_TO_BE_USED=("$@")
     #-----------------------------------------------------------------#
@@ -182,5 +202,5 @@ function ProduceInputFile() {
     echo "num_timescales=2" >> $INPUTFILE_GLOBALPATH
     echo "integrator0=twomn" >> $INPUTFILE_GLOBALPATH
     echo "integrator1=twomn" >> $INPUTFILE_GLOBALPATH
-    
+
 }

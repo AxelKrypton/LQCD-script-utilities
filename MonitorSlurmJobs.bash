@@ -1,4 +1,23 @@
 #!/bin/bash
+#
+#  Copyright (c) 2014-2016,2019 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 # This script is intended to parse the result of the command
 # squeue on the LOEWE and or L-CSC together to scontrol show job, in order
@@ -40,7 +59,7 @@ function ParseCommandLineOptions(){
         printf "\n\e[0;31mError parsing the options (see --help)! Aborting...\n\n\e[0m"
         exit -1
     fi
-    
+
     if [ ${#MUTUALLYEXCLUSIVEOPTS_PASSED[@]} -gt 1 ]; then
 	    printf "\n\e[0;31m The options\n\n\e[1m"
 	    for OPT in "${MUTUALLYEXCLUSIVEOPTS[@]}"; do
@@ -49,7 +68,7 @@ function ParseCommandLineOptions(){
 	    printf "\n\e[0;31m are mutually exclusive and must not be combined! Aborting...\n\n\e[0m"
 	    exit -1
     fi
-    
+
 }
 
 #Unused function left here in case in future some more information is needed (for which squeue has not a format option)
@@ -181,7 +200,7 @@ for ((j=0; j<${#JOB_SUBMISSION_FOLDER[@]}; j++)); do
     JOB_SUBMISSION_FOLDER[$j]=${JOB_SUBMISSION_FOLDER[$j]/$DATA2_DIR/DATA02}
 done && unset -v 'HOME_DIR' 'WORK_DIR' 'DATA1_DIR' 'DATA2_DIR'
 
-#Some counting for the table 
+#Some counting for the table
 LONGEST_NAME=${JOB_NAME[0]}
 for NAME in ${JOB_NAME[@]}; do
     if [ ${#NAME} -gt ${#LONGEST_NAME} ]; then
@@ -218,7 +237,7 @@ if [ $NODE_USAGE = "TRUE" ]; then
     for NODE in ${!USED_NODES[@]}; do
 	    printf "\e[38;5;39m%-15s\e[38;5;10m%-10s\e[38;5;49m%d\e[0m\n" "${NODE}" "${USED_NODES[$NODE]}" "$(grep -o '+' <<< "${USED_NODES[$NODE]}" | wc -l)"
     done | sort -h
-    
+
     printf "\n\e[38;5;202m  Total number of submitted jobs: $TOTAL_JOBS"
     printf " (\e[1;32mRunning: $RUNNING_JOBS  \e[0m - \e[1;31m  Pending: $PENDING_JOBS  \e[0m - \e[1;35m  Others: $OTHER_JOBS\e[38;5;202m)\n"
     printf "\e[1;36m"
@@ -259,7 +278,7 @@ if [ $GROUP_BETAS = "TRUE" ]; then
     for NAME in ${!JOB_PARAMETERS[@]}; do
 	    printf "\e[38;5;14m%-40s\e[38;5;13m%-30s${SEEDS_STATUS[$NAME]:1}\e[0m\n" "${NAME}" "${JOB_PARAMETERS[$NAME]:1}"
     done | sort -h
-    
+
     printf "\n\e[38;5;202m  Total number of submitted jobs: $TOTAL_JOBS"
     printf " (\e[1;32mRunning: $RUNNING_JOBS  \e[0m - \e[1;31m  Pending: $PENDING_JOBS  \e[0m - \e[1;35m  Others: $OTHER_JOBS\e[38;5;202m)\n"
     printf "\e[1;36m"
@@ -271,7 +290,7 @@ fi
 #------------------------------------------------------------------------------------------------------------------------------------------------#
 #Stabdard display
 if [ $DISPLAY_STANDARD_LIST = "TRUE" ]; then
-        
+
     #Table header
     COLUMNS_OF_THE_SHELL=$(tput cols)
     TABLE_FORMAT="%-8s%-5s%-$((2+${#LONGEST_NAME}))s%-5s%-25s%-5s%-19s%-5s%+14s%-5s%-s"

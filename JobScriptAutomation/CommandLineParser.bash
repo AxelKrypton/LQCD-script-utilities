@@ -1,6 +1,26 @@
 # NOTE: If at some points for some reason one would decide to allow as options
+#
+#  Copyright (c) 2014-2016 Christopher Czaban
+#  Copyright (c) 2014-2017 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 #       --startcondition and/or --host_seed (CL2QCD) one should think whether
-#       the continue part should be modified or not. 
+#       the continue part should be modified or not.
 
 function SplitCombinedShortOptionsInSingleOptions() {
     local NEW_OPTIONS=()
@@ -16,7 +36,7 @@ function SplitCombinedShortOptionsInSingleOptions() {
             for OPTION in "${SPLITTED_OPTIONS[@]}"; do
                 NEW_OPTIONS+=( "-$OPTION" )
             done && unset -v 'OPTION'
-            [ "$OPTION_EQUAL_PART" != "" ] && NEW_OPTIONS[${#NEW_OPTIONS[@]}-1]="${NEW_OPTIONS[${#NEW_OPTIONS[@]}-1]}=$OPTION_EQUAL_PART" #Add =.* to last option 
+            [ "$OPTION_EQUAL_PART" != "" ] && NEW_OPTIONS[${#NEW_OPTIONS[@]}-1]="${NEW_OPTIONS[${#NEW_OPTIONS[@]}-1]}=$OPTION_EQUAL_PART" #Add =.* to last option
         else
             NEW_OPTIONS+=($VALUE)
         fi
@@ -45,13 +65,13 @@ function ParseCommandLineOption(){
                             "--cleanOutputFiles"
                             "--completeBetasFile")
     MUTUALLYEXCLUSIVEOPTS_PASSED=( )
-    
+
     if ! ElementInArray "--doNotUseMultipleChains" $@ && [ "$CLUSTER_NAME" = "JUQUEEN" ]; then
         printf "\n\e[0;31m At the moment, the options --doNotUseMultipleChains must be specified on not CSC clusters!! Aborting...\n\n\e[0m"
         exit -1
 	fi
 
-    
+
     while [ "$1" != "" ]; do
 	    case $1 in
 	        -h | --help )
@@ -100,7 +120,7 @@ function ParseCommandLineOption(){
 		            echo -e "                                           Use \e[0;34mresumefrom=last\e[0;32m in the betasfile to resume a simulation from the last saved conf.[[:digit:]]+ file."
 		        fi
 		        echo -e "  \e[0;34m-C | --continueThermalization\e[0;32m      ->    Unfinished thermalizations will be continued doing the nr. of measurements specified in the input file."
-		        echo -e "  \e[0;34m-C=[#] | --continueThermalization=[#]\e[0;32m    If a number is specified, thermalizations will be continued up to the specified number."        
+		        echo -e "  \e[0;34m-C=[#] | --continueThermalization=[#]\e[0;32m    If a number is specified, thermalizations will be continued up to the specified number."
 		        if [ "$CLUSTER_NAME" = "LOEWE" ] || [ "$CLUSTER_NAME" = "LCSC" ]; then
 		            echo -e "                                           To resume a thermalization from a given trajectory, add \e[0;34mresumefrom=[number]\e[0;32m in the betasfile."
 		            echo -e "                                           Use \e[0;34mresumefrom=last\e[0;32m in the betasfile to resume a thermalization from the last saved conf.[[:digit:]]+ file."
@@ -114,16 +134,16 @@ function ParseCommandLineOption(){
 		        echo -e "  \e[0;34m--showjobs\e[0;32m                         ->    The queued jobs will be displayed for the local parameters (kappa,nt,ns,beta)"
 		        echo -e "  \e[0;34m--accRateReport=[#]\e[0;32m                ->    The acceptance rates will be computed on the output files of the given betas every [#] configurations and summarized in a table."
 		        echo -e "  \e[0;34m--cleanOutputFiles\e[0;32m                 ->    The output files referred to the betas contained in the betas file are cleaned (repeated lines are eliminated)"
-		        echo -e "                                           For safety reason, a backup of the output file is done (it is left in the output file folder with the name outputfilename_date)" 
+		        echo -e "                                           For safety reason, a backup of the output file is done (it is left in the output file folder with the name outputfilename_date)"
 		        echo -e "                                           Secondary options: \e[0;34m--all\e[0;32m to clean output files for all betas in WORK_DIR referred to the actual path parameters"
 		        echo -e "  \e[0;34m--emptyBetaDirectories\e[0;32m             ->    The beta directories corresponding to the beta values specified in the file \"\e[4memptybetas\e[0;32m\" will be emptied!"
-		        echo -e "                                           For each beta value specified there will be a promt for confirmation! \e[1mATTENTION\e[0;32m: After the Confirmation the process cannot be undone!" 
+		        echo -e "                                           For each beta value specified there will be a promt for confirmation! \e[1mATTENTION\e[0;32m: After the Confirmation the process cannot be undone!"
 		        echo -e "  \e[0;34m--completeBetasFile[=number]\e[0;32m       ->    The beta file is completed adding for each beta new chains in order to have as many chain as specified. "
-		        echo -e "                                           If no number is specified, 4 is used. This option, if \"-u\" has been given, uses the seed in the second field to generate new chains." 
-		        echo -e "                                           Otherwise one new field containing the seed is inserted in second position." 
-		        echo -e "  \e[0;34m-U | --uncommentBetas\e[0;32m              ->    This option uncomments the specified betas (All remaining entries will be commented)." 
+		        echo -e "                                           If no number is specified, 4 is used. This option, if \"-u\" has been given, uses the seed in the second field to generate new chains."
+		        echo -e "                                           Otherwise one new field containing the seed is inserted in second position."
+		        echo -e "  \e[0;34m-U | --uncommentBetas\e[0;32m              ->    This option uncomments the specified betas (All remaining entries will be commented)."
 		        echo -e "                                           The betas can be specified either with a seed or without."
-		        echo -e "                                           The format of the specified string can either contain the output of the --liststatus option, e.g. 5.4380_s5491_NC" 
+		        echo -e "                                           The format of the specified string can either contain the output of the --liststatus option, e.g. 5.4380_s5491_NC"
 		        echo -e "                                           or simply beta values like 5.4380 or a mix of both. If pure beta values are given then all seeds of the given beta value will be uncommented."
 		        echo -e "  \e[0;34m-u | --commentBetas\e[0;32m                ->    Is the reverse option of the --uncommentBetas option"
 		        echo -e "  \e[0;34m-i | --invertConfigurations\e[0;32m        ->    Invert configurations and produce correlator files for betas and seed specified in the betas file."
@@ -188,21 +208,21 @@ function ParseCommandLineOption(){
 		        fi
                 shift ;;
 	        --partition=* )
-		        LOEWE_PARTITION=${1#*=}; 
+		        LOEWE_PARTITION=${1#*=};
 	            if [[ $CLUSTER_NAME != "LOEWE" ]]; then
 		            printf "\n\e[0;31m The options --partition can be used only on the LOEWE! Aborting...\n\n\e[0m"
                     exit -1
 		        fi
 		        shift ;;
 	        --constraint=* )
-		        LOEWE_CONSTRAINT=${1#*=}; 
+		        LOEWE_CONSTRAINT=${1#*=};
 	            if [[ $CLUSTER_NAME != "LOEWE" ]]; then
 		            printf "\n\e[0;31m The options --constraint can be used only on the LOEWE! Aborting...\n\n\e[0m"
                     exit -1
 		        fi
 		        shift ;;
 	        --node=* )
-                LOEWE_NODE=${1#*=}; 
+                LOEWE_NODE=${1#*=};
 	            if [[ $CLUSTER_NAME != "LOEWE" ]]; then
 		            printf "\n\e[0;31m The options --node can be used only on the LOEWE! Aborting...\n\n\e[0m"
                     exit -1
@@ -211,41 +231,41 @@ function ParseCommandLineOption(){
 	        -s | --submit )
 		        MUTUALLYEXCLUSIVEOPTS_PASSED+=( "$1" )
 		        SUBMIT="TRUE"
-		        shift;; 
-	        --submitonly )	 			
+		        shift;;
+	        --submitonly )
                 MUTUALLYEXCLUSIVEOPTS_PASSED+=( "$1" )
 		        SUBMITONLY="TRUE"
-		        shift;; 
-	        -t | --thermalize )			 
+		        shift;;
+	        -t | --thermalize )
 		        MUTUALLYEXCLUSIVEOPTS_PASSED+=( "$1" )
 		        THERMALIZE="TRUE"
-		        shift;; 
-	        -c | --continue )			 
-		        MUTUALLYEXCLUSIVEOPTS_PASSED+=( "$1" )
-		        CONTINUE="TRUE"		
-		        shift;; 
-	        -c=* | --continue=* )		
+		        shift;;
+	        -c | --continue )
 		        MUTUALLYEXCLUSIVEOPTS_PASSED+=( "$1" )
 		        CONTINUE="TRUE"
-		        CONTINUE_NUMBER=${1#*=}; 
+		        shift;;
+	        -c=* | --continue=* )
+		        MUTUALLYEXCLUSIVEOPTS_PASSED+=( "$1" )
+		        CONTINUE="TRUE"
+		        CONTINUE_NUMBER=${1#*=};
 		        if [[ ! $CONTINUE_NUMBER =~ ^[[:digit:]]+$ ]];then
-		    	    printf "\n\e[0;31m The specified number for --continue=[number] must be an integer containing at least one or more digits! Aborting...\n\n\e[0m" 
+		    	    printf "\n\e[0;31m The specified number for --continue=[number] must be an integer containing at least one or more digits! Aborting...\n\n\e[0m"
 			        exit -1
 		        fi
-		        shift;; 
-	        -C | --continueThermalization )			 
-		        MUTUALLYEXCLUSIVEOPTS_PASSED+=( "$1" )
-		        CONTINUE_THERMALIZATION="TRUE"		
-		        shift;; 
-	        -C=* | --continueThermalization=* )		
+		        shift;;
+	        -C | --continueThermalization )
 		        MUTUALLYEXCLUSIVEOPTS_PASSED+=( "$1" )
 		        CONTINUE_THERMALIZATION="TRUE"
-		        CONTINUE_NUMBER=${1#*=}; 
+		        shift;;
+	        -C=* | --continueThermalization=* )
+		        MUTUALLYEXCLUSIVEOPTS_PASSED+=( "$1" )
+		        CONTINUE_THERMALIZATION="TRUE"
+		        CONTINUE_NUMBER=${1#*=};
 		        if [[ ! $CONTINUE_NUMBER =~ ^[[:digit:]]+$ ]];then
-		    	    printf "\n\e[0;31m The specified number for --continueThermalization=[number] must be an integer containing at least one or more digits! Aborting...\n\n\e[0m" 
+		    	    printf "\n\e[0;31m The specified number for --continueThermalization=[number] must be an integer containing at least one or more digits! Aborting...\n\n\e[0m"
 			        exit -1
 		        fi
-		        shift;; 
+		        shift;;
 	        -l | --liststatus )
 		        MUTUALLYEXCLUSIVEOPTS_PASSED+=( "$1" )
 		        LISTSTATUS="TRUE"
@@ -263,11 +283,11 @@ function ParseCommandLineOption(){
 		        MUTUALLYEXCLUSIVEOPTS_PASSED+=( "$1" )
 		        LISTSTATUS="FALSE"
 		        LISTSTATUSALL="TRUE"
-		        shift;; 
+		        shift;;
 	        --showjobs )
                 MUTUALLYEXCLUSIVEOPTS_PASSED+=( "$1" )
 		        SHOWJOBS="TRUE"
-		        shift;; 
+		        shift;;
 	        --accRateReport=* )
                 INTERVAL=${1#*=}
                 [[ ! $INTERVAL =~ [[:digit:]]+ ]] && printf "\n\e[0;31m Interval for --accRateReport option must be an integer number! Aborting...\n\n\e[0m" && exit -1
@@ -307,14 +327,14 @@ function ParseCommandLineOption(){
                     UNCOMMENT_BETAS="FALSE"
                     COMMENT_BETAS="TRUE"
                 fi
-                
+
 				while [[ "$2" =~ ^[[:digit:]]\.[[:digit:]]{4}_s[[:digit:]]{4}_(NC|fC|fH)$ ]] || [[ "$2" =~ ^[[:digit:]]\.[[:digit:]]*$ ]]
 				do
 					if [[ "$2" =~ ^[[:digit:]]\.[[:digit:]]{4}_s[[:digit:]]{4}_(NC|fC|fH)$ ]]
 					then
 						UNCOMMENT_BETAS_SEED_ARRAY+=( $2 )
 					elif [[ "$2" =~ ^[[:digit:]]\.[[:digit:]]*$ ]]
-					then 
+					then
                         UNCOMMENT_BETAS_ARRAY+=( $(awk '{printf "%1.4f", $1}' <<< "$2") )
 					fi
 				    shift
@@ -338,11 +358,11 @@ function ParseCommandLineOption(){
     done
 
     if [ ${#MUTUALLYEXCLUSIVEOPTS_PASSED[@]} -gt 1 ]; then
-	    printf "\n\e[0;31m The options\n\n\e[1m" 
+	    printf "\n\e[0;31m The options\n\n\e[1m"
 	    for OPT in "${MUTUALLYEXCLUSIVEOPTS[@]}"; do
 		    printf "  %s\n" "$OPT"
 	    done
-	    printf "\n\e[0;31m are mutually exclusive and must not be combined! Aborting...\n\n\e[0m" 
+	    printf "\n\e[0;31m are mutually exclusive and must not be combined! Aborting...\n\n\e[0m"
 	    exit -1
     fi
 }

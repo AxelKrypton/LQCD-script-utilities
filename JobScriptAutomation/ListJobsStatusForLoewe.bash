@@ -1,4 +1,24 @@
 # Load auxiliary bash files that will be used.
+#
+#  Copyright (c) 2015,2016 Alessandro Sciarra
+#  Copyright (c) 2016 Christopher Czaban
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 source $HOME/Script/UtilityFunctions.sh || exit -2
 #------------------------------------------------------------------------------------#
 
@@ -47,7 +67,7 @@ function __static__ExtractPostfixFromJOBNAME(){
     elif [ "$POSTFIX" == "Tuning" ]; then
         echo "tuning"
         #Also in the "TC" and "TH" cases we have seeds in the name, but such a cases are exluded from the elif
-    elif [ $(echo $JOBNAME | grep -o "_${SEED_PREFIX}[[:alnum:]]\{4\}" | wc -l) -ne 0 ]; then 
+    elif [ $(echo $JOBNAME | grep -o "_${SEED_PREFIX}[[:alnum:]]\{4\}" | wc -l) -ne 0 ]; then
         echo "continueWithNewChain"
     else
         echo ""
@@ -57,7 +77,7 @@ function __static__ExtractPostfixFromJOBNAME(){
 function __static__ExtractMetaInformationFromJOBNAME(){
     local METAINFORMATION_ARRAY=()
     local JOBINFO_STRING="$(squeue --noheader -u $(whoami) -o "%j@%T")" #here JOBINFO_STRING contains spaces at the end of the line
-    
+
     for VALUE in $JOBINFO_STRING; do #here I use the fact that JOBINFO_STRING has spaces to split it (IMPORTANT missing quotes)
         local JOBNAME=${VALUE%@*}
         local JOB_STATUS=${VALUE#*@}
@@ -90,21 +110,21 @@ function ListJobStatus_Loewe(){
         local LOCAL_PARAMETERS_PATH="$1"
         local LOCAL_PARAMETERS_STRING=$(sed 's@/@_@g' <<< "$LOCAL_PARAMETERS_PATH")
         LOCAL_PARAMETERS_STRING=${LOCAL_PARAMETERS_STRING:1}
-	else 
+	else
 		echo "\e[31m Wrong invocation of ListJobStatus_Loewe: Invalid number of arguments. Please investigate...exiting."
 		return
 	fi
-    
+
 
     local JOBS_STATUS_FILE="jobs_status_$LOCAL_PARAMETERS_STRING.txt"
     rm -f $JOBS_STATUS_FILE
-    
+
     printf "\n${DEFAULT_LISTSTATUS_COLOR}===============================================================================================================================================\n\e[0m"
     printf "\e[0;35m%s\t\t  %s\t  %s\t   %s\t  %s\t%s\n\e[0m"   "Beta"   "Traj. Done (Acc.) [Last 1000] int0-1-2-kmp"   "Status"   "Max DS" "Last tr. finished" " Tr: # (time last|av.)"
     printf "%s\t\t\t  %s\t  %s\t%s\t  %s\t%s\n"   "Beta"   "Traj. Done (Acc.) [Last 1000] int0-1-2-kmp"   "Status"   "Max DS" >> $JOBS_STATUS_FILE
 
     JOB_METAINFORMATION_ARRAY=( $(__static__ExtractMetaInformationFromJOBNAME) )
-    
+
     for BETA in ${BETA_PREFIX}[[:digit:]]*; do
 
 	    #Select only folders with old or new names
@@ -128,7 +148,7 @@ function ListJobStatus_Loewe(){
 	        printf "\n \e[1;37;41mWARNING:\e[0;31m \e[1mThere are more than one job with ${LOCAL_PARAMETERS_STRING} and BETA=$BETA as parameters! CHECK!!! Aborting...\n\n\e[0m\n"
 	        exit -1
 	    fi
-	    
+
 	    #----Constructing WORK_BETADIRECTORY, HOME_BETADIRECTORY, JOBSCRIPT_NAME, JOBSCRIPT_GLOBALPATH and INPUTFILE_GLOBALPATH---#
 	    local OUTPUTFILE_GLOBALPATH="$WORK_DIR/$SIMULATION_PATH$LOCAL_PARAMETERS_PATH/$BETA_PREFIX$BETA/$OUTPUTFILE_NAME"
 	    local INPUTFILE_GLOBALPATH="$HOME_DIR/$SIMULATION_PATH$LOCAL_PARAMETERS_PATH/$BETA_PREFIX$BETA/$INPUTFILE_NAME"
@@ -179,13 +199,13 @@ function ListJobStatus_Loewe(){
 	        fi
 	    else
 		    local AVERAGE_TIME_PER_TRAJECTORY="OFF"
-		    local TIME_LAST_TRAJECTORY="OFF"	    
+		    local TIME_LAST_TRAJECTORY="OFF"
 	    fi
-	    
+
 	    if [ -f $OUTPUTFILE_GLOBALPATH ] && [ $(wc -l < $OUTPUTFILE_GLOBALPATH) -gt 0 ]; then
-	        
+
 	        local TO_BE_CLEANED=$(awk 'BEGIN{traj_num = -1; file_to_be_cleaned=0}{if($1>traj_num){traj_num = $1} else {file_to_be_cleaned=1; exit;}}END{print file_to_be_cleaned}' $OUTPUTFILE_GLOBALPATH)
-	        
+
 	        if [ $TO_BE_CLEANED -eq 0 ]; then
 		        local TRAJECTORIES_DONE=$(wc -l < $OUTPUTFILE_GLOBALPATH)
 	        else
@@ -193,7 +213,7 @@ function ListJobStatus_Loewe(){
 	        fi
 	        local NUMBER_LAST_TRAJECTORY=$(awk 'END{print $1}' $OUTPUTFILE_GLOBALPATH)
 	        local ACCEPTANCE=$(awk '{ sum+=$11} END {printf "%5.2f", 100*sum/(NR)}' $OUTPUTFILE_GLOBALPATH)
-	        
+
 	        if [ $TRAJECTORIES_DONE -ge 1000 ]; then
 		        local ACCEPTANCE_LAST=$(tail -n1000 $OUTPUTFILE_GLOBALPATH | awk '{ sum+=$11} END {printf "%5.2f", 100*sum/(NR)}')
 	        else
@@ -205,9 +225,9 @@ function ListJobStatus_Loewe(){
 	        else
 		        local TIME_FROM_LAST_MODIFICATION="------"
 	        fi
-	        
+
 	    else
-	        
+
 	        local TO_BE_CLEANED=0
 	        local TRAJECTORIES_DONE="-----"
 	        local NUMBER_LAST_TRAJECTORY="----"
@@ -215,9 +235,9 @@ function ListJobStatus_Loewe(){
 	        local ACCEPTANCE_LAST=" ----"
 	        local MAX_DELTAS=" ----"
 	        local TIME_FROM_LAST_MODIFICATION="------"
-	        
+
 	    fi
-	    
+
 	    if [ -f $INPUTFILE_GLOBALPATH ]; then
 	        local INT0=$( grep -o "integrationsteps0=[[:digit:]]\+"  $INPUTFILE_GLOBALPATH | sed 's/integrationsteps0=\([[:digit:]]\+\)/\1/' )
 	        local INT1=$( grep -o "integrationsteps1=[[:digit:]]\+"  $INPUTFILE_GLOBALPATH | sed 's/integrationsteps1=\([[:digit:]]\+\)/\1/' )
@@ -232,7 +252,7 @@ function ListJobStatus_Loewe(){
 		            INT2="--"
                     K_MP="--"
 		        fi
-	        else 
+	        else
 		        local INT2="  "
 		        local K_MP="      "
 	        fi
@@ -243,7 +263,7 @@ function ListJobStatus_Loewe(){
 	        local INT2="--"
 	        local K_MP="-----"
 	    fi
-	    
+
 	    printf \
             "$(ColorBeta)%-15s\t  \
 $(ColorClean $TO_BE_CLEANED)%8s${DEFAULT_LISTSTATUS_COLOR} \
@@ -264,14 +284,14 @@ $(ColorTime $TIME_FROM_LAST_MODIFICATION)%s${DEFAULT_LISTSTATUS_COLOR}      \
             "$STATUS"   "$MAX_DELTAS" \
 	        "$(echo $TIME_FROM_LAST_MODIFICATION | awk '{if($1 ~ /^[[:digit:]]+$/){printf "%6d", $1}else{print $1}}') sec. ago" \
 	        "$NUMBER_LAST_TRAJECTORY" \
-	        "$(echo "$TIME_LAST_TRAJECTORY $AVERAGE_TIME_PER_TRAJECTORY" | awk '{if($1 ~ /^[[:digit:]]+$/ && $2 ~ /^[[:digit:]]+$/){printf "%3ds | %3ds", $1, $2}else if($1 == "ERR" || $2 == "ERR"){print "_errorMeas_"}else{print "notMeasured"}}')" 
-	    
+	        "$(echo "$TIME_LAST_TRAJECTORY $AVERAGE_TIME_PER_TRAJECTORY" | awk '{if($1 ~ /^[[:digit:]]+$/ && $2 ~ /^[[:digit:]]+$/){printf "%3ds | %3ds", $1, $2}else if($1 == "ERR" || $2 == "ERR"){print "_errorMeas_"}else{print "notMeasured"}}')"
+
 	    if [ $TO_BE_CLEANED -eq 0 ]; then
 	        printf "%s\t\t%8s (%s %%) [%s %%]  %s-%s%s%s\t%9s\t%s\n"   "$(GetShortenedBetaString)"   "$TRAJECTORIES_DONE"   "$ACCEPTANCE"   "$ACCEPTANCE_LAST"   "$INT0" "$INT1" "$INT2" "$K_MP"   "$STATUS"   "$MAX_DELTAS" >> $JOBS_STATUS_FILE
 	    else
 	        printf "%s\t\t%8s (%s %%) [%s %%]  %s-%s%s%s\t%9s\t%s\t ---> File to be cleaned!\n"   "$(GetShortenedBetaString)"   "$TRAJECTORIES_DONE"   "$ACCEPTANCE"   "$ACCEPTANCE_LAST"   "$INT0" "$INT1" "$INT2" "$K_MP"   "$STATUS"   "$MAX_DELTAS" >> $JOBS_STATUS_FILE
 	    fi
-	    
+
     done #Loop on BETA
     printf "${DEFAULT_LISTSTATUS_COLOR}===============================================================================================================================================\n\e[0m"
 }
@@ -283,7 +303,7 @@ function GetShortenedBetaString(){
 	    echo "${BETA%_*}_fH"
     elif [ "$POSTFIX_FROM_FOLDER" == "thermalizeFromConf" ]; then
 	    echo "${BETA%_*}_fC"
-    else 
+    else
 	    echo "${BETA%_*}"
     fi
 }
@@ -339,10 +359,10 @@ function ColorBeta(){
         echo $DEFAULT_LISTSTATUS_COLOR
         return
     fi
-    
+
     awk -v obsColumns="${AUX1%?}" -v obsNames="${AUX2%?}" -f ${HOME}/Script/JobScriptAutomation/CheckCorrectnessCl2qcdOutputFile.awk $OUTPUTFILE_GLOBALPATH
     local ERROR_CODE=$?
-    
+
     if [ $ERROR_CODE -eq 0 ]; then
         echo $DEFAULT_LISTSTATUS_COLOR
     elif [ $ERROR_CODE -eq 1 ]; then
@@ -350,12 +370,12 @@ function ColorBeta(){
     else
         echo $SUSPICIOUS_BETA_LISTSTATUS_COLOR
     fi
-    
+
 }
 
 
 function ColorDeltaS(){
-    if [[ ! $1 =~ [+-]?[[:digit:]]+[.]?[[:digit:]]* ]]; then 
+    if [[ ! $1 =~ [+-]?[[:digit:]]+[.]?[[:digit:]]* ]]; then
         echo "$DEFAULT_LISTSTATUS_COLOR"
     else
 		if [ "$POSTFIX_FROM_FOLDER" == "continueWithNewChain" ] && [ $(awk -v threshold=$DELTA_S_THRESHOLD -v value=$1 'BEGIN{if(value >= threshold)print 1; else print 0;}') -eq 1 ]; then

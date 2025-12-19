@@ -1,4 +1,23 @@
 #!/bin/bash
+#
+#  Copyright (c) 2016 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 #-----------------------------------------------------------------------------------------------------------------#
 # Load auxiliary bash files that will be used.
@@ -11,7 +30,7 @@ source $HOME/Script/CollapsePlot/BashQuantitativeCollapse/AuxiliaryPlots.sh || e
 #-----------------------------------------------------------------------------------------------------------------#
 
 function DeleteAuxiliaryFiles(){
-    for FILE in ${DATA_FILENAMES[@]}; do    
+    for FILE in ${DATA_FILENAMES[@]}; do
         rm ${FILE}_betaC*_nu*${SUFFIX_RESCALED_DATA}
         rm ${FILE}_betaC*_nu*${SUFFIX_RESCALED_DATA}${SUFFIX_DATA_ON_GRID}
     done
@@ -34,7 +53,7 @@ function CheckErrorCodeOfPreparationOfFileForIntegration(){
             printf "#Unable to calculate collapse at desired precision due to too low resolution in x of data!\n"
             return 1
         else
-            [ $DELETE_INTERMEDIATE_FILES = 'TRUE' ] && DeleteAuxiliaryFiles 
+            [ $DELETE_INTERMEDIATE_FILES = 'TRUE' ] && DeleteAuxiliaryFiles
             exit -1
         fi
     fi
@@ -74,7 +93,7 @@ BETA_C_NU_STRING="_betaC${BETA_C[0]}_nu${NU[0]}"
 printf "%-19s %5s %-8s %5s %-6s %5s %-17s %5s %-60s\n" "#Volumes" "" "Beta_C" "" "nu" "" "WorseCollapse" "" "CollapseQualities"
 for BETA_LOOP in ${BETA_C[@]}; do
     for NU_LOOP in ${NU[@]}; do
-        SUFFIX_RESCALED_DATA_LOOP="_betaC${BETA_LOOP}_nu${NU_LOOP}${SUFFIX_RESCALED_DATA}" 
+        SUFFIX_RESCALED_DATA_LOOP="_betaC${BETA_LOOP}_nu${NU_LOOP}${SUFFIX_RESCALED_DATA}"
         #Rescale data
         for INDEX in ${!DATA_FILENAMES[@]}; do
             RescaleDataForGivenFile ${DATA_FILENAMES[$INDEX]} ${BETA_LOOP} ${NU_LOOP} ${VOLUMES[$INDEX]} ${DATA_FILENAMES[$INDEX]}${SUFFIX_RESCALED_DATA_LOOP}

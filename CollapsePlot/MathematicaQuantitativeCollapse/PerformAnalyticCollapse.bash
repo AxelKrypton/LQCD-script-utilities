@@ -1,4 +1,23 @@
 #!/bin/bash
+#
+#  Copyright (c) 2016 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 #Wrapper script to run the mathematica code in a more friendly way.
 
@@ -43,7 +62,7 @@ if ElementInArray "--help" $@ || ElementInArray "-h" $@; then
     printf "\n\t \e[1m\e[21m                              one containing the {estimatorNumber, beta, kurtosis} data in three columns."
     printf "\n\t \e[1m\e[21m                              The file given to this script are those produced by the python code and therefore"
     printf "\n\t \e[1m\e[21m                              they have an header and many columns to be removed."
-    printf "\n\t \e[1m-o | --stdOutput\e[21m           -> In this way it is possible to specify a name of a file to which the mathematica script" 
+    printf "\n\t \e[1m-o | --stdOutput\e[21m           -> In this way it is possible to specify a name of a file to which the mathematica script"
     printf "\n\t \e[1m\e[21m                              will print its output. If not given then the mathematica script will print to the shell."
     printf "\n\t \e[1m--bC\e[21m                       -> Use this option to specify the range and the resolution in beta to be used. Give them as a"
     printf "\n\t \e[1m\e[21m                              single command line parameter, i.e. do not forget the quotation marks: \"bCmin bCmax bCres\"."
@@ -183,14 +202,14 @@ done
 #====================================================================================================
 #Checks on command line parameters
 case ${#FILENAMES[@]} in
-    0 ) 
+    0 )
         printf "\n\e[91m No data file specified! Aborting...\e[0m\n\n" && exit -1 ;;
-    1 ) 
+    1 )
         if [ $RUN_ANALYTIC_COLLAPSE = "TRUE" ]; then
             printf "\n\e[91m Only one data file specified! At least two are needed! Aborting...\e[0m\n\n" && exit -1
         fi
         ;;
-    * ) 
+    * )
         ;;
 esac
 
@@ -212,11 +231,11 @@ if [ $RUN_ANALYTIC_COLLAPSE = "TRUE" ]; then
     fi
     if [ $(bc -l <<< "$DDX_RES == 0") -eq 1 ]; then
         printf "\n\e[91m The resolution of ddx cannot be zero! Aborting...\e[0m\n\n"
-        exit -1        
+        exit -1
     fi
     if { [ $(bc -l <<< "$BC_RES != 0") -eq 1 ] && [ $(bc -l <<< "$NU_RES == 0") -eq 1 ]; } || { [ $(bc -l <<< "$BC_RES == 0") -eq 1 ] && [ $(bc -l <<< "$NU_RES != 0") -eq 1 ]; }; then
         printf "\n\e[91m The resolution of bC and nu must be at the moment either both zero or both different from zero! Aborting...\e[0m\n\n"
-        exit -1        
+        exit -1
     fi
 fi
 
@@ -228,7 +247,7 @@ if [ $PRODUCE_DATA_FILES = "TRUE" ]; then
 fi
 
 #====================================================================================================
-#Produce locally the data files for mathematica assuming that 
+#Produce locally the data files for mathematica assuming that
 # 1) the beta and the kurtosis are in the columns 1 and 8 of the datafile
 # 2) the estimator number, beta and kurtosis are in the columns 1, 2 and 9 of the estimator
 #    file that has the same name as the data file with suffix "_estimators" before the extension (.dat)
@@ -259,5 +278,5 @@ fi
 #====================================================================================================
 exit 0
 
-#./PerformAnalyticCollapse.wl 5.33477 5.33477 0.01 0.37 0.39 0.02 0.1 0.2 0.1 out.txt k1650_ns16.dat k1650_ns20.dat k1650_ns24.dat 
+#./PerformAnalyticCollapse.wl 5.33477 5.33477 0.01 0.37 0.39 0.02 0.1 0.2 0.1 out.txt k1650_ns16.dat k1650_ns20.dat k1650_ns24.dat
 

@@ -1,4 +1,23 @@
 #!/bin/bash
+#
+#  Copyright (c) 2015 Christopher Czaban
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 
 ls | grep "conf\.[[:digit:]]\{5\}" | awk '
@@ -9,7 +28,7 @@ BEGIN{
         srand();
 }
 {
-    split($1,corr_name_array,"_"); 
+    split($1,corr_name_array,"_");
     conf_count[corr_name_array[1]]++;
     if(corr_name_array[2] != "")
     {
@@ -28,7 +47,7 @@ END{
             {
                 conf_x_y_z_t_corr_key_new[new_corr_name];
                 conf_count[conf_nr]++;
-            }            
+            }
         }
     }
 
@@ -39,7 +58,7 @@ END{
        {
            if(match(j,conf_count_sorted[i]))
            {
-               split(j,corr_name_array,"_"); 
+               split(j,corr_name_array,"_");
                print "--sourcefile=" conf_count_sorted[i] " --source_x=" corr_name_array[2] " --source_y=" corr_name_array[3] " --source_z=" corr_name_array[4] " --source_t=" corr_name_array[5];
            }
        }

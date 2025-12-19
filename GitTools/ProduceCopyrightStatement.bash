@@ -1,4 +1,23 @@
 #!/bin/bash
+#
+#  Copyright (c) 2018,2019 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 # This script is intended to produce a copyright statement for a file
 # in a git repository, which contains all the authors which contributed
@@ -115,7 +134,7 @@ if [[ ${CPR_dashConsecutiveYears} = 'TRUE' ]]; then
     done
 fi
 
-# Remove last comma 
+# Remove last comma
 declare -A CPR_yearsAuthor
 for author in "${!CPR_authorYears[@]}"; do
     CPR_authorYears["${author}"]=${CPR_authorYears["$author"]%?}

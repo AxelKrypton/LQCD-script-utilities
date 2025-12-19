@@ -1,4 +1,23 @@
 #!/bin/bash
+#
+#  Copyright (c) 2014 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 # This script is intended to rename configurations generated with tmLQCD
 # adjusting the index number to the trajectory number, using the Nsave parameter.
@@ -41,7 +60,7 @@ else
     else
 	folder=$1
     fi
-    
+
     # Check if the folder exists
     if [ ! -d $folder ]; then
 	echo "Directory \"$folder\" does not exist or cannot be accessed! Aborting..."
@@ -99,19 +118,19 @@ END{
     numDigitsAllowedTMLQCD=4
     numDigitsAllowedCL2QCD=5
     max_index_conf=$(ls -l $folder | grep -v "^d" | awk 'NR>1{print $9}' | grep "conf." | grep -v "save" | awk '{print substr($1,index($1, "conf.")+5,length($1))}' | awk -v allowedDigits=$numDigitsAllowedTMLQCD '\
-BEGIN {maximumIndex; correctNumDigits = 1}                         
-{ 
+BEGIN {maximumIndex; correctNumDigits = 1}
+{
   if(length($0) != allowedDigits){
     correctNumDigits = 0;
     exit;
   }
-  for (i = 1; i <= NF; i = i + 1){ 
+  for (i = 1; i <= NF; i = i + 1){
     if(NR==1 && i==1)
       maximumIndex=$i;
     else{
       if($i > digitsOfIndex)
         maximumIndex=$i;
-    }  
+    }
   }
 }
 END {
@@ -129,11 +148,11 @@ END {
 	echo "Configurations in folder \"$folder\" have not valid indexes (e.g. 4 digits)! Aborting..."
 	exit -1
     fi
-    
+
     # Estimate maximum trajectory number and check it
     max_index_conf=$(echo $max_index_conf | sed 's/^0*//') #Removing leading zeros!
     max_traj_number=$(($Nsave * ($max_index_conf + 1)))
-    
+
     if [ $(($(echo "$(($Nsave * ($max_index_conf + 1)))" | wc -m) -1)) -gt $numDigitsAllowedCL2QCD ]; then # wc counts the endline, too -> I have to subtract 1
 	echo "Maximum trajectory number would have more than 5 digits and it is not allowed! Aborting..."
 	exit -1
@@ -147,7 +166,7 @@ END {
 	new_index=$(($Nsave * ($new_index + 1)))
 	new_name=`printf "conf.%0${numDigitsAllowedCL2QCD}d" $new_index`
 	mv -i $folder/$f $folder/$new_name
-	echo "Renamed $f ---> $new_name" 
+	echo "Renamed $f ---> $new_name"
     done
 fi
 

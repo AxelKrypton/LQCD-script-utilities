@@ -1,4 +1,23 @@
 #!/bin/bash
+#
+#  Copyright (c) 2017,2019 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 function ParseCommandLineOption(){
     while [ "$1" != "" ]; do
@@ -6,7 +25,7 @@ function ParseCommandLineOption(){
             -h | --help )
                 printf "\n\e[0;91m"
                 echo "This script will rewrite the history of your git repository on all branches,"
-                echo "therefore use it with care (from great powers comes great responsibilities)!" 
+                echo "therefore use it with care (from great powers comes great responsibilities)!"
                 printf "\n\e[0;36m"
                 echo "Running the script, the history of the repository from where the script is run will"
                 echo "be analysed, looking for commits in which the author and the committer differ."
@@ -25,12 +44,12 @@ function ParseCommandLineOption(){
     done
 }
 
-function ExecuteGitOperations(){ 
+function ExecuteGitOperations(){
     #Rewrite history
     local COMMAND_TO_BE_RUN
-    COMMAND_TO_BE_RUN="git filter-branch --env-filter ' 
+    COMMAND_TO_BE_RUN="git filter-branch --env-filter '
                            if [ \"\$GIT_AUTHOR_NAME\" != \"\$GIT_COMMITTER_NAME\" ] || [ \"\$GIT_AUTHOR_DATE\" != \"\$GIT_COMMITTER_DATE\" ];
-                           then 
+                           then
                                export GIT_COMMITTER_NAME=\"\$GIT_AUTHOR_NAME\"   ;
                                export GIT_COMMITTER_EMAIL=\"\$GIT_AUTHOR_EMAIL\" ;
                                export GIT_COMMITTER_DATE=\"\$GIT_AUTHOR_DATE\"   ;

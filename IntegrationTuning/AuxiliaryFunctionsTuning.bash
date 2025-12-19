@@ -1,4 +1,23 @@
 function ParseCommandLineOption(){
+#
+#  Copyright (c) 2014 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
     while [ "$1" != "" ]; do
 	case $1 in
 	    -h | --help )
@@ -70,12 +89,12 @@ function ParseIntegratorSteps(){
 	printf "\n\e[0;31m NUMTIMESCALES=$NUMTIMESCALES not valid! Aborting...\n\n\e[0m"
 	exit -1
     fi
-    
+
     if [[ ! $INTSTEPS0 =~ ^([0-9]+[:]){2}[0-9]+$ ]]; then
 	printf "\n\e[0;31m Integrator0 steps have been specified in the wrong way, see --help for more info! Aborting...\n\n\e[0m"
 	exit -1
     fi
-        
+
     local INTSTEPS0MIN=$(echo "$INTSTEPS0" | awk 'BEGIN{ FS=":" }{print $1}')
     local INTSTEPS0MAX=$(echo "$INTSTEPS0" | awk 'BEGIN{ FS=":" }{print $2}')
     local INTSTEPS0RES=$(echo "$INTSTEPS0" | awk 'BEGIN{ FS=":" }{print $3}')
@@ -86,7 +105,7 @@ function ParseIntegratorSteps(){
         printf "\n\e[0;31m Integrator0 steps resolution equal to 0 cannot be used to scan the given region!! Aborting...\n\n\e[0m"
         exit -1
     fi
-    
+
     if [ $INTSTEPS0MIN -gt $INTSTEPS0MAX ]; then
 	INTSTEPS0MIN=`expr $INTSTEPS0MIN + $INTSTEPS0MAX`
 	INTSTEPS0MAX=`expr $INTSTEPS0MIN - $INTSTEPS0MAX`
@@ -110,7 +129,7 @@ function ParseIntegratorSteps(){
 	local INTSTEPS1RES=$(echo "$INTSTEPS1" | awk 'BEGIN{ FS=":" }{print $3}')
 
 	if [ $INTSTEPS0MIN -eq $INTSTEPS0MAX ]; then INTSTEPS0RES=1; fi
-	
+
 	if [ $INTSTEPS0RES -eq 0 ]; then
             printf "\n\e[0;31m Integrator1 steps resolution equal to 0 cannot be used to scan the given region!! Aborting...\n\n\e[0m"
             exit -1
@@ -133,7 +152,7 @@ function ProduceJobScriptFile(){
     #-----------------------------------------------------------------#
     if [ $# -lt 1 ] || [ $# -gt $((2*$GPU_PER_NODE)) ] || [ $(echo $# | awk '{print $1 % 2}') -ne 0 ]; then
 	printf "\n\e[0;31m  Wrong number of parameters given to \"ProduceJobScriptFile\" function. Aborting...\n\n\e[0m"
-	exit -1	
+	exit -1
     fi
     local INT0_TO_BE_USED=()
     local INT1_TO_BE_USED=()

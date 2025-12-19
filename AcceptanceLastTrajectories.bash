@@ -1,4 +1,23 @@
 #!/bin/bash
+#
+#  Copyright (c) 2015,2016,2021 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 #Script to get quickly the Acceptance of the last trajectories
 
@@ -63,7 +82,7 @@ done
 
 if [ ${#NUM_FIRST_TR[@]} -ne 0 ] && [ ${#NUM_LAST_TR[@]} -ne 0 ] && [ ${#NUM_FIRST_TR[@]} -ne ${#NUM_LAST_TR[@]} ]; then
     printf "\n\e[0;31m Options \e[1m-t\e[21m and \e[1m-T\e[21m given with different amount of values! Aborting...\n\n\e[0m"
-    exit -1 
+    exit -1
 fi
 
 ReadParametersFromPath $(pwd)
@@ -93,7 +112,7 @@ if [ ! -z ${GLOBALPATH_TO_BETAFOLDER_PLACE:+x} ]; then
         exit -1
     fi
 else
-    for TRIAL_PATH in ${PWD/\/*\//home} ${PWD/\/*\//data01} ${PWD/\/*\//data02} ${PWD/\/*\//scratch}; do #LOEWE specific 
+    for TRIAL_PATH in ${PWD/\/*\//home} ${PWD/\/*\//data01} ${PWD/\/*\//data02} ${PWD/\/*\//scratch}; do #LOEWE specific
         if [ -f $TRIAL_PATH/$BETA/$OUTPUT_FILE ]; then
             SCRATCH_PATH=$TRIAL_PATH/$BETA/$OUTPUT_FILE
             break

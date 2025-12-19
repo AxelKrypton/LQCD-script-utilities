@@ -1,8 +1,28 @@
 #!/bin/bash
+#
+#  Copyright (c) 2014-2016 Christopher Czaban
+#  Copyright (c) 2014-2017 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 #Some scripts could be called via . (source) builtin, see e.g.
 #https://developer.apple.com/library/mac/documentation/OpenSource/Conceptual/ShellScripting/SubroutinesandScoping/SubroutinesandScoping.html
-#Important: Unlike executing a script as a normal shell command, executing a script with the source builtin results in the second script executing within the same 
+#Important: Unlike executing a script as a normal shell command, executing a script with the source builtin results in the second script executing within the same
 #overall context as the first script. Any variables that are modified by the second script will be seen by the calling script.
 
 #COMMENT about -s | --submit and --submitonly: ...############### INSERT COMMENT HERE ###################
@@ -118,7 +138,7 @@ DELTA_S_THRESHOLD=6
 
 #####################################CREATE OPTIONS FOR COMMAND-LINE-PARSER######################################
 #Inverter Options
-CORRELATOR_DIRECTION="0" 
+CORRELATOR_DIRECTION="0"
 NUMBER_SOURCES_FOR_CORRELATORS="8"
 
 
@@ -126,7 +146,7 @@ NUMBER_SOURCES_FOR_CORRELATORS="8"
 UNCOMMENT_BETAS_SEED_ARRAY=()
 UNCOMMENT_BETAS_ARRAY=()
 
-#Array for the options string 
+#Array for the options string
 DATABASE_OPTIONS=()
 
 #-----------------------------------------------------------------------------------------------------------------#
@@ -162,7 +182,7 @@ ParseCommandLineOption "${SPECIFIED_COMMAND_LINE_OPTIONS[@]}"
 CheckWilsonStaggeredVariables
 
 if [ "$CALL_DATABASE" = "TRUE" ]; then
-	projectStatisticsDatabase ${DATABASE_OPTIONS[@]}	
+	projectStatisticsDatabase ${DATABASE_OPTIONS[@]}
 	exit
 fi
 
@@ -182,7 +202,7 @@ fi
 
 
 #-----------------------------------------------------------------------------------------------------------------#
-# Perform all the checks on the path, reading out some variables 
+# Perform all the checks on the path, reading out some variables
 if [ "$CLUSTER_NAME" = "JUQUEEN" ]; then
     CheckSingleOccurrenceInPath "homeb" "hkf8/" "hkf8[[:digit:]]\+" "${NFLAVOUR_PREFIX}${NFLAVOUR_REGEX}" "${CHEMPOT_PREFIX}${CHEMPOT_REGEX}" "${MASS_PREFIX}${MASS_REGEX}" "${NTIME_PREFIX}${NTIME_REGEX}" "${NSPACE_PREFIX}${NSPACE_REGEX}"
 else
@@ -214,8 +234,8 @@ SUBMIT_BETA_ARRAY=()
 PROBLEM_BETA_ARRAY=() #Arrays that will contain the beta values that actually will be processed
 declare -A INTSTEPS0_ARRAY
 declare -A INTSTEPS1_ARRAY
-declare -A CONTINUE_RESUMETRAJ_ARRAY 
-declare -A MASS_PRECONDITIONING_ARRAY 
+declare -A CONTINUE_RESUMETRAJ_ARRAY
+declare -A MASS_PRECONDITIONING_ARRAY
 declare -A STARTCONFIGURATION_GLOBALPATH #NOTE: Before bash 4.2 associative array are LOCAL by default (from bash 4.2 one can do "declare -g ARRAY" to make it global).
                                          #      This is the reason why they are declared here and not in ReadBetaValuesFromFile where it would be natural!!
 
@@ -256,7 +276,7 @@ elif [ $THERMALIZE = "TRUE" ] || [ $CONTINUE_THERMALIZATION = "TRUE" ]; then
 	    BETA_POSTFIX="_thermalizeFromHot"
     else
 	    BETA_POSTFIX="_thermalizeFromConf"
-    fi	
+    fi
     if [ $MEASURE_PBP = "TRUE" ]; then
 	    printf "\n \e[1;33;4mMeasurement of PBP switched off during thermalization!!\n\e[0m"
 	    MEASURE_PBP="FALSE"
@@ -283,14 +303,14 @@ elif [ $THERMALIZE = "TRUE" ] || [ $CONTINUE_THERMALIZATION = "TRUE" ]; then
         ProcessBetaValuesForContinue
     fi
     SubmitJobsForValidBetaValues #TODO: Declare all possible local variable in this function as local!
-    
+
 elif [ $CONTINUE = "TRUE" ]; then
 
     if [ "$CLUSTER_NAME" = "JUQUEEN" ]; then CheckParallelizationTmlqcdForJuqueen; fi
     ReadBetaValuesFromFile  # Here we declare and fill the array BETAVALUES
     ProcessBetaValuesForContinue #TODO: Declare all possible local variable in this function as local! Use also only capital letters!
     SubmitJobsForValidBetaValues #TODO: Declare all possible local variable in this function as local!
-    
+
 elif [ $LISTSTATUS = "TRUE" ] || [ $LISTSTATUSALL = "TRUE" ]; then
 
     ListJobStatus   #TODO: On Juqueen, declare all possible local variable in this function as local! Use PARAMETERS_STRING/PATH where needed!
@@ -305,7 +325,7 @@ elif [ $ACCRATE_REPORT = "TRUE" ]; then
     AcceptanceRateReport
 
 elif [ $CLEAN_OUTPUT_FILES = "TRUE" ]; then
-    
+
     if [ $SECONDARY_OPTION_ALL = "TRUE" ]; then
         BETAVALUES=( $( ls $WORK_DIR_WITH_BETAFOLDERS | grep "^${BETA_PREFIX}${BETA_REGEX}" | awk '{print substr($1,2)}') )
     else
@@ -314,15 +334,15 @@ elif [ $CLEAN_OUTPUT_FILES = "TRUE" ]; then
     CleanOutputFiles
 
 elif [ $EMPTY_BETA_DIRS = "TRUE" ]; then
-    
+
     BETASFILE="emptybetas"
     ReadBetaValuesFromFile
     EmptyBetaDirectories
-    
+
 elif [ $COMPLETE_BETAS_FILE = "TRUE" ]; then
 
     CompleteBetasFile
-    
+
 elif [ $UNCOMMENT_BETAS = "TRUE" ] || [ $COMMENT_BETAS = "TRUE" ]; then
 
 	UncommentEntriesInBetasFile
@@ -330,7 +350,7 @@ elif [ $UNCOMMENT_BETAS = "TRUE" ] || [ $COMMENT_BETAS = "TRUE" ]; then
 elif [ $INVERT_CONFIGURATIONS = "TRUE" ]; then
 
     ReadBetaValuesFromFile
-    ProcessBetaValuesForInversion 
+    ProcessBetaValuesForInversion
     SubmitJobsForValidBetaValues
 fi
 

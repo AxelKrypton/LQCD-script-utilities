@@ -1,4 +1,23 @@
 #!/bin/awk -f
+#
+#  Copyright (c) 2016 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 # This awk script needs two input variables, namely the
 # observable columns (from 1 on) in a variable named "obsColumns" and
@@ -10,7 +29,7 @@
 # to get a report.
 
 BEGIN{
-    split(obsNames, namesArray, ","); 
+    split(obsNames, namesArray, ",");
     split(obsColumns, columnsArray, ",");
     for(i in namesArray){
         observables[namesArray[i]]=columnsArray[i]
@@ -20,7 +39,7 @@ BEGIN{
     if(acceptedFound!=1 || trajectoryNumberFound!=1){skipEnd=1; exit}
 }
 NR>1{
-    if($(observables["Accepted"]) == 0){ 
+    if($(observables["Accepted"]) == 0){
         for(obs in observables){
             if(obs=="TrajectoryNr" || obs=="Accepted"){continue};
             if($(observables[obs]) != oldObservables[obs]){
@@ -28,7 +47,7 @@ NR>1{
                 else{changedObs=(changedObs ", " obs)}
             }
         }
-        if(changedObs != ""){ 
+        if(changedObs != ""){
             if(printReport==1){print "\033[38;5;9m Trajectory\033[38;5;11m", $(observables["TrajectoryNr"]) "\033[38;5;9m -> configuration rejected but\033[38;5;11m", changedObs, "\033[38;5;9mchanged!\033[0m"}
             changedObs=""
             wrongLines++

@@ -1,4 +1,23 @@
 #!/bin/awk
+#
+#  Copyright (c) 2015,2016 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 #This script relies on a fixed format of the input file:
 #   Fitted_Volumes   NDF chi2       Q          nu dnu          beta dbeta            B4 dB4           b db           Beta_Ranges
@@ -21,7 +40,7 @@ function CalculateOverlap(a, b, c, d,     partNotInCommon){
     {
         partNotInCommon=sqrt((a-c)^2)+sqrt((b-d)^2)
         return 1.-(partNotInCommon/(sqrt((b-a)^2)+sqrt((d-c)^2)))
-    }   
+    }
 }
 
 #Symmetry of an interval [-a, b] with respect to zero can be defined as 1-abs(2b/(b-a)-1).
@@ -163,7 +182,7 @@ NR==1{
     #}
     #print "minimumSymmetryPercentage="minimumSymmetryPercentage
 
-        
+
     if(fitType == "lin"){
         printf "%-15s    %-22s    %-17s    %-17s    %-17s    %-17s", $1, $2" "$3" "$4, $5" "$6, $7" "$8, $9" "$(10), $(11)" "$(12)
     }else{

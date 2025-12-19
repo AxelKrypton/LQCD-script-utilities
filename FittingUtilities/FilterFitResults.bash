@@ -1,4 +1,23 @@
 #!/bin/bash
+#
+#  Copyright (c) 2015 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 OPTION_COUNTER=0
 
@@ -6,9 +25,9 @@ OPTION_COUNTER=0
 #^([sl]{1}[+-]?)?[[:digit:]]+(\.[[:digit:]]+)?$
 #The first part ^([sl]{1}[+-]?)? represents an optional group in the beginning of the string.
 #If one decides to put an instance of this group into the string, certain criteria on this instance enter:
-#There must only be one "l" or one "s". Then there can be either a "+" or a minus "-". 
+#There must only be one "l" or one "s". Then there can be either a "+" or a minus "-".
 #The second part [[:digit:]]+(\.[[:digit:]]+)?$ is constructed in a similar fashion.
-#Here again the important element is the optional group at the end of the string (\.[[:digit:]]+)?$ . 
+#Here again the important element is the optional group at the end of the string (\.[[:digit:]]+)?$ .
 #If one decides to put an instance of this group into the string,
 #the instance has to start with a period followed by at least one digit.
 
@@ -61,12 +80,12 @@ do
         ;;
     -o) PRODUCE_OVERLAP_PERCENTAGE="TRUE"
         ;;
-    -p) if [ $OPTION_COUNTER -gt 0 ]; then echo "Currently only filtering by one parameter at a time is implemented."; break; fi  
+    -p) if [ $OPTION_COUNTER -gt 0 ]; then echo "Currently only filtering by one parameter at a time is implemented."; break; fi
         PERFORM_FILTERING="TRUE"
         PARAMETER=$2
         shift
-        while [[ $2 =~ ^([$CRITERIA_STRING_SMALLER$CRITERIA_STRING_LARGER][+-]?)?[[:digit:]]+(\.[[:digit:]]+)?$ ]] 
-        do                                                
+        while [[ $2 =~ ^([$CRITERIA_STRING_SMALLER$CRITERIA_STRING_LARGER][+-]?)?[[:digit:]]+(\.[[:digit:]]+)?$ ]]
+        do
             CRITERIA_ARRAY+=( $2 )
             if [ ${#CRITERIA_ARRAY[@]} -gt 3 ]; then echo "Maximally three criteria allowed at a time...terminating"; exit; fi
             shift
@@ -140,10 +159,10 @@ then
     COLUMN_BETA_CRITICAL=$(head -n1 <<< "$INFORMATION_TO_BE_FILTERED" | awk -v parameter="betaC" 'NR==1{for(i=1;i<=NF;++i){if($i == parameter){print i}}}')
     COLUMN_CHI2=$(head -n1 <<< "$INFORMATION_TO_BE_FILTERED" | awk -v parameter="chi2" 'NR==1{for(i=1;i<=NF;++i){if($i == parameter){print i}}}')
     COLUMN_RANGES=$(head -n1 <<< "$INFORMATION_TO_BE_FILTERED" | awk -v parameter="^Beta_Ranges.*" 'NR==1{for(i=1;i<=NF;++i){if($i ~ parameter){print i}}}')
-    
+
     if [ $PARAMETER = "chi2" ]
     then
-        CHI2_PASSED=1    
+        CHI2_PASSED=1
     elif [ $PARAMETER = "Q" ]
     then
         Q_PASSED=1

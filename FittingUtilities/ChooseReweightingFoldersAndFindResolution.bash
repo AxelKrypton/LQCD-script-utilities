@@ -1,4 +1,23 @@
 #!/bin/bash
+#
+#  Copyright (c) 2016,2018 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 # This script should be run from the folder where the BruteForceFit is
 # done, namely from a path from which mass, nt and ns can be read out.
@@ -8,7 +27,7 @@
 #
 # If no option is given, then the script checks in the spatial volume folders
 # whether any folder called "${DEFAULT_REWEIGHTED_FOLDER}_dBeta*" is present.
-# If this is the case, then the user will be prompted for choosing one among 
+# If this is the case, then the user will be prompted for choosing one among
 # these and the chosen one will be symlinked with the default name. This is
 # very handy when it comes to make fit after having reweighted the data with
 # different resolutions.

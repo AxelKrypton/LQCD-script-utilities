@@ -1,11 +1,30 @@
 #!/bin/bash
+#
+#  Copyright (c) 2015 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 # This script is to automatize the Integrator tuning in hmc simulation with
 # mass preconditioning.
 # It is not really well written as script, but it is just ad hoc with
 # not so general cases treated.
 #
-# It creates a folder with a name XX_YY_ZZ_kmpTTTT from where it is run. 
+# It creates a folder with a name XX_YY_ZZ_kmpTTTT from where it is run.
 #  - XX is the number of integration steps on the innermost scale
 #  - YY on the middle scale
 #  - ZZ on the outermost scale
@@ -15,19 +34,19 @@
 # The tuning is meant to be on the outermost scale as well as on the kappa_mp, while
 # the innermost scales are kept fixed.
 #
-# Since on LOEWE now one should group GPU_PER_NODE srun in order not to waste 
+# Since on LOEWE now one should group GPU_PER_NODE srun in order not to waste
 # computing time, in this script the user will have to specify
 # the number of the outermost scale and the value of kappa_mp in the following
-# way: 
+# way:
 #                      Xmin:Xmax:delta
 # where Xmin is the minimum value that will be used, Xmax is the maximum, and delta is
 # the resolution with which to scan. All the possibility will be then done. For example:
 #  --intsteps2=4:6:1
 #  --kmp=1525:1600:25
 # will make the following 12 simulations start:
-#  (4,1525) - (4,1550) - (4,1575) - (4,1600)  
-#  (5,1525) - (5,1550) - (5,1575) - (5,1600)  
-#  (6,1525) - (6,1550) - (6,1575) - (6,1600)  
+#  (4,1525) - (4,1550) - (4,1575) - (4,1600)
+#  (5,1525) - (5,1550) - (5,1575) - (5,1600)
+#  (6,1525) - (6,1550) - (6,1575) - (6,1600)
 #
 #
 # From the path some parameters like kxappa, ns, nt, mu are deduced.
@@ -86,7 +105,7 @@ ParseCommandLineOption $@
 
 
 #-----------------------------------------------------------------------------------------------------------------#
-# Perform all the checks on the path, reading out some variables 
+# Perform all the checks on the path, reading out some variables
 CheckSingleOccurrenceInPath "scratch" "hfftheo" "$(whoami)" "mui" "k[[:digit:]]\+" "nt[[:digit:]]\+" "ns[[:digit:]]\+"
 
 ReadParametersFromPath $(pwd)
@@ -211,7 +230,7 @@ while [[ "${!STEPS_TOGETHER[@]}" != "" ]]; do # ${!array[@]} gives the list of t
 	printf "\n\e[0;31m Jobscript \"$JOBSCRIPT_NAME\" failed to be created! It will be not submitted!!!\n\e[0m"
     fi
 done
-    
+
 #-----------------------------------------------------------------------------------------------------------------#
 
 

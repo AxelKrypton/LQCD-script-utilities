@@ -1,4 +1,23 @@
 #!/bin/bash
+#
+#  Copyright (c) 2014 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 # This script is to create the file .nstore_counter in the folder
 # that is given as argument. Basically the file .nstore_counter
@@ -9,7 +28,7 @@
 #     will be named conf.index where index is such that
 #         trajectory_counter = (index + 1) * Nsave
 #     (with some initial 0). Note that the configuration for
-#     trajectory_counter=0 is not saved (the index qould be -1). 
+#     trajectory_counter=0 is not saved (the index qould be -1).
 #     This means that conf.0000 is the gauge configuration after
 #     Nsave trajectories.
 #  2) the trajectory number of the following Monte Carlo iteration
@@ -23,11 +42,11 @@
 # name start by "conf." and "rlxd." finding the highest common index following
 # these names. Found this number it will overwrite or create the correct
 # ".nstore_counter" file to continue the simulation from the last saved
-# configuration. 
+# configuration.
 
 
 #Wrong arguments for the script => exit!
-if [ $# -ne 2 ]; then 
+if [ $# -ne 2 ]; then
     printf "\nPlease use the following syntax:\n"
     printf "\t\e[0;32m $0 <path_to_the_folder_where_to_look> <Nsave>\e[0m\n\n"
     exit -1
@@ -39,9 +58,9 @@ else
     cd $1
     # NOTE: The way we look for the index is working only if in the directory we have the right structure.
     #       This means that the files "conf.index" must have all the indices with the same number of digits
-    #       and there must not be any file whose name contains "conf." but not of the type "conf.index". 
+    #       and there must not be any file whose name contains "conf." but not of the type "conf.index".
     #       Actually, we check that all the indices have the same number of digits and we stop the script
-    #       if we encounter some error. Also a check that the index does not contain anything else than 
+    #       if we encounter some error. Also a check that the index does not contain anything else than
     #       numbers between 0 and 9 is performed. In principle in the folder there could be some folder
     #       that violates these rules: this will not make the script interrupt because we do not look among
     #       directory names.
@@ -51,15 +70,15 @@ else
     ### ---> conf.index
     #
     correctDirectoryStructure=$(ls -l | grep -v '^d' | awk 'NR>1{print $9}' | grep "conf." | grep -v 'save' | awk '{print substr($1,index($1, "conf.")+5,length($1))}' | awk '\
-BEGIN {wrongFormat=0; digitsOfIndex}                         
-{ 
-  for (i = 1; i <= NF; i = i + 1){ 
+BEGIN {wrongFormat=0; digitsOfIndex}
+{
+  for (i = 1; i <= NF; i = i + 1){
     if(NR==1 && i==1)
       digitsOfIndex=length($i);
     else{
       if(length($i) != digitsOfIndex)
         wrongFormat++;
-    }  
+    }
     for (j = 1; j <= length($i); j = j + 1){
       if(!(substr($i,j,1) ~ /^[0-9]+$/)) wrongFormat++;
     }
@@ -70,15 +89,15 @@ END {print wrongFormat}')
     ### ---> rlxd.index
     #
     correctDirectoryStructure=$(($correctDirectoryStructure+$(ls -l | grep -v '^d' | awk 'NR>1{print $9}' | grep "rlxd." | grep -v 'save' | awk '{print substr($1,index($1, "rlxd.")+5,length($1))}' | awk '\
-BEGIN {wrongFormat=0; digitsOfIndex}                         
-{ 
-  for (i = 1; i <= NF; i = i + 1){ 
+BEGIN {wrongFormat=0; digitsOfIndex}
+{
+  for (i = 1; i <= NF; i = i + 1){
     if(NR==1 && i==1)
       digitsOfIndex=length($i);
     else{
       if(length($i) != digitsOfIndex)
         wrongFormat++;
-    }  
+    }
     for (j = 1; j <= length($i); j = j + 1){
       if(!(substr($i,j,1) ~ /^[0-9]+$/)) wrongFormat++;
     }
@@ -87,37 +106,37 @@ BEGIN {wrongFormat=0; digitsOfIndex}
 END {print wrongFormat}')))
     #
     # Now we check if we found something wrong
-    #   
+    #
     if [ $correctDirectoryStructure -eq 0 ]; then
 	#
 	# Look for higher index. In principle one could look only among the conf files and not also among the rlxd files.
 	# The reason for looking among both is just to be conservative. During a simulation, one should produce as many
 	# rlxd files as conf files. If for some reason there are more of the first or of the second type, it means that
-	# something strange happened and this situation should be investigated. It is better then to interrupt the run 
+	# something strange happened and this situation should be investigated. It is better then to interrupt the run
 	# and not make it restart from an older configuration.
 	index_conf=$(ls -l | grep -v '^d' | awk 'NR>1{print $9}' | grep "conf." | grep -v 'save' | awk '{print substr($1,index($1, "conf.")+5,length($1))}' | awk '\
-BEGIN {maximumIndex}                         
-{ 
-  for (i = 1; i <= NF; i = i + 1){ 
+BEGIN {maximumIndex}
+{
+  for (i = 1; i <= NF; i = i + 1){
     if(NR==1 && i==1)
       maximumIndex=$i;
     else{
       if($i > digitsOfIndex)
         maximumIndex=$i;
-    }  
+    }
   }
 }
 END {print maximumIndex}')
 	index_rlxd=$(ls -l | grep -v '^d' | awk 'NR>1{print $9}' | grep "rlxd." | grep -v 'save' | awk '{print substr($1,index($1, "rlxd.")+5,length($1))}' | awk '\
-BEGIN {maximumIndex}                         
-{ 
-  for (i = 1; i <= NF; i = i + 1){ 
+BEGIN {maximumIndex}
+{
+  for (i = 1; i <= NF; i = i + 1){
     if(NR==1 && i==1)
       maximumIndex=$i;
     else{
       if($i > digitsOfIndex)
         maximumIndex=$i;
-    }  
+    }
   }
 }
 END {print maximumIndex}')

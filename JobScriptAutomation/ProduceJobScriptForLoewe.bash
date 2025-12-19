@@ -1,4 +1,24 @@
 function ProduceJobscript_Loewe(){
+#
+#  Copyright (c) 2015,2016 Alessandro Sciarra
+#  Copyright (c) 2015,2016 Christopher Czaban
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
     #-----------------------------------------------------------------#
     # This piece of script uses the variable
     #   local BETA_FOR_JOBSCRIPT
@@ -35,7 +55,7 @@ function ProduceJobscript_Loewe(){
 
 	if [ -f "$FILE_WITH_WHICH_NODES_TO_EXCLUDE" ]; then
 		EXCLUDE_STRING=$(grep -oE '\-\-exclude=.*\[.*\]' $FILE_WITH_WHICH_NODES_TO_EXCLUDE 2>/dev/null)
-	elif [[ $FILE_WITH_WHICH_NODES_TO_EXCLUDE =~ : ]]; then 
+	elif [[ $FILE_WITH_WHICH_NODES_TO_EXCLUDE =~ : ]]; then
         EXCLUDE_STRING=$(ssh ${FILE_WITH_WHICH_NODES_TO_EXCLUDE%%:*} "grep -oE '\-\-exclude=.*\[.*\]' ${FILE_WITH_WHICH_NODES_TO_EXCLUDE#*:} 2>/dev/null")
 	fi
     if [ "$EXCLUDE_STRING" != "" ]; then
@@ -97,7 +117,7 @@ function ProduceJobscript_Loewe(){
     if [ "$HOME_DIR" != "$WORK_DIR" ]; then
         echo "#Copy inputfile from home to work directories..." >> $JOBSCRIPT_GLOBALPATH
         for INDEX in "${!BETA_FOR_JOBSCRIPT[@]}"; do
-            echo "mkdir -p \$workdir$INDEX && cp \$dir$INDEX/$INPUTFILE_NAME \$workdir$INDEX/$INPUTFILE_NAME.\$SLURM_JOB_ID || exit 2" >> $JOBSCRIPT_GLOBALPATH            		
+            echo "mkdir -p \$workdir$INDEX && cp \$dir$INDEX/$INPUTFILE_NAME \$workdir$INDEX/$INPUTFILE_NAME.\$SLURM_JOB_ID || exit 2" >> $JOBSCRIPT_GLOBALPATH
         done
         echo "echo \"...done!\"" >> $JOBSCRIPT_GLOBALPATH
     fi

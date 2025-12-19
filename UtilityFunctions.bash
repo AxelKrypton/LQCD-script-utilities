@@ -1,10 +1,29 @@
 #Collections of common operations
 #
+#  Copyright (c) 2014-2017 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
+#
 # TODO: Implement checks on parameters to functions
 
 function TimeToSeconds(){
     local T=$1; shift
-    echo $((10#${T:0:2} * 3600 + 10#${T:3:2} * 60 + 10#${T:6:2})) 
+    echo $((10#${T:0:2} * 3600 + 10#${T:3:2} * 60 + 10#${T:6:2}))
 }
 
 function SecondsToTime(){
@@ -23,7 +42,7 @@ function SecondsToTimeString(){
     printf "%02dh %02dm %02ds"  "${hours}" "${minutes}" "${seconds}"
 }
 
-function TimeStringToSecond(){ 
+function TimeStringToSecond(){
     #The string can contain s,m,h,d preceded by digits, NO SPACES
     local STRING_SEPARATED=( $(sed 's/\([smhd]\)/\1 /g' <<< "$1") )
     local TOTAL_TIME_IN_SECONDS=0
@@ -34,7 +53,7 @@ function TimeStringToSecond(){
 	        *m) TOTAL_TIME_IN_SECONDS=$(( $TOTAL_TIME_IN_SECONDS +    60*${ELEMENT%?} )) ;;
 	        *s) TOTAL_TIME_IN_SECONDS=$(( $TOTAL_TIME_IN_SECONDS +       ${ELEMENT%?} )) ;;
 	    esac
-    done && unset -v 'ELEMENT' 
+    done && unset -v 'ELEMENT'
     echo "$TOTAL_TIME_IN_SECONDS"
 }
 

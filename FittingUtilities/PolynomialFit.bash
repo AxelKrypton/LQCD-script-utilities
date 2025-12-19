@@ -1,4 +1,25 @@
 #!/bin/bash
+#
+#  Copyright (c) 2015-2017,2019-2021 Alessandro Sciarra
+#  Copyright (c) 2017 Francesca Cuteri
+#  Copyright (c) 2020 Alena Schoen
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 #######################################################################################
 #
@@ -207,7 +228,7 @@ done
 #            somewhere in the tex distribution when gnuplot gets installed. If these are missing
 #            or present but produced with a different version of gnuplot than that in use, there
 #            could be problems in the later compilation of the .tex file. This happens, for example,
-#            using gnuplot 5.0 and having the support files of gnuplot 4.6. 
+#            using gnuplot 5.0 and having the support files of gnuplot 4.6.
 #            Reading http://tex.stackexchange.com/questions/267031/tikz-problem-since-texlive-2015-update
 #            and in particular the comment of Akira Kakuto to the answer of egreg, it is possible to
 #            create the support files locally from where the gnuplot script is run and be sure that
@@ -263,14 +284,14 @@ for((i=1; i<=$POLYNOMIAL_DEGREE; i++)); do
 done
 echo ')."\n\n".sprintf("$\\chi^2_{\\mbox{d.o.f.}}=$%.3f", FIT_STDFIT**2)."\n"' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 # Plot information
-echo 'set xlabel "'$LABEL_X'"'                          >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
-echo 'set ylabel "'$LABEL_Y'"'                          >> $TMP_FILE_FOR_GNUPLOT_SCRIPT  
-echo 'set key at graph 0.9, graph 0.95 spacing 1.25'    >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
+echo 'set xlabel "'$LABEL_X'"'                          >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+echo 'set ylabel "'$LABEL_Y'"'                          >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+echo 'set key at graph 0.9, graph 0.95 spacing 1.25'    >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 echo 'set title titlePlot'                              >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 if [ ${#XRANGE[@]} -ne 0 ]; then
-    echo 'set xrange ['${XRANGE[0]}':'${XRANGE[1]}']'   >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
+    echo 'set xrange ['${XRANGE[0]}':'${XRANGE[1]}']'   >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 else
-    echo 'set xrange ['$X_MIN':'$X_MAX']'   >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
+    echo 'set xrange ['$X_MIN':'$X_MAX']'   >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 fi
 #Extrapolate
 if [ ${#EXTRAPOLATE_TO[@]} -ne 0 ]; then
@@ -292,14 +313,14 @@ if [ ${#EXTRAPOLATE_TO[@]} -ne 0 ]; then
 fi
 unset -v 'i' 'NEW_POINT'
 #Set output name
-echo 'set output  "'$OUTPUT_FILENAME'.tex"'   >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
+echo 'set output  "'$OUTPUT_FILENAME'.tex"'   >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 #Actual plot
 if [ ${#EXTRAPOLATE_TO[@]} -ne 0 ]; then
     for NEW_POINT in ${EXTRAPOLATE_TO[@]}; do
         echo 'set arrow from '$NEW_POINT',graph(0,0) to '$NEW_POINT',graph(1,1) nohead lt 0' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     done
 fi
-echo -n 'plot "'$DATA_FILENAME'" u '$COLUMN_X':'$COLUMN_Y':'$COLUMN_DY ' w e notitle, f(x) lc 3 notitle'  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
+echo -n 'plot "'$DATA_FILENAME'" u '$COLUMN_X':'$COLUMN_Y':'$COLUMN_DY ' w e notitle, f(x) lc 3 notitle'  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 if [ ${#EXTRAPOLATE_TO[@]} -ne 0 ]; then
     for NEW_POINT in ${EXTRAPOLATE_TO[@]}; do
         echo -n ', "+" using ('$NEW_POINT'):(f('$NEW_POINT')):(f_err('$NEW_POINT')) w e pt 7 lc rgb "#FF8000" notitle' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT

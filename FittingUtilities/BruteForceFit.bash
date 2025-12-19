@@ -1,8 +1,27 @@
 #!/bin/bash
+#
+#  Copyright (c) 2015,2016 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 # This script is intended to produce all the possible fits of the Binder.
-# Run it with -h | --help to get information about how it works. 
-# 
+# Run it with -h | --help to get information about how it works.
+#
 ###################################################################################
 
 #--------------------------------------------------------------------------------#
@@ -49,11 +68,11 @@ function GetBetaValuesWithAwk() {
         {
             if($2 == "merged" && (length(min) == 0 ? 1 : $1 >= min) && (length(max) == 0 ? 1 : $1 <= max)){printf "%.4f\n", $1}
         }
-        else 
+        else
         {
             if((length(min) == 0 ? 1 : $1 >= min) && (length(max) == 0 ? 1 : $1 <= max)){printf "%.6f\n", $1}
         }
-    }' $FILE_TO_PROCESS   
+    }' $FILE_TO_PROCESS
 }
 
 #================================================================================================================================
@@ -206,12 +225,12 @@ function ParseCommandLineOptions() {
             * ) printf "\n\e[0;31m Invalid option \e[1m$1\e[0;31m (see help for further information)! Aborting...\n\n\e[0m" ; exit -1 ;;
         esac
 
-        if [ ${#MUTUALLYEXCLUSIVEOPTS_PASSED[@]} -gt 1 ]; then  
-            printf "\n\e[0;31m The options\n\n\e[1m" 
+        if [ ${#MUTUALLYEXCLUSIVEOPTS_PASSED[@]} -gt 1 ]; then
+            printf "\n\e[0;31m The options\n\n\e[1m"
             for OPT in "${MUTUALLYEXCLUSIVEOPTS[@]}"; do
                 printf "  %s\n" "$OPT"
             done
-            printf "\n\e[0;31m are mutually exclusive and must not be combined! Aborting...\n\n\e[0m" 
+            printf "\n\e[0;31m are mutually exclusive and must not be combined! Aborting...\n\n\e[0m"
             exit -1
         fi
     done
@@ -304,11 +323,11 @@ if [[ ! $PROGRESS_BAR_UPDATE_FREQUENCY =~ ^[[:digit:]]+$ ]]; then
     exit -1
 fi
 #Checks on beta min and max
-if [ ${#BETA_MINIMUM_TO_BE_CONSIDERED[@]} -gt 1 ] && [ ${#BETA_MINIMUM_TO_BE_CONSIDERED[@]} -ne ${#NSPACE[@]} ]; then 
+if [ ${#BETA_MINIMUM_TO_BE_CONSIDERED[@]} -gt 1 ] && [ ${#BETA_MINIMUM_TO_BE_CONSIDERED[@]} -ne ${#NSPACE[@]} ]; then
     printf "\n\e[0;31m Option --betaMin requires either one beta value or as many as the number of volumes! Aborting...\n\n\e[0m"
     exit -1
 fi
-if [ ${#BETA_MAXIMUM_TO_BE_CONSIDERED[@]} -gt 1 ] && [ ${#BETA_MAXIMUM_TO_BE_CONSIDERED[@]} -ne ${#NSPACE[@]} ]; then 
+if [ ${#BETA_MAXIMUM_TO_BE_CONSIDERED[@]} -gt 1 ] && [ ${#BETA_MAXIMUM_TO_BE_CONSIDERED[@]} -ne ${#NSPACE[@]} ]; then
     printf "\n\e[0;31m Option --betaMax requires either one beta value or as many as the number of volumes! Aborting...\n\n\e[0m"
     exit -1
 fi
@@ -319,13 +338,13 @@ if  [ ${ALLOWED_ASYMMETRY_PERCENTAGE:+x} ]; then
         exit -1
     elif  [[ ! $ALLOWED_ASYMMETRY_PERCENTAGE =~ ^[[:digit:]]{1,2}[.]?[[:digit:]]*$ ]] || [ $(bc -l <<< "$ALLOWED_ASYMMETRY_PERCENTAGE > 50") -eq 1 ]; then
         printf "\n\e[0;31m Option --allowedAsymmetryPercentage invalid (it must a number x with 0<=x<=50)! Aborting...\n\n\e[0m"
-        exit -1    
+        exit -1
     fi
 fi
 #Check on NUMBER_OF_FIT_TO_BE_DONE_IN_PARALLEL
 if [[ ! $NUMBER_OF_FIT_TO_BE_DONE_IN_PARALLEL =~ ^[1-9][[:digit:]]*$ ]]; then
     printf "\n\e[0;31m Option --numberOfFitsDoneInParallel invalid (it must an integer number without leading zero)! Aborting...\n\n\e[0m"
-    exit -1    
+    exit -1
 fi
 #=================================================================================================================================
 printf "\n\e[0;36m$(printf '%0.s=' $( seq 1 $(($(tput cols)-5)) ))\n\e[0m"
@@ -339,7 +358,7 @@ else
     else
         for INDEX in ${!NSPACE[@]}; do TMP_ARRAY[${NSPACE[$INDEX]}]=${BETA_MINIMUM_TO_BE_CONSIDERED[$INDEX]}; done
     fi
-    unset -v 'BETA_MINIMUM_TO_BE_CONSIDERED'    
+    unset -v 'BETA_MINIMUM_TO_BE_CONSIDERED'
     for VOL in ${NSPACE[@]}; do BETA_MINIMUM_TO_BE_CONSIDERED[$VOL]=${TMP_ARRAY[$VOL]}; done
     unset -v 'TMP_ARRAY'
 fi
@@ -352,7 +371,7 @@ else
     else
         for INDEX in ${!NSPACE[@]}; do TMP_ARRAY[${NSPACE[$INDEX]}]=${BETA_MAXIMUM_TO_BE_CONSIDERED[$INDEX]}; done
     fi
-    unset -v 'BETA_MAXIMUM_TO_BE_CONSIDERED'    
+    unset -v 'BETA_MAXIMUM_TO_BE_CONSIDERED'
     for VOL in ${NSPACE[@]}; do BETA_MAXIMUM_TO_BE_CONSIDERED[$VOL]=${TMP_ARRAY[$VOL]}; done
     unset -v 'TMP_ARRAY'
 fi
@@ -378,10 +397,10 @@ if [ $USE_RANGES_TO_BE_FITTED_FILE = "FALSE" ]; then
     # Create all the possible combinations of beta_min and beta_max for each volume.
     #
     # NOTE: Since the number of volumes is variable, then it is not at all easy to
-    #       get it work in general! Here it was achieved using eval to append the 
+    #       get it work in general! Here it was achieved using eval to append the
     #       volume to the name of the variable!
     #
-    # Now, for efficiency reason (for big numbers the recursive function called below can 
+    # Now, for efficiency reason (for big numbers the recursive function called below can
     # need days), it is better to apply some filtering here. Basically the filtering set
     # by --minNumDataPerVolume and --betaToBeFitAround can be done here.
     printf "\e[0;36m Creating all possible ranges per volume...\n\e[0m"
@@ -534,7 +553,7 @@ fi
 unset -v 'LINE_WITH_ERROR'
 awk -v gnuplot_parameters="$GNUPLOT_PARAMETERS" -v fit_globalpath="$FIT_GLOBALPATH" \
 '{
-    gnuplot_command = "gnuplot -e \42" gnuplot_parameters 
+    gnuplot_command = "gnuplot -e \42" gnuplot_parameters
     for(i=1; i<=NF; i+=2){
         gnuplot_command = gnuplot_command " b" (i-1)/2 "l=\47" $i "\47; b" (i-1)/2 "r=\47"  $(i+1) "\47;"
     }
@@ -566,7 +585,7 @@ echo "Standard error of the gnuplot fits made by brute force on $(date +'%F %H:%
 LINES_READ=0
 FIT_IN_WHICH_ERROR_OCCURRED=0
 COUNTER_PARALLEL_FITS=0
-for((INDEX=0; INDEX<${#NUMBER_OF_FIT_TO_BE_DONE_IN_PARALLEL}; INDEX++)); do 
+for((INDEX=0; INDEX<${#NUMBER_OF_FIT_TO_BE_DONE_IN_PARALLEL}; INDEX++)); do
     GLOBBING_INDICES_EXPRESSION="$GLOBBING_INDICES_EXPRESSION[^a-z]"
 done
 TOTAL_NUMBER_OF_FITS=$(wc -l < $BETA_RANGES_TO_BE_FITTED)
@@ -649,7 +668,7 @@ else
                                     -v perc="$REJECTION_PERCENTAGE" \
                                     -v fitWithError="$FIT_IN_WHICH_ERROR_OCCURRED" \
                                     '{if($0 ~ /^[ #]+/){print $0} else if(($4 < perc) || ($4 > (100-perc))){rej++; next} else {print $0}} \
-                                    END{printf "#Rejected %d fits out of %d done (%s previously skipped according to specified options, in %d some error occurred)\n", rej, totalRanges, skipped, fitWithError}' > $FIT_RESULTS_STDOUT; } < $FIT_RESULTS_STDOUT 
+                                    END{printf "#Rejected %d fits out of %d done (%s previously skipped according to specified options, in %d some error occurred)\n", rej, totalRanges, skipped, fitWithError}' > $FIT_RESULTS_STDOUT; } < $FIT_RESULTS_STDOUT
     #Print to screen some information
     FILTERING_RESULT="$(tac $FIT_RESULTS_STDOUT | grep "." -m 1)"
     printf "\n\e[1;32m ${FILTERING_RESULT:1}\n\e[0m"
@@ -669,7 +688,7 @@ else
             RANGES_BEST_FIT="${BEST_FIT_AS_ARRAY[@]:12}"
             $BINDER_FIT_GLOBALPATH -b ${RANGES_BEST_FIT[@]} >> /dev/null
         elif [ $FIT_TYPE = "quadratic" ]; then
-            RANGES_BEST_FIT="${BEST_FIT_AS_ARRAY[@]:14}"        
+            RANGES_BEST_FIT="${BEST_FIT_AS_ARRAY[@]:14}"
             $BINDER_FIT_GLOBALPATH -b ${RANGES_BEST_FIT[@]} --quadratic >> /dev/null
         fi
     fi

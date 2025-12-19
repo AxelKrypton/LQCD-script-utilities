@@ -1,4 +1,23 @@
 #Comment:
+#
+#  Copyright (c) 2015,2016 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 #Pattern used for  functions __static__DetermineCreationDateAndSubmits and function __static__CreateSubmitsFile:
 #date -d @$(date +"%s") +"%d.%m.%y %H:%M"
 #A string %s is passed to date which has the format of seconds and is converted into date and time.
@@ -9,14 +28,14 @@ function __static__DetermineCreationDateAndSubmits(){
 	if [[ $(ls $HOME_BETADIRECTORY"/" | egrep -o "b[[:digit:]]\.[[:digit:]]{4}_created_[[:digit:]]{2}_[[:digit:]]{2}_[[:digit:]]{2}" | wc -l) = 1 ]]; then
 
 		CREATION_DATE=$(ls $HOME_BETADIRECTORY"/" | egrep -o "b[[:digit:]]\.[[:digit:]]{4}_created_[[:digit:]]{2}_[[:digit:]]{2}_[[:digit:]]{2}" | egrep -o "[[:digit:]]{2}_[[:digit:]]{2}_[[:digit:]]{2}" | sed "s/_/\./g")
-		#CREATION_DATE=$(ls $HOME_BETADIRECTORY"/" | egrep -o "b[[:digit:]]\.[[:digit:]]{4}_created_[[:digit:]]{2}igit:]]{2}_[[:digit:]]{2}" | egrep -o "[[:digit:]]{2}_[[:digit:]]{2}_[[:digit:]]{2}" | sed "s/_/\./g") 
+		#CREATION_DATE=$(ls $HOME_BETADIRECTORY"/" | egrep -o "b[[:digit:]]\.[[:digit:]]{4}_created_[[:digit:]]{2}igit:]]{2}_[[:digit:]]{2}" | egrep -o "[[:digit:]]{2}_[[:digit:]]{2}_[[:digit:]]{2}" | sed "s/_/\./g")
 	else
 		CREATION_DATE="NN.NN.NN"
 	fi
 
-	if [ -f "$WORK_BETADIRECTORY/history_hmc_tm" ]; then	
+	if [ -f "$WORK_BETADIRECTORY/history_hmc_tm" ]; then
 
-		NRSUBMITS=$(grep "Timestamp" "$WORK_BETADIRECTORY/history_hmc_tm" | wc -l)	
+		NRSUBMITS=$(grep "Timestamp" "$WORK_BETADIRECTORY/history_hmc_tm" | wc -l)
 		SUBMITFIRST=$(date -d @$(date +"$(grep "Timestamp" $WORK_BETADIRECTORY/history_hmc_tm | egrep -o "[[:digit:]]{10}" | head -n1)") +"%d.%m.%y")
 		SUBMITLAST=$(date -d @$(date +"$(grep "Timestamp" $WORK_BETADIRECTORY/history_hmc_tm | egrep -o "[[:digit:]]{10}" | tail -n1)") +"%d.%m.%y")
 
@@ -37,7 +56,7 @@ function __static__CreateSubmitsFile(){
 
 	local SUBMITS_ARRAY=( )
 
-	if [ -f "$WORK_BETADIRECTORY/history_hmc_tm" ]; then	
+	if [ -f "$WORK_BETADIRECTORY/history_hmc_tm" ]; then
 
 		TIMESTAMP_ARRAY=( $(grep "Timestamp" $WORK_BETADIRECTORY/history_hmc_tm | egrep -o "[[:digit:]]{10}") )
 
@@ -54,7 +73,7 @@ function __static__CreateSubmitsFile(){
 		for i in ${SUBMITS_ARRAY[@]}; do
 
 			echo $i >> $HOME_BETADIRECTORY/$SUBMITS_FILE
-		done	
+		done
 	fi
 }
 
@@ -62,7 +81,7 @@ function __static__ListJobsStatus_local(){
 
 	printf "\n\e[0;36m==================================================================================================\n\e[0m"
 
-	printf "\n\e[0;34m%s  %s  %s\n" $MASS_PREFIX$MASS $NTIME_PREFIX$NTIME $NSPACE_PREFIX$NSPACE 
+	printf "\n\e[0;34m%s  %s  %s\n" $MASS_PREFIX$MASS $NTIME_PREFIX$NTIME $NSPACE_PREFIX$NSPACE
 	printf "\n      %s  %s  %s\n" $MASS_PREFIX$MASS $NTIME_PREFIX$NTIME $NSPACE_PREFIX$NSPACE >> $JOBS_STATUS_FILE
 	printf "\n  Beta Total /  Done  Acc int0/1    Status Sub. Nr /    First /     Last\n\e[0m"
 	printf "  	Beta Total /  Done  Acc int0/1    Status Sub. Nr /    First /     Last\n" >> $JOBS_STATUS_FILE
@@ -73,20 +92,20 @@ function __static__ListJobsStatus_local(){
 		BETA=$(echo $i | grep -o "[[:digit:]].[[:digit:]]\{4\}")
 
 		if [[ ! $BETA =~ [[:digit:]].[[:digit:]]{4} ]]; then
-				
+
 			continue;
 		fi
 
-		STATUS=$(llq -W -f %jn %st -u $(whoami) | awk '$1 ~ /^muiPiT_'$MASS_PREFIX$MASS'_'$NTIME_PREFIX$NTIME'_'$NSPACE_PREFIX$NSPACE'_'$i'$/ {print $2}') 
+		STATUS=$(llq -W -f %jn %st -u $(whoami) | awk '$1 ~ /^muiPiT_'$MASS_PREFIX$MASS'_'$NTIME_PREFIX$NTIME'_'$NSPACE_PREFIX$NSPACE'_'$i'$/ {print $2}')
 
 		if [ ${#STATUS} -eq 0 ]; then
-			STATUS="notQueued"	
+			STATUS="notQueued"
 		elif [ $STATUS = R ]; then
 			STATUS="running"
 		elif [ $STATUS = I ]; then
 			STATUS="idling"
 		fi
-		
+
 		#----------Constructing WORK_BETADIRECTORY, HOME_BETADIRECTORY, JOBSCRIPT_GLOBALPATH and INPUTFILE_GLOBALPATH---------#
 		WORK_BETADIRECTORY="$WORK_DIR_WITH_BETAFOLDERS/$BETA_PREFIX$BETA"
 		HOME_BETADIRECTORY="$HOME_DIR_WITH_BETAFOLDERS/$BETA_PREFIX$BETA"
@@ -103,7 +122,7 @@ function __static__ListJobsStatus_local(){
 
 			WORKDIRS_EXIST="true"
 			ACCEPTANCE=$(awk '{ sum+=$7} END {if(NR != 0){acc=sum/(NR); printf "%.2f", acc} else {acc="N.NN";printf "%s", acc} }' $OUTPUTFILE_GLOBALPATH)
-		else 
+		else
 			WORKDIRS_EXIST="false"
 		 	ACCEPTANCE="N.NN"
 		fi
@@ -113,7 +132,7 @@ function __static__ListJobsStatus_local(){
 			INT0=$(awk '{if (($1 ~ /Integrationsteps0/) || ($1 ~ /IntegrationSteps0/)){print $3}}' $INPUTFILE_GLOBALPATH)
 			INT1=$(awk '{if ($1 ~ /IntegrationSteps1/){print $3}}' $INPUTFILE_GLOBALPATH)
 
-			TOTAL_NR_TRAJECTORIES=$(grep "Total number of trajectories" $INPUTFILE_GLOBALPATH | grep -o "[[:digit:]]\+")	
+			TOTAL_NR_TRAJECTORIES=$(grep "Total number of trajectories" $INPUTFILE_GLOBALPATH | grep -o "[[:digit:]]\+")
 			#TOTAL_NR_TRAJECTORIES=$(expr $TOTAL_NR_TRAJECTORIES - 0)
 
 			if [ $WORKDIRS_EXIST = "true" ]; then
@@ -146,7 +165,7 @@ function __static__ListJobsStatus_local(){
 
 			__static__CreateSubmitsFile
 		fi
-		
+
 	done
 }
 
@@ -162,8 +181,8 @@ function __static__ListJobsStatus_global(){
 
 
 		for i in ${DIRECTORY_ARRAY[@]}; do
-			
-			cd $i	
+
+			cd $i
 
 			PARAMETERS_PATH=""
 			PARAMETERS_STRING=""
@@ -218,34 +237,34 @@ function __static__BuildGlobalJobStatusFile(){
 }
 
 function ListJobStatus_Juqueen(){
-    
+
     DATE='D_'$(date +"%d_%m_%Y")'_T_'$(date +"%H_%M")
-    
+
     #-----------Prepare array with directories for which a job status file shall be produced---------------#
-    
+
     if [ $LISTSTATUS = "TRUE" ]; then
 
 	JOBS_STATUS_FILE="jobs_status_"$CHEMPOT_PREFIX$CHEMPOT"_"$MASS_PREFIX$MASS"_"$NTIME_PREFIX$NTIME"_"$NSPACE_PREFIX$NSPACE".txt"
 	echo "NSPACE:$NSPACE"
 	echo "JOBS_STATUS_FILE: $JOBS_STATUS_FILE"
 	rm -f $JOBS_STATUS_FILE
-	
+
 	printf "\n\e[0;36m==================================================================================================\n\e[0m"
 	printf "\e[0;34m Listing current local measurements status...\n\e[0m"
-	
+
 	__static__ListJobsStatus_local
-	
+
     elif [ $LISTSTATUSALL = "TRUE" ]; then
-	
+
 	printf "\n\e[0;36m==================================================================================================\n\e[0m"
 	printf "\e[0;34m Listing current global measurements status...\n\e[0m"
-	
+
 	__static__ListJobsStatus_global
-	
+
 	printf "\n\e[0;36m==================================================================================================\n\e[0m"
 	__static__BuildGlobalJobStatusFile
     fi
-    
+
     printf "\e[0;36m==================================================================================================\n\e[0m"
 }
 

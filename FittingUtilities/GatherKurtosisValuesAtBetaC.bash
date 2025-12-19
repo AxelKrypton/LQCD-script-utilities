@@ -1,11 +1,32 @@
 #!/bin/bash
+#
+#  Copyright (c) 2016 Christopher Czaban
+#  Copyright (c) 2017,2018,2021 Alessandro Sciarra
+#  Copyright (c) 2017,2021 Francesca Cuteri
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 source $HOME/Script/PathManagement.sh   || exit -2
 
 CheckWilsonStaggeredVariables
 
 if [ $WILSON = "TRUE" ]; then
-    PATH_TO_DATA="/home/phil-configs/wilson_nf2_muipi4/ImagMu"   
+    PATH_TO_DATA="/home/phil-configs/wilson_nf2_muipi4/ImagMu"
 elif [ $STAGGERED = "TRUE" ]; then
     PATH_TO_DATA="/home/phil-configs/Staggered"
 fi
@@ -16,7 +37,7 @@ AVAILABLE_OBSERVABLES=('plaq' 'poly_re' 'poly_im' 'poly_im_abs' 'poly_sq' 'poly_
 OBSERVABLE=""
 EXTRACT_BETAC_FROM_BINDER='FALSE'
 
-while [ "$#" -gt 0 ] 
+while [ "$#" -gt 0 ]
 do
     case $1 in
         --nf)
@@ -32,7 +53,7 @@ do
             shift
             ;;
         --mass)
-            while [[ $2 =~ [[:digit:]]{4} ]] 
+            while [[ $2 =~ [[:digit:]]{4} ]]
             do
                 MASS_PARAMETER_ARRAY+=( $2 )
                 shift

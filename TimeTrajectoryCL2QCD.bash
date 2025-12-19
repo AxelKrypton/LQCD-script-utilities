@@ -1,4 +1,23 @@
 #!/bin/bash
+#
+#  Copyright (c) 2014-2017 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 # This script is just an Handy tool to get the average time
 # per trajectory calculated using the standard output of the
@@ -8,7 +27,7 @@
 #
 
 #-----------------------------------------------------------------------------------------------------------------#
-# Load auxiliary bash files that will be used. 
+# Load auxiliary bash files that will be used.
 source $HOME/Script/UtilityFunctions.sh || exit -2
 #-----------------------------------------------------------------------------------------------------------------#
 
@@ -83,7 +102,7 @@ else
             printf "\n\e[0;32m Block of operations done $NUMBER_OF_BLOCKS times in $(SecondsToTimeStringWithDays $TOTAL_TIME_SEC)  --->  $AVERAGE_TIME sec. per block.\e[0m\n\n"
         fi
     fi
- 
-    
+
+
 
 fi

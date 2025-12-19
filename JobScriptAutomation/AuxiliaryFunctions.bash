@@ -1,4 +1,24 @@
 # Collection of function needed in the job handler script.
+#
+#  Copyright (c) 2015 Christopher Czaban
+#  Copyright (c) 2015,2016 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 # Load auxiliary bash files that will be used.
 source $HOME/Script/JobScriptAutomation/AuxiliaryFunctionsForLoewe.sh || exit -2
@@ -32,9 +52,9 @@ function ReadBetaValuesFromFile(){
     local RESUME_REGEXPR="resumefrom=\([[:digit:]]\+\|last\)"
     local MP_REGEXPR="MP=(.*)"
     local SEARCH_RESULT=""  # Auxiliary variable to help to parse the file
-    local OLD_IFS=$IFS      # save the field separator           
-    local IFS=$'\n'         # new field separator, the end of line           
-    for LINE in $(cat $BETASFILE); do          
+    local OLD_IFS=$IFS      # save the field separator
+    local IFS=$'\n'         # new field separator, the end of line
+    for LINE in $(cat $BETASFILE); do
         if [[ $LINE =~ ^[[:blank:]]*# ]] || [[ $LINE =~ ^[[:blank:]]*$ ]]; then
             continue
         fi
@@ -63,8 +83,8 @@ function ReadBetaValuesFromFile(){
             INTSTEPS0_ARRAY_TEMP+=( $(echo $LINE | awk '{print $3}') )
             INTSTEPS1_ARRAY_TEMP+=( $(echo $LINE | awk '{print $4}') )
         fi
-    done          
-    IFS=$OLD_IFS     # restore default field separator 
+    done
+    IFS=$OLD_IFS     # restore default field separator
 
     #Check whether the entries in the file have the right format, otherwise abort
     if [ ${#BETAVALUES[@]} -eq 0 ]; then
@@ -92,7 +112,7 @@ function ReadBetaValuesFromFile(){
             exit -1
             fi
         done
-        
+
         #Check whether same seed is provided multiple times for same beta --> do it with an associative array in awk after having removed "resumefrom=", EMPTYLINES and comments
         if [ "$(awk '{split($0, res, "'#'"); print res[1]}' $BETASFILE |\
                 sed -e 's/'$RESUME_REGEXPR'//g' -e 's/'$MP_REGEXPR'//g' -e '/^[[:space:]]*$/d' |\
@@ -131,17 +151,17 @@ function ReadBetaValuesFromFile(){
             exit -1
         fi
 
-        #Now that all the checks have been done, build associative arrays for later use of integration steps 
+        #Now that all the checks have been done, build associative arrays for later use of integration steps
         for INDEX in "${!BETAVALUES[@]}"; do
             INTSTEPS0_ARRAY["${BETAVALUES[$INDEX]}"]="${INTSTEPS0_ARRAY_TEMP[$INDEX]}"
             INTSTEPS1_ARRAY["${BETAVALUES[$INDEX]}"]="${INTSTEPS1_ARRAY_TEMP[$INDEX]}"
-        done	
+        done
     else
         #Build associative arrays for later use of integration steps with the same value for all betas
         for INDEX in "${!BETAVALUES[@]}"; do
             INTSTEPS0_ARRAY["${BETAVALUES[$INDEX]}"]=$INTSTEPS0
             INTSTEPS1_ARRAY["${BETAVALUES[$INDEX]}"]=$INTSTEPS1
-        done		
+        done
     fi
 
     for INDEX in "${!BETAVALUES[@]}"; do
@@ -152,7 +172,7 @@ function ReadBetaValuesFromFile(){
                 printf "\n\e[0;31m Invalid resume trajectory number in betasfile! Aborting...\n\n\e[0m"
                 exit -1
             fi
-            #Build associative array for later use 
+            #Build associative array for later use
             CONTINUE_RESUMETRAJ_ARRAY["${BETAVALUES[$INDEX]}"]="$TEMP_STR"
         fi
         TEMP_STR=${MASS_PRECONDITIONING_TEMP[$INDEX]}
@@ -450,9 +470,9 @@ function UncommentEntriesInBetasFile()
 function ProduceInputFileAndJobScriptForEachBeta()
 {
     if [ "$CLUSTER_NAME" = "JUQUEEN" ]
-    then 
+    then
         ProduceInputFileAndJobScriptForEachBeta_Juqueen
-    else 
+    else
         ProduceInputFileAndJobScriptForEachBeta_Loewe
     fi
 }
@@ -470,7 +490,7 @@ function ProcessBetaValuesForSubmitOnly()
 
 
 function ProcessBetaValuesForContinue()
-{    
+{
     if [ "$CLUSTER_NAME" = "JUQUEEN" ]
     then
         ProcessBetaValuesForContinue_Juqueen
@@ -481,7 +501,7 @@ function ProcessBetaValuesForContinue()
 
 
 function ProcessBetaValuesForInversion()
-{    
+{
     if [ "$CLUSTER_NAME" = "JUQUEEN" ]
     then
         printf "\n\e[0;31mOption --invertConfigurations not yet implemented on the Juqueen! Aborting...\n\n\e[0m"; exit -1

@@ -1,4 +1,25 @@
 #!/bin/bash
+#
+#  Copyright (c) 2015-2021 Alessandro Sciarra
+#  Copyright (c) 2016 Christopher Czaban
+#  Copyright (c) 2020 Alena Schoen
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 function __static__PrintHelp(){
     printf "\e[96m"
@@ -264,7 +285,7 @@ done
 #If the script is executed, exit
 [[ "${BASH_SOURCE[0]}" == "${0}" ]] && exit
 
-#Variables for later indirect reference 
+#Variables for later indirect reference
 IDENTITY="$(whoami | sed 's/[^a-zA-Z0-9_]/_/g')_$(hostname | sed 's/[^a-zA-Z0-9_]/_/g')"
 IDENTITY_WORK="${IDENTITY}_work"
 IDENTITY_WILSON="${IDENTITY}_Wilson"
@@ -288,8 +309,8 @@ fi
 if [ $LOAD_JOB_ALIASES = "TRUE" ] &&
        [ ! ${!IDENTITY_WORK:+x} ]; then printf "\n\e[91m Job aliases desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1
 fi
-if [ $LOAD_ROOTHIST_ALIASES = "TRUE" ] && 
-       [ ! ${!IDENTITY_ROOTHIST:+x} ]; then printf "\n\e[91m Root 3D histogram program alias desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1 
+if [ $LOAD_ROOTHIST_ALIASES = "TRUE" ] &&
+       [ ! ${!IDENTITY_ROOTHIST:+x} ]; then printf "\n\e[91m Root 3D histogram program alias desired, but missing information! No alias will be created...\n\n\e[0m"; [[ "${BASH_SOURCE[0]}" != "${0}" ]] && return || exit -1
 fi
 
 #============================================================================================================================#
@@ -395,7 +416,7 @@ if [ $LOAD_PYTHON_ALIASES = "TRUE" ]; then
             printf "\n\e[91m One or three arguments needed to reweight!\e[0m\n\n" 1>&2
             return 1
         fi
-        if [[ ! ${betaMin} =~ [0-9][.][0-9]+ ]] || [[ ! ${betaMax} =~ [0-9][.][0-9]+ ]]; then 
+        if [[ ! ${betaMin} =~ [0-9][.][0-9]+ ]] || [[ ! ${betaMax} =~ [0-9][.][0-9]+ ]]; then
             printf "\n\e[91m Wrong format of beta min and beta max!\e[0m\n\n" 1>&2
             return 1
         fi
@@ -453,7 +474,7 @@ if [ $LOAD_PYTHON_ALIASES = "TRUE" ]; then
                 ;;
         esac
         echo " && ${HOME}/Script/PlottingUtilities/PlotGaugeActionHistograms.sh"
-    }    
+    }
 
     DEFINED_FUNCTIONS+=( 'GetFindBetaCPbpCommand' )
     function GetFindBetaCPbpCommand(){
@@ -668,7 +689,7 @@ fi
 
 #Aliases to work confortably on jobs
 if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
-    
+
     DEFINED_FUNCTIONS+=( 'cdw' )
     alias cdw="cd ${!IDENTITY_WORK}"
 
@@ -1131,13 +1152,13 @@ if [ $LOAD_JOB_ALIASES = "TRUE" ]; then
         printf "\e[38;5;129m\n Calling:\e[38;5;117m ${HOME}/Script/CheckCorrectnessCl2qcdOutputFile.sh $FOLDER_FILE\n\e[0m"
         bash ${HOME}/Script/CheckCorrectnessCl2qcdOutputFile.sh $FOLDER_FILE
     }
-    
+
 fi
 
 #============================================================================================================================#
 #Aliases to call the Root 3D histogram program
 if [ $LOAD_ROOTHIST_ALIASES = "TRUE" ]; then
-    
+
     DEFINED_FUNCTIONS+=( 'CreateRootHistograms' )
     function CreateRootHistograms(){
         local BETA_ARRAY=()

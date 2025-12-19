@@ -1,10 +1,29 @@
 #!/bin/bash
+#
+#  Copyright (c) 2014 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 # This script is to get the value of the total number of trajectories of a simulation
 # from the input file of tmLQCD. This is actually not an input parameter for tmLQCD
 # program, but it is a needed number to automatize properly the simulation. The point
 # is that the tmLQCD hmc_tm does exactely "Measurement" trajectories, no matter from
-# which trajectory it starts. Then if one has already performed 80 trajectories out 
+# which trajectory it starts. Then if one has already performed 80 trajectories out
 # of 100, he should resume the program with "Measurement=20". And if the simulation
 # is automatically resumed with the same input file as at the beginning, then the
 # program will perform again 100 going up to 180. If instead there is written somewhere
@@ -28,9 +47,9 @@
 #
 #
 # If there is no line with the required line the script will return 0.
-# allowed string is not a white space, the line is discarded. 
+# allowed string is not a white space, the line is discarded.
 # Of course, the input file is supposed to contain ONLY one valid line
-# from which the value will be extracted. 
+# from which the value will be extracted.
 #
 # IMPORTANT: The number is returned with the line
 #
@@ -44,14 +63,14 @@
 #            In the same fashion, in case of errors the variable ERROR_OCCURRED is set to 1.
 #            This is done because we will call this script from within another script.
 #
-# Note that if in the valid line, after the number there is a comment starting by 
+# Note that if in the valid line, after the number there is a comment starting by
 # an hash (#), this script is still working.
 #
 # Note also that this scripts does not work if the parameter is negative.
 
 
 # Wrong arguments for the script => exit!
-if [ $# -ne 1 ]; then 
+if [ $# -ne 1 ]; then
     #printf "\nPlease use the following syntax:\n"
     #printf "\t\e[0;32m $0 <input_file>\e[0m\n\n"
     echo "export ERROR_OCCURRED=1"
@@ -60,7 +79,7 @@ else
     #
     # Check if input file is properly written. At the same time
     # we save which line of the output of the grep command contains
-    # the right Parameter. This is to read out the number more quickly 
+    # the right Parameter. This is to read out the number more quickly
     # later on.
     #
     # In particular we check that in the line the characters before the Parameter are only spaces or hashes
@@ -118,7 +137,7 @@ END{
 BEGIN{digitsBeforeParam; equalPosition; hashPosition}
 {
   if(NR == line){
-    digitsBeforeParam = index($0, Param); 
+    digitsBeforeParam = index($0, Param);
     equalPosition = index(substr($0, digitsBeforeParam), "=");
     hashPosition = index(substr($0, digitsBeforeParam + equalPosition), "#");
     if(hashPosition == 0)
@@ -130,7 +149,7 @@ BEGIN{digitsBeforeParam; equalPosition; hashPosition}
 	#
 	# If ParamVal as number is 0 there was something wrong!
 	#
-	if [ $(($ParamVal)) -eq 0 ]; then 
+	if [ $(($ParamVal)) -eq 0 ]; then
 	    #echo "\"$Parameter\" is present in the input file but either has no number after = sign, or it is set to zero!"
 	    echo "export ERROR_OCCURRED=1"
 	    exit -1

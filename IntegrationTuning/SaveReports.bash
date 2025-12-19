@@ -1,4 +1,23 @@
 #!/bin/bash
+#
+#  Copyright (c) 2014,2015 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 # Just a short script to save as text files the reports
 # of the integrator for the beta present in the folder
@@ -51,13 +70,13 @@ for BETA in b[[:digit:]]*; do
 
     BETA=$(echo $BETA | grep -o "[[:digit:]].[[:digit:]]\{4\}")
     if [[ ! $BETA =~ [[:digit:]].[[:digit:]]{4} ]]; then continue; fi
-    
+
     OUTPUT_FILENAME="${PREFIX}${PARAMETERS_STRING}_b${BETA}"
     printf "\e[0;32m  $OUTPUT_FILENAME\e[0m\n"
     cd "b$BETA" || exit 2
     if [ $SAVE_ONLY_ST = "TRUE" ]; then
 	    if [ $(ls | grep "^[0-9]\{1,2\}_[0-9]\{1,2\}$" | wc -l) -ne 0 ]; then
-	        $HOME/Script/IntegrationTuning/MakeReport.sh -s -t > ${OUTPUT_FILENAME}_ST 
+	        $HOME/Script/IntegrationTuning/MakeReport.sh -s -t > ${OUTPUT_FILENAME}_ST
 	        mv ${OUTPUT_FILENAME}_ST ../Reports || exit 2
         fi
     elif [ $SAVE_ONLY_MP = "TRUE" ]; then
@@ -67,7 +86,7 @@ for BETA in b[[:digit:]]*; do
 	    fi
     else
 	    $HOME/Script/IntegrationTuning/MakeReport.sh > $OUTPUT_FILENAME
-	    $HOME/Script/IntegrationTuning/MakeReport.sh -t > ${OUTPUT_FILENAME}_time 
+	    $HOME/Script/IntegrationTuning/MakeReport.sh -t > ${OUTPUT_FILENAME}_time
 	    mv $OUTPUT_FILENAME ../Reports || exit 2
 	    mv ${OUTPUT_FILENAME}_time ../Reports || exit 2
     fi

@@ -1,4 +1,24 @@
 function ProduceInputFile_Loewe() {
+#
+#  Copyright (c) 2015,2016 Alessandro Sciarra
+#  Copyright (c) 2016 Christopher Czaban
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
     rm -f $INPUTFILE_GLOBALPATH || exit -2
     touch $INPUTFILE_GLOBALPATH || exit -2
     #This input file is for CL2QCD only!
@@ -28,7 +48,7 @@ function ProduceInputFile_Loewe() {
         if [ $CHEMPOT = "PiT" ]; then
             echo "chem_pot_im=0.523598775598299" >> $INPUTFILE_GLOBALPATH
         else
-            printf "\n\e[0;31m Unknown value of imaginary chemical potential for input file! Aborting...\n\n\e[0m" 
+            printf "\n\e[0;31m Unknown value of imaginary chemical potential for input file! Aborting...\n\n\e[0m"
             exit -1
         fi
     fi
@@ -50,7 +70,7 @@ function ProduceInputFile_Loewe() {
         echo "ferm_obs_pbp_prefix=${OUTPUTFILE_NAME}" >> $INPUTFILE_GLOBALPATH
     fi
     #Information about integrators
-    if [ $WILSON = "TRUE" ]; then    
+    if [ $WILSON = "TRUE" ]; then
         echo "iter_refresh=2000" >> $INPUTFILE_GLOBALPATH
         echo "use_merge_kernels_fermion=1" >> $INPUTFILE_GLOBALPATH
         if KeyInArray "${BETAVALUES_COPY[$INDEX]}" MASS_PRECONDITIONING_ARRAY; then
@@ -95,7 +115,7 @@ function ProduceInputFile_Loewe() {
     if [ $USE_MULTIPLE_CHAINS == "TRUE" ]; then
         local SEED_EXTRACTED_FROM_BETA="$(echo ${BETAVALUES_COPY[$INDEX]} | awk '{split($1, result, "_"); print substr(result[2],2)}')"
         if [[ ! $SEED_EXTRACTED_FROM_BETA =~ ^[[:digit:]]{4}$ ]] || [[ $SEED_EXTRACTED_FROM_BETA == "0000" ]]; then
-            printf "\n\e[0;31m Seed not allowed to be put in inputfile for CL2QCD! Aborting...\n\n\e[0m" 
+            printf "\n\e[0;31m Seed not allowed to be put in inputfile for CL2QCD! Aborting...\n\n\e[0m"
             exit -1
         else
             echo "host_seed=$SEED_EXTRACTED_FROM_BETA" >> $INPUTFILE_GLOBALPATH

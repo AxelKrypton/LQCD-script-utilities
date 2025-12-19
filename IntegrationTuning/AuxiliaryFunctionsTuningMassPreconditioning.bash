@@ -1,4 +1,23 @@
 function ParseCommandLineOption(){
+#
+#  Copyright (c) 2015 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
     while [ "$1" != "" ]; do
 	case $1 in
 	    -h | --help )
@@ -64,7 +83,7 @@ function ParseIntegratorSteps(){
 	printf "\n\e[0;31m Integrator2 steps have been specified in the wrong way, see --help for more info! Aborting...\n\n\e[0m"
 	exit -1
     fi
-        
+
     local INTSTEPS2_MIN=$(echo "$INTSTEPS2" | awk 'BEGIN{ FS=":" }{print $1}')
     local INTSTEPS2_MAX=$(echo "$INTSTEPS2" | awk 'BEGIN{ FS=":" }{print $2}')
     local INTSTEPS2_RES=$(echo "$INTSTEPS2" | awk 'BEGIN{ FS=":" }{print $3}')
@@ -75,7 +94,7 @@ function ParseIntegratorSteps(){
         printf "\n\e[0;31m Integrator2 steps resolution equal to 0 cannot be used to scan the given region!! Aborting...\n\n\e[0m"
         exit -1
     fi
-    
+
     if [ $INTSTEPS2_MIN -gt $INTSTEPS2_MAX ]; then
 	INTSTEPS2_MIN=`expr $INTSTEPS2_MIN + $INTSTEPS2_MAX`
 	INTSTEPS2_MAX=`expr $INTSTEPS2_MIN - $INTSTEPS2_MAX`
@@ -90,20 +109,20 @@ function ParseIntegratorSteps(){
     local KAPPA_MP_MIN=$(echo "$KAPPA_MP" | awk 'BEGIN{ FS=":" }{print $1}')
     local KAPPA_MP_MAX=$(echo "$KAPPA_MP" | awk 'BEGIN{ FS=":" }{print $2}')
     local KAPPA_MP_RES=$(echo "$KAPPA_MP" | awk 'BEGIN{ FS=":" }{print $3}')
-    
+
     if [ $KAPPA_MP_MIN -eq $KAPPA_MP_MAX ]; then KAPPA_MP_RES=1; fi
-    
+
     if [ $KAPPA_MP_RES -eq 0 ]; then
         printf "\n\e[0;31m Kappa_mp resolution equal to 0 cannot be used to scan the given region!! Aborting...\n\n\e[0m"
         exit -1
     fi
-    
+
     if [ $KAPPA_MP_MIN -gt $KAPPA_MP_MAX ]; then
 	KAPPA_MP_MIN=`expr $KAPPA_MP_MIN + $KAPPA_MP_MAX`
 	KAPPA_MP_MAX=`expr $KAPPA_MP_MIN - $KAPPA_MP_MAX`
 	KAPPA_MP_MIN=`expr $KAPPA_MP_MIN - $KAPPA_MP_MAX`
     fi
-    
+
     INTSTEPS2=("$INTSTEPS2_MIN" "$INTSTEPS2_MAX" "$INTSTEPS2_RES")
     KAPPA_MP=("$KAPPA_MP_MIN" "$KAPPA_MP_MAX" "$KAPPA_MP_RES")
 }
@@ -114,7 +133,7 @@ function ProduceJobScriptFile(){
     #-----------------------------------------------------------------#
     if [ $# -lt 1 ] || [ $# -gt $((2*$GPU_PER_NODE)) ] || [ $(echo $# | awk '{print $1 % 2}') -ne 0 ]; then
 	printf "\n\e[0;31m  Wrong number of parameters given to \"ProduceJobScriptFile\" function. Aborting...\n\n\e[0m"
-	exit -1	
+	exit -1
     fi
     local INT2_TO_BE_USED=()
     local KMP_TO_BE_USED=()

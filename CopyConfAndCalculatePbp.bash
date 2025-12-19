@@ -1,4 +1,23 @@
 #!/bin/bash
+#
+#  Copyright (c) 2014 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 # This script is intended to copy a set of configurations from remote and
 # to calculate the Chiral Condensate on them. It has been developed specifically
@@ -101,7 +120,7 @@ else
 fi
 
 # For the moment only the part on the loewe is implemented
-if [ "$HOST" == "loewe" ]; then 
+if [ "$HOST" == "loewe" ]; then
     INPUTDIR_PREFIX="/home/hfftheo/sciarra/WilsonProject"
     WORKDIR_PREFIX="/scratch/hfftheo/sciarra/WilsonProject"
     SCRIPTDIR="/home/hfftheo/sciarra/Script"

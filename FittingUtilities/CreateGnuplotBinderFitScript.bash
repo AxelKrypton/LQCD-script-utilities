@@ -1,4 +1,23 @@
 function CreateGnuplotFitWithHardCodedParameters(){
+#
+#  Copyright (c) 2015-2017 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
     #Since the gnuplot fit syntax changed from version 4 to version 5, let's define here some handy variables
     local GNUPLOT_VERSION=$(gnuplot -V | awk '{print int($2)}')
     if [ $GNUPLOT_VERSION -le 4 ]; then
@@ -52,7 +71,7 @@ function CreateGnuplotFitWithHardCodedParameters(){
     echo "fitrange_high = $FIT_UPPER_BOUND" >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     [ $QUIET_MODE = 'TRUE' ] && echo 'set fit quiet' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     # Actual fit
-    # ATTENTION: Here 'set yrange' fixes which data blocks to fit, since y is the index of the data block in the fit!! 
+    # ATTENTION: Here 'set yrange' fixes which data blocks to fit, since y is the index of the data block in the fit!!
     if [ $FIT_TYPE = 'linear' ]; then
         echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) "'$TMP_FILE_FOR_DATA_TO_BE_FITTED'" u 1:-2:8:9 '$FIT_ERRORS_STRING' via B4, bc, a1, nu' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     elif [ $FIT_TYPE = 'quadratic' ]; then
@@ -72,14 +91,14 @@ function CreateGnuplotFitWithHardCodedParameters(){
     echo 'Q = 1 - igamma(0.5 * ndf, 0.5 * chisq)' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT  # the quality of fit parameter Q -> NOTE: From version 5.0 this is in the variable FIT_P (activated by "set fit errorscaling")
     # Plot information
     if [ $TEX_PLOT = 'FALSE' ]; then
-        echo 'set xlabel "{/Symbol b}"'                                  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
-        echo 'set ylabel "B_4"'                                          >> $TMP_FILE_FOR_GNUPLOT_SCRIPT  
-        echo 'set key at graph 0.9, graph 0.95 spacing 1.25'             >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
+        echo 'set xlabel "{/Symbol b}"'                                  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+        echo 'set ylabel "B_4"'                                          >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+        echo 'set key at graph 0.9, graph 0.95 spacing 1.25'             >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
         echo 'set label "'$MASS_PREFIX'=0.'$MASS'" at screen 0.92,0.96 center textcolor lt 3 font "Times, 12"' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     else
-        echo 'set xlabel "$\\beta$"   '                                  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
-        echo 'set ylabel "$B_4$"'                                        >> $TMP_FILE_FOR_GNUPLOT_SCRIPT  
-        echo 'set key at graph 0.96, graph 0.95 spacing 2'             >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
+        echo 'set xlabel "$\\beta$"   '                                  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+        echo 'set ylabel "$B_4$"'                                        >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+        echo 'set key at graph 0.96, graph 0.95 spacing 2'             >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
         echo 'set label "\\textcolor{blue}{\\fbox{\\footnotesize{$'$MASS_PREFIX'=0.'$MASS'$}}}" at screen 0.1,0.95 center' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     fi
     echo 'set xrange[fitrange_low*0.9999 : fitrange_high*1.0001]'    >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
@@ -101,17 +120,17 @@ function CreateGnuplotFitWithHardCodedParameters(){
             echo 'fit_title = "Fit to $B_4(L_{\\text{Im}})$ of form $\\to B_4(\\infty) + a\\:(\\beta - \\beta_c)\\cdot N_{s}^{(1/\\nu)}$\n\n with "\'                                       >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
             echo '            .sprintf("$B_4(\\infty)=%.4f\\pm%.4f\\quad a=%.4f\\pm%.4f\\quad \\nu=%.4f\\pm%.4f$\n\n$\\beta_c=%.4f\\pm%.4f\\quad \\chi^2_{ndf=%d} = %f\\quad Q=%5.2f\\%$"\' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
             echo '            , B4, B4_err/FIT_STDFIT, a1, a1_err/FIT_STDFIT, nu, nu_err/FIT_STDFIT, bc, bc_err/FIT_STDFIT, FIT_NDF, FIT_STDFIT**2., Q*100)\'                               >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-            echo '            .sprintf("%s", commit)'                                                                                                                                       >> $TMP_FILE_FOR_GNUPLOT_SCRIPT            
+            echo '            .sprintf("%s", commit)'                                                                                                                                       >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
         elif [ $FIT_TYPE = 'quadratic' ]; then
             echo 'fit_title = "Fit to $B_4(L_{\\text{Im}})$ of form $\\to B_4(\\infty) + a(\\beta - \\beta_c)\\cdot N_{s}^{(1/\\nu)}$\n\n with "\'                                                                >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
             echo '            .sprintf("$B_4(\\infty)=%.4f\\pm%.4f\\quad a_1=%.4f\\pm%.4f\\quad a_2=%.4f\\pm%.4f \n \\nu=%.4f\\pm%.4f$\n\n$\\beta_c=%.4f\\pm%.4f\\quad \\chi^2_{ndf=%d} = %f\\quad Q=%5.2f\\%$"\' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
             echo '            , B4, B4_err/FIT_STDFIT, a1, a1_err/FIT_STDFIT, a2, a2_err/FIT_STDFIT, nu, nu_err/FIT_STDFIT, bc, bc_err/FIT_STDFIT, FIT_NDF, FIT_STDFIT**2., Q*100)\'                              >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-            echo '            .sprintf("%s", commit)'                                                                                                                                                             >> $TMP_FILE_FOR_GNUPLOT_SCRIPT            
+            echo '            .sprintf("%s", commit)'                                                                                                                                                             >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
         fi
     fi
     echo 'set title fit_title'                                            >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     #Set output name
-    echo 'set output  "'$OUTPUT_FILENAME'"'                               >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
+    echo 'set output  "'$OUTPUT_FILENAME'"'                               >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     #Draw other stuff
     echo 'set style arrow 1 nohead lt 0 lc -1 lw .5'                      >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     echo 'if (bc >= fitrange_low && bc <= fitrange_high){'                >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
@@ -128,7 +147,7 @@ function CreateGnuplotFitWithHardCodedParameters(){
     #Actual plot
     echo -n 'plot ' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     for INDEX in ${!NSPACE[@]}; do
-        echo '"'$(GetDatafileGlobalpath ${NSPACE[$INDEX]})'" u 1:8:9 pt 1 lc '$INDEX' w e title title'$INDEX' \'  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
+        echo '"'$(GetDatafileGlobalpath ${NSPACE[$INDEX]})'" u 1:8:9 pt 1 lc '$INDEX' w e title title'$INDEX' \'  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
         echo '     , "'$TMP_FILE_FOR_DATA_TO_BE_FITTED'" index '$INDEX' u 1:8:9 pt 5 ps 0.3 lc '$INDEX' notitle \'       >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
         echo -n '     , fns'$INDEX'(x) notitle lt 1 lc '$INDEX                                                           >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
         if [ $INDEX -ne $((${#NSPACE[@]} - 1)) ]; then
@@ -136,7 +155,7 @@ function CreateGnuplotFitWithHardCodedParameters(){
             echo -n '     , '  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
         else
             echo '' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-        fi 
+        fi
     done
     #Replot with different x range
     echo 'set autoscale x'                                                 >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
@@ -144,7 +163,7 @@ function CreateGnuplotFitWithHardCodedParameters(){
     echo 'unset arrow'                                                     >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     echo 'set arrow 1 from bc,graph(0,0) to bc,graph(1,1) arrowstyle 1'    >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     echo 'replot'                                                          >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-  
+
     unset -v 'INDEX'
 }
 
@@ -214,11 +233,11 @@ function CreateGnuplotTemplateFitScriptWithoutPlotting(){
     done
     echo '' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
 	echo 'foundEmptyDataBlock=system("".data_all." | awk '"'"'BEGIN{last=-1; num=0}/^$/{if(NR==last+1){num++; if(num>1){failed=1}}else{num=0}; last=NR}END{print failed}'"'"'")' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
-	echo 'if (foundEmptyDataBlock == 1) {'                                                          >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH 
+	echo 'if (foundEmptyDataBlock == 1) {'                                                          >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
 	echo '   system("rm emptyfile fn*")'                                                            >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
 	echo '   print "\033[1;31mAn invalid range (containing no points) has been indicated!\033[0m"'  >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
 	echo '   q()'                                                                                   >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
-	echo '}'                                                                                        >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH 
+	echo '}'                                                                                        >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
 	echo 'data_all="< ".data_all'                                                                   >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     echo '#==========================================================================================================='  >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     # Starting values for fit params
@@ -268,7 +287,7 @@ function CreateGnuplotTemplateFitScriptWithoutPlotting(){
     done
     echo 'set fit quiet' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     # Actual fit
-    # ATTENTION: Here 'set yrange' fixes which data blocks to fit, since y is the index of the data block in the fit!! 
+    # ATTENTION: Here 'set yrange' fixes which data blocks to fit, since y is the index of the data block in the fit!!
     if [ $FIT_TYPE = 'linear' ]; then
         echo 'fit [fitrange_low:fitrange_high] fit_data(x,y) data_all u 1:-2:8:9 '$FIT_ERRORS_STRING' via B4, bc, a1, nu' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     elif [ $FIT_TYPE = 'quadratic' ]; then
@@ -297,7 +316,7 @@ function CreateGnuplotTemplateFitScriptWithoutPlotting(){
     echo 'set print' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     # Removing auxiliary files
     echo '# Removing auxiliary files' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
-    echo 'system("rm emptyfile")'     >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH 
+    echo 'system("rm emptyfile")'     >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     for INDEX in ${!NSPACE[@]}; do
         echo 'system("rm fn'$INDEX'_f")' >> $GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH
     done

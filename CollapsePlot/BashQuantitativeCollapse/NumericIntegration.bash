@@ -1,11 +1,30 @@
-#Function to integrate numerically a function. 
+#Function to integrate numerically a function.
+#
+#  Copyright (c) 2016 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 #Inputs argument are the file, the x-column and
 #the function column
 function IntegrateNumericallyWithTrapezoidalRule(){
     local INPUT_FILE=$1
     local X_AXIS_COLUMN=$2
     local Y_AXIS_COLUMN=$3
-    
+
     awk -v xCol="$X_AXIS_COLUMN" -v fCol="$Y_AXIS_COLUMN" \
         'NR==1{
           xPrev=$xCol
@@ -21,7 +40,7 @@ function IntegrateNumericallyWithTrapezoidalRule(){
 
 
 
-# Here the square distance of two functions is calculated using two given columns as 
+# Here the square distance of two functions is calculated using two given columns as
 # function values in the given file (the x-axis is also in a given column of the file).
 # The square distance of two functions is [f(x)-g(x)]^2.
 # After the integration, the integral result is normalized dividing by the integration interval extent.
@@ -54,7 +73,7 @@ function CalculateDistanceBetweenFunctionsNormalizedWithIntervalExtent(){
           printf "%.12f %.12f %.12f %.12f\n", $xCol, y, y-yErr, y+yErr
         }
         ' $INPUT_FILE > $TEMPORARY_FILE
-    
+
     local INTEGRAL=$(IntegrateNumericallyWithTrapezoidalRule $TEMPORARY_FILE 1 2)    #Integral of y      value
     local ERROR_LEFT=$(IntegrateNumericallyWithTrapezoidalRule $TEMPORARY_FILE 1 3)  #Integral of y-yErr value
     local ERROR_RIGHT=$(IntegrateNumericallyWithTrapezoidalRule $TEMPORARY_FILE 1 4) #Integral of y+yErr value

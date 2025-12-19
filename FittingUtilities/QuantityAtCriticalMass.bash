@@ -1,4 +1,24 @@
 #!/usr/bin/env bash
+#
+#  Copyright (c) 2021 Alessandro Sciarra
+#  Copyright (c) 2021 Francesca Cuteri
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 #######################################################################################
 #
@@ -265,7 +285,7 @@ function CrossCheckCriticalBetasForLargestNs(){
     else
         printf "Cannot check the stability of the extracted result comparing the two largest ns values.\n"
     fi
-    
+
     printf 'Saving results for the largest ns...\n\n'
     exec 3>&1 1>$OUTPUT_FILENAME
     printf '#%-5s %-5s  %-12s %-12s %-12s %-12s\n' 'Nf' 'nt' 'mC' 'mc_err' "$QUANT_NAME" "${QUANT_NAME}_err"

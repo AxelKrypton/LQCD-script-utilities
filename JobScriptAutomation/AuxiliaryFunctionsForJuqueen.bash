@@ -1,4 +1,23 @@
 # Load auxiliary bash files that will be used.
+#
+#  Copyright (c) 2015,2016 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 source $HOME/Script/JobScriptAutomation/ProduceInputFileForJuqueen.sh || exit -2
 source $HOME/Script/JobScriptAutomation/ProduceJobScriptForJuqueen.sh || exit -2
 #------------------------------------------------------------------------------------#
@@ -12,61 +31,61 @@ function CheckParallelizationTmlqcdForJuqueen(){
     printf "   NRXPROC = $NRXPROCS\n"
     printf "   NRZPROC = $NRZPROCS\n"
     printf "   NRYPROC = $NRYPROCS\n"
-    
+
     if [ $(echo $BGSIZE | awk '{print log($1/32)/log(2)-int(log($1/32)/log(2))}') != "0" ]; then
-	
+
 	printf "\n\e[0;31m BGSIZE=$BGSIZE cannot be used with tmLQCD on Juqueeen! Aborting...\n\n\e[0m"
 	exit -1
-	
+
     elif [ $(echo $BGSIZE $NRXPROCS $NRYPROCS $NRZPROCS | awk '{print $1/($2*$3*$4)-int($1/($2*$3*$4))}') != "0" ]; then
-	
+
 	printf "\n\e[0;31m The number of processes in time direction has to be integer! Aborting...\n\n\e[0m"
 	exit -1
-	
+
     elif [ $(echo $NSPACE $NRXPROCS | awk '{print ($1/$2)-int($1/$2)}') != "0" ]; then
-	
+
 	printf "\n\e[0;31m The local lattice size in x-direction has to be integer! Aborting...\n\n\e[0m"
 	exit -1
-	
+
     elif [ $(echo $NSPACE $NRYPROCS | awk '{print ($1/$2)-int($1/$2)}') != "0" ]; then
-	
+
 	printf "\n\e[0;31m The local lattice size in y-direction has to be integer! Aborting...\n\n\e[0m"
 	exit -1
-	
+
     elif [ $(echo $NSPACE $NRZPROCS | awk '{print ($1/$2)-int($1/$2)}') != "0" ]; then
-	
+
 	printf "\n\e[0;31m The local lattice size in z-direction has to be integer! Aborting...\n\n\e[0m"
 	exit -1
-	
+
     elif [ $((($NSPACE/$NRZPROCS)%2)) != "0" ]; then
-	
+
 	printf "\n\e[0;31m The local lattice size in z-direction has to be even! Aborting...\n\n\e[0m"
 	exit -1
-	
+
     elif [ $((($NSPACE*$NSPACE*$NSPACE/($NRXPROCS*$NRYPROCS*$NRZPROCS))%2)) != "0" ]; then
-	
+
 	printf "\n\e[0;31m The product of the lattice sizes in spatial direction has to be even! Aborting...\n\n\e[0m"
 	exit -1
-	
+
     elif [ $(echo $BGSIZE $NRXPROCS $NRYPROCS $NRZPROCS $NTIME | awk '{print $5/($1/($2*$3*$4))-int($5/($1/($2*$3*$4)))}') != "0" ]; then
-	
+
 	printf "\n\e[0;31m The local lattice size in t-direction has to be integer! Aborting...\n\n\e[0m"
 	exit -1
-	
-    elif [ $(($NSPACE/$NRXPROCS)) -le 1 ] || [ $(($NSPACE/$NRYPROCS)) -le 1 ] || 
+
+    elif [ $(($NSPACE/$NRXPROCS)) -le 1 ] || [ $(($NSPACE/$NRYPROCS)) -le 1 ] ||
 	 [ $(($NSPACE/$NRZPROCS)) -le 1 ] || [ $(($NTIME/($BGSIZE/($NRXPROCS*$NRYPROCS*$NRZPROCS)))) -lt 1 ]; then
-	
+
 	printf "\n\e[0;31m No local lattice size is allowed to be 1! Aborting...\n\n\e[0m"
 	exit -1
-	
-    elif [ $(($NSPACE/$NRXPROCS)) -ge $NSPACE ] || [ $(($NSPACE/$NRYPROCS)) -ge $NSPACE ] || 
+
+    elif [ $(($NSPACE/$NRXPROCS)) -ge $NSPACE ] || [ $(($NSPACE/$NRYPROCS)) -ge $NSPACE ] ||
 	 [ $(($NSPACE/$NRZPROCS)) -ge $NSPACE ] || [ $(($NTIME/($BGSIZE/($NRXPROCS*$NRYPROCS*$NRZPROCS)))) -ge $NTIME ]; then
-	
+
 	printf "\n\e[0;31m No local lattice size is allowed to be equal to or bigger than the total lattice size! Aborting...\n\n\e[0m"
 	exit -1
-	
+
     fi
-    
+
     printf "\e[0;32m The parallelization is fine!\n"
     printf "\e[0;36m===================================================================================\n\e[0m"
 }
@@ -81,27 +100,27 @@ function ProduceInputFileAndJobScriptForEachBeta_Juqueen(){
 	local JOBSCRIPT_GLOBALPATH="${HOME_BETADIRECTORY}/$JOBSCRIPT_NAME"
 	local INPUTFILE_GLOBALPATH="${HOME_BETADIRECTORY}/$INPUTFILE_NAME"
 	#-----------------------------------------------------------------------------------#
-	
+
 	if [ ! -d $HOME_BETADIRECTORY ]; then
 	    printf "\e[0;34m Creating directory for beta = $BETA...\e[0m"
 	    mkdir $HOME_BETADIRECTORY || exit -2
 	    printf "\e[0;34m done!\n\e[0m"
 	    SUBMIT_BETA_ARRAY+=( $BETA )
 	else
-	    #$HOME_BETADIRECTORY already exists. Check if there are files in $HOME_BETADIRECTORY. 
+	    #$HOME_BETADIRECTORY already exists. Check if there are files in $HOME_BETADIRECTORY.
 	    if [ $(ls $HOME_BETADIRECTORY | wc -l) -gt 0 ]; then
 		printf "\n\e[0;31m There are already files in $HOME_BETADIRECTORY. The value beta = $BETA will be skipped!\n\e[0m"
 		PROBLEM_BETA_ARRAY+=( $BETA )
 		continue
 	    fi
 	fi
-	
-        # Build jobscript and input file and put them together with hmc_tm into the $HOME_BETADIRECTORY	
+
+        # Build jobscript and input file and put them together with hmc_tm into the $HOME_BETADIRECTORY
 	printf "\e[0;34m Producing files inside $HOME_BETADIRECTORY/... \n\e[0m"
 	ProduceJobscript_Juqueen
 	ProduceInputFile_Juqueen
 	cp $HMC_GLOBALPATH $HOME_BETADIRECTORY || exit -2
-	
+
 	if [ -f "$INPUTFILE_GLOBALPATH" ] && [ -f "$JOBSCRIPT_GLOBALPATH" ]; then
 	    printf "\e[0;34m ...files built successfully!\n\n\e[0m"
 	else
@@ -111,31 +130,31 @@ function ProduceInputFileAndJobScriptForEachBeta_Juqueen(){
 	    printf "\n\e[0;31m Aborting...\n\n\e[0m"
 	    exit -1
 	fi
-	
+
 	# Create a File in each new beta dir with the name format bx.xxx_created_d_m_y
 	# From this file one can tell when a directory was created the first time
 	touch $HOME_BETADIRECTORY"/b"$BETA"_created_$(date +"%d_%m_%y")"
-	
+
     done #loop on BETA
 }
 
 #=======================================================================================================================#
 
 function ProcessBetaValuesForSubmitOnly_Juqueen() {
-    for BETA in ${BETAVALUES[@]}; do	
+    for BETA in ${BETAVALUES[@]}; do
 	#-----------------------------------------------------------------------------------#
 	local HOME_BETADIRECTORY="$HOME_DIR_WITH_BETAFOLDERS/$BETA_PREFIX$BETA"
 	local JOBSCRIPT_NAME="${JOBSCRIPT_PREFIX}_${PARAMETERS_STRING}_$BETA_PREFIX$BETA"
 	local JOBSCRIPT_GLOBALPATH="${HOME_BETADIRECTORY}/$JOBSCRIPT_NAME"
 	local INPUTFILE_GLOBALPATH="${HOME_BETADIRECTORY}/$INPUTFILE_NAME"
 	#-----------------------------------------------------------------------------------#
-	
+
 	if [ ! -d $HOME_BETADIRECTORY ]; then
 	    printf "\e[0;31m Directory $HOME_BETADIRECTORY not existing. The value beta = $BETA will be skipped!\n\e[0m"
 	    PROBLEM_BETA_ARRAY+=( $BETA )
 	    continue
 	else
-	    #$HOME_BETADIRECTORY already exists. Check if there are files in $HOME_BETADIRECTORY. 
+	    #$HOME_BETADIRECTORY already exists. Check if there are files in $HOME_BETADIRECTORY.
 	    if [ -f "$INPUTFILE_GLOBALPATH" ] && [ -f "$JOBSCRIPT_GLOBALPATH" ] && [ -f "$HOME_BETADIRECTORY/$HMC_FILENAME" ]; then
 		#Check if there are more than 3 files, this means that there are more files than
 		#jobscript, input file and hmc_tm which should not be the case
@@ -186,14 +205,14 @@ function ProcessBetaValuesForContinue_Juqueen() {
 	local INPUTFILE_GLOBALPATH="${HOME_BETADIRECTORY}/$INPUTFILE_NAME"
 	local OUTPUTFILE_GLOBALPATH="${WORK_BETADIRECTORY}/$OUTPUTFILE_NAME"
 	#------------------------------------------------------------------------#
-	
+
 	if [ ! -f $INPUTFILE_GLOBALPATH ]; then
 	    printf "\n\e[0;31m $INPUTFILE_GLOBALPATH does not exist.\n\e[0m"
 	    printf "\e[0;31m Simulation cannot be continued. Leaving out beta = $BETA .\n\n\e[0m"
 	    PROBLEM_BETA_ARRAY+=( $BETA )
 	    continue
 	fi
-	
+
 	echo ""
 	__static__CheckIfJobIsInQueue_Juqueen
 	if [ $? == 0 ]; then
@@ -217,24 +236,24 @@ function ProcessBetaValuesForContinue_Juqueen() {
 	    PROBLEM_BETA_ARRAY+=( $BETA )
 	    continue
 	fi
-	
+
 	grep -q "^StartCondition = continue" $INPUTFILE_GLOBALPATH
 	if [ $(echo $?) = 0 ]
-	then 
-	    StartCondition="continue" 
-	else 
-	    StartCondition="undefined" 
+	then
+	    StartCondition="continue"
+	else
+	    StartCondition="undefined"
 	fi
-	
+
 	grep -q "^InitialStoreCounter = readin" $INPUTFILE_GLOBALPATH
-	
+
 	if [ $(echo $?) = 0 ]
-	then 
-	    InitialStoreCounter="readin" 
-	else 
-	    InitialStoreCounter="undefined" 
+	then
+	    InitialStoreCounter="readin"
+	else
+	    InitialStoreCounter="undefined"
 	fi
-	
+
 	if [  $StartCondition != "continue" ]; then
 	    printf "\n\e[0;31m StartCondition for beta = $BETA is not set to continue.\n\e[0m"
 	    printf "\e[0;31m Simulation cannot be continued. Leaving out beta = $BETA .\n\e[0m"
@@ -246,19 +265,19 @@ function ProcessBetaValuesForContinue_Juqueen() {
 	    PROBLEM_BETA_ARRAY+=( $BETA )
 	    continue
 	fi
-	
+
 	if [ $CONTINUE_NUMBER -eq 0 ]
 	then
-	    TOTAL_NR_TRAJECTORIES=$(grep "^#[[:blank:]]\+Total[[:blank:]]\+number[[:blank:]]\+of[[:blank:]]\+trajectories" $INPUTFILE_GLOBALPATH | grep -o "=[[:blank:]]*[[:digit:]]\+[[:blank:]]*#*" | grep -o "[[:digit:]]\+")	
+	    TOTAL_NR_TRAJECTORIES=$(grep "^#[[:blank:]]\+Total[[:blank:]]\+number[[:blank:]]\+of[[:blank:]]\+trajectories" $INPUTFILE_GLOBALPATH | grep -o "=[[:blank:]]*[[:digit:]]\+[[:blank:]]*#*" | grep -o "[[:digit:]]\+")
 	else
 	    TOTAL_NR_TRAJECTORIES=$CONTINUE_NUMBER
  	    sed -i "s/\(^#[[:blank:]]\+Total[[:blank:]]\+number[[:blank:]]\+of[[:blank:]]\+trajectories[[:blank:]]\+=[[:blank:]]*\)[[:digit:]]\+[[:blank:]]*#*.*/\1$TOTAL_NR_TRAJECTORIES/" $INPUTFILE_GLOBALPATH
 	fi
-	
+
 	TRAJECTORIES_DONE=$(tail -n1 $OUTPUTFILE_GLOBALPATH | grep -o "^[[:digit:]]\+")
 	TRAJECTORIES_DONE=$(expr $TRAJECTORIES_DONE + 1)
 	MEASUREMENTS_REMAINING=$(expr $TOTAL_NR_TRAJECTORIES - $TRAJECTORIES_DONE)
-	
+
 	if [ $MEASUREMENTS_REMAINING -gt 0 ]
 	then
 	    sed -i "s/\(^Measurements.*$\)/#\1\nMeasurements = $MEASUREMENTS_REMAINING/" $INPUTFILE_GLOBALPATH
@@ -268,7 +287,7 @@ function ProcessBetaValuesForContinue_Juqueen() {
 	    printf "\e[0;31m is smaller or equal to zero.\n\e[0m"
 	    printf "\e[0;31m Simulation cannot be continued. Leaving out beta = $BETA .\n\e[0m"
 	    PROBLEM_BETA_ARRAY+=( $BETA )
-	    continue	
+	    continue
 	fi
     done #loop on BETA
 }
@@ -291,7 +310,7 @@ function SubmitJobsForValidBetaValues_Juqueen() {
 	for BETA in ${SUBMIT_BETA_ARRAY[@]}; do
 	    echo "  - $BETA"
 	done
-	
+
 	for BETA in ${SUBMIT_BETA_ARRAY[@]}; do
 	    local SUBMITTING_DIRECTORY="$HOME_DIR_WITH_BETAFOLDERS/$BETA_PREFIX$BETA"
 	    local JOBSCRIPT_NAME="${JOBSCRIPT_PREFIX}_${PARAMETERS_STRING}_$BETA_PREFIX$BETA"

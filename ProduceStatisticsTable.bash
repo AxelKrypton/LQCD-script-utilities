@@ -1,4 +1,24 @@
 #!/bin/bash
+#
+#  Copyright (c) 2021 Alessandro Sciarra
+#  Copyright (c) 2021 Francesca Cuteri
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 export LC_NUMERIC="en_US.UTF-8"
 
@@ -66,7 +86,7 @@ while [ "$1" != "" ]; do
             if [[ $2 =~ ^${NTIME_REGEX//\\/}$ ]]; then
                 REQUESTED_NTIME="$2"
             else
-                printf "\n\e[38;5;9m Option value \e[1m$2\e[22m invalid! Aborting...\n\n\e[0m"; exit -1 
+                printf "\n\e[38;5;9m Option value \e[1m$2\e[22m invalid! Aborting...\n\n\e[0m"; exit -1
             fi
             shift 2
             ;;
@@ -74,7 +94,7 @@ while [ "$1" != "" ]; do
             if [[ $2 =~ ^${NFLAVOUR_REGEX//\\/}$ ]]; then
                 REQUESTED_NFLAVOUR="$2"
             else
-                printf "\n\e[38;5;9m Option value \e[1m$2\e[22m invalid! Aborting...\n\n\e[0m"; exit -1 
+                printf "\n\e[38;5;9m Option value \e[1m$2\e[22m invalid! Aborting...\n\n\e[0m"; exit -1
             fi
             shift 2
             ;;
@@ -117,7 +137,7 @@ function ReadParametersFromPath(){
 
     local PARAMETERS_VALUE=()
     #Path given as first argument to this function
-    local PATH_TO_BE_USED="/$1/" 
+    local PATH_TO_BE_USED="/$1/"
     for ((i=0; i<${#PARAMETER_PREFIXES[@]}; i++)); do
 	    if [ $(echo $PATH_TO_BE_USED | grep -o "/${PARAMETER_PREFIXES[$i]}" | wc -l) -ne 1 ]; then
 	        printf "\n\e[0;31m Unable to recover \"${PARAMETER_PREFIXES[$i]}\" from the path \"$1\". Aborting...\n\n\e[0m"

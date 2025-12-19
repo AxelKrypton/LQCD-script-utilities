@@ -1,4 +1,23 @@
 #!/bin/bash
+#
+#  Copyright (c) 2015 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 FIND_LARGEST="FALSE"
 FIND_CLOSEST_VALUE="FALSE"
@@ -12,9 +31,9 @@ do
             printf "\n"
             printf "\e[1;32mDescription:\n\e[0m"
             printf "        \e[32mThis script is designed to process a file that represents a gathering of the best fit results of different volume combinations.\n\e[0m"
-            printf "        \e[32mThe processing consists in either searching for a value that is next to a specified one or simply searching for the largest value.\n\e[0m" 
+            printf "        \e[32mThe processing consists in either searching for a value that is next to a specified one or simply searching for the largest value.\n\e[0m"
             printf "\n"
-            printf "        \e[32m-h | --help\n\e[0m"  
+            printf "        \e[32m-h | --help\n\e[0m"
             printf "                \e[32mprint this help message\n\e[0m"
             printf "\n"
             printf "        \e[32m-f | --filename\n\e[0m"
@@ -23,7 +42,7 @@ do
             printf "        \e[32m-c | --column-number\n\e[0m"
             printf "                \e[32mspecify column number of parameter to be processed\n\e[0m"
             printf "\n"
-            printf "        \e[32m-l | --line [<line start>] [<line end>]\n\e[0m" 
+            printf "        \e[32m-l | --line [<line start>] [<line end>]\n\e[0m"
             printf "                \e[32mspecify either first or last line or both if you only want to search a specific portion of the file\n\e[0m"
             printf "\n"
             printf "        \e[32m-m | --maximal-value\n\e[0m"
@@ -40,7 +59,7 @@ do
         -f | --filename)        FILENAME=$2
                                 shift
                                 ;;
-        -c | --column-nr)       COLUMN_NR=$2  
+        -c | --column-nr)       COLUMN_NR=$2
                                 shift
                                 ;;
         -l | --line)            LINE_START=$2
@@ -69,13 +88,13 @@ done
 awk -v volume_combination=$FIRST_VOLUME_COMBINATION -v line_start=$LINE_START -v line_end=$LINE_END -v column_nr=$COLUMN_NR -v find_largest=$FIND_LARGEST -v find_closest=$FIND_CLOSEST_VALUE -v value_closest_to=$VALUE_CLOSEST_TO '
 BEGIN{
     largest_initialized=0
-    closest_initialized=0 
+    closest_initialized=0
     #print "first volume combination: " volume_combination
     counter=0
     #print "line_start: " line_start
     #print "line_end: " line_end
 }
-{  
+{
     if(NR==1) print $0
         if((length(line_start) != 0 ? NR >= line_start : 1) && (length(line_end) != 0 ? NR <= line_end : 1))
     {
@@ -91,7 +110,7 @@ BEGIN{
             }
         }
 
-        if($1 ~ /^([[:digit:]]{2}\.){1,3}[[:digit:]]{2}$/){volume_combination=$1} 
+        if($1 ~ /^([[:digit:]]{2}\.){1,3}[[:digit:]]{2}$/){volume_combination=$1}
 
         if(find_largest == "TRUE")
         {
@@ -111,8 +130,8 @@ BEGIN{
                 {
                     largest_value=$column_nr
                     largest_value_line=$0
-                } 
-            }    
+                }
+            }
         }
         else if(find_closest == "TRUE")
         {

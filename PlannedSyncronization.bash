@@ -1,4 +1,25 @@
 #!/bin/bash
+#
+#  Copyright (c) 2014,2015,2017 Alessandro Sciarra
+#  Copyright (c) 2014,2016 Christopher Czaban
+#  Copyright (c) 2020 Reinhold Kaiser
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 # Script to syncronize data and write the report in a file
 # (Launching this script in crontab to get it run regularly does not work
@@ -29,7 +50,7 @@
 #                 ---> screen -S LQCD_sync
 #             4) Launch the following script (better in background)
 #             5) Check that it is running via "jobs" and detach the screen
-#                session via CTRL+a CTRL+d and exit from kampala.            
+#                session via CTRL+a CTRL+d and exit from kampala.
 #
 # IMPORTANT: Add here below your globalpath using a variable whose name is whoami.
 
@@ -39,7 +60,7 @@ kaiser="/home/kaiser/MasterThesis/Data_Elaboration_Tools/AutomaticSyncronization
 
 #Move to the correct sync folder
 identity=$(whoami)
-cd ${!identity} || exit 2 
+cd ${!identity} || exit 2
 
 # extract options and their arguments into variables.
 if [ $# -eq 0 ]; then
@@ -55,11 +76,11 @@ CUSTOM_SLEEP_TIME="FALSE"
 while [ "$2" != "" ]; do
     case $2 in
       --now )   SYNC_NOW="TRUE"; shift ;;
-      --sleepTime )  
-            if [[ "$3" =~ [[:digit:]]+(s|m|h|d) ]]; then 
-                SLEEP_TIME=$3; 
-                CUSTOM_SLEEP_TIME="TRUE"; 
-            fi 
+      --sleepTime )
+            if [[ "$3" =~ [[:digit:]]+(s|m|h|d) ]]; then
+                SLEEP_TIME=$3;
+                CUSTOM_SLEEP_TIME="TRUE";
+            fi
             shift 2
             ;;
       * ) printf "\n\e[0;31mError parsing the options! Aborting...\n\n\e[0m" ; exit -1 ;;
@@ -85,23 +106,23 @@ do
             SLEEP_SECONDS=$(awk 'BEGIN{secInDay=3600*24}{print (($1-$2)+secInDay)%(secInDay)}' <<< "$TARGET_EPOCH $CURRENT_EPOCH" )
             printf "\n\t\e[38;5;147mEntering sleeping mode. Performing next backup on \e[38;5;86m$(date -d @$(( $CURRENT_EPOCH + $SLEEP_SECONDS)) +"%d.%m.%Y \e[38;5;147mat\e[38;5;86m %H:%M")\e[0m\n\n"
             sleep $SLEEP_SECONDS
-        elif [ $CUSTOM_SLEEP_TIME = "TRUE" ]; then	
+        elif [ $CUSTOM_SLEEP_TIME = "TRUE" ]; then
             sleep $SLEEP_TIME
         fi
-    fi 
+    fi
     declare -A RUN_NAMES
     while read SYNC_FOLDER_GLOBAL_PATH REMOTE_NAME; do
         RUN_NAMES[$REMOTE_NAME]="${RUN_NAMES[$REMOTE_NAME]} $SYNC_FOLDER_GLOBAL_PATH"
     done <<< "$(awk '/^($|[#]+)/{next} {print $0}' $FILE_WITH_DIRECTIONS )"
-    
+
     OUTPUT_FILENAME="syncronization_$(date +'%d.%m.%y-%Hh%M')"
     ERROR_FILENAME="errors_$(date +'%d.%m.%y-%Hh%M')"
     for REMOTE in "${!RUN_NAMES[@]}"; do
 	    ${HOME}/Script/DataSyncronization.sh -r $REMOTE -p ${RUN_NAMES[$REMOTE]} 1>> $OUTPUT_FILENAME 2>> $ERROR_FILENAME
     done
-	
+
     unset -v 'RUN_NAMES'
     [ $SYNC_NOW = "TRUE" ] && break
 done
-    
+
 cd ${HOME}

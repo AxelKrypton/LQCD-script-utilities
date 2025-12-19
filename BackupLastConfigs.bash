@@ -1,4 +1,24 @@
 #!/bin/bash
+#
+#  Copyright (c) 2015,2016,2018-2021 Alessandro Sciarra
+#  Copyright (c) 2021 Reinhold Kaiser
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 # This script is intended to copy the last configuration per beta
 # from a remote location to somewhere else. The last configuration
@@ -318,7 +338,7 @@ EOF
                     if [[ ${prefix} = 'data' ]] && [[ ${dataFileMustExist} = 'FALSE' ]]; then
                         continue
                     else
-                        printf "\e[0;91m Checkpoint ${numberLastCheckpoint} is incomplete in \e[0;93m$(pwd)\e[0;91m -> To be invastigated...\n\e[0m" >&2    
+                        printf "\e[0;91m Checkpoint ${numberLastCheckpoint} is incomplete in \e[0;93m$(pwd)\e[0;91m -> To be invastigated...\n\e[0m" >&2
                         listOfProblematicFolders+=( "$(pwd)" )
                         continue 2
                     fi

@@ -1,8 +1,27 @@
 #!/bin/bash
+#
+#  Copyright (c) 2014,2015 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 # This script is intended to calculate the Chiral Condensate on a set of configurations
 # placed in the folder from which it is invoked.
-# Basically the "inverter" executable of CL2QCD is called per each configuration. 
+# Basically the "inverter" executable of CL2QCD is called per each configuration.
 # Such an executable, by default should be in the folder given in the --help,
 # otherwise it has to be specified.
 # Since several options that could be given to such an executable are here fixed,
@@ -78,7 +97,7 @@ if [[ "$HOST" = "loewe" ]]; then
 fi
 shopt -u nocasematch
 
-if [ "$HOST" == "loewe" ]; then 
+if [ "$HOST" == "loewe" ]; then
     # Let us read from pwd some parameters
     ReadParametersFromPath $(pwd)
     BETA=$(echo "$(pwd)" | awk '{if(index($0, "/b") != 0){print substr($0, index($0, "/b") + 2, 6)}else{print 0}}')
@@ -86,14 +105,14 @@ if [ "$HOST" == "loewe" ]; then
 	echo "Unable to recover beta from the path \"$(pwd)\". Aborting..."
 	exit -1
     fi
-   
+
     # Build string that will be used later
     PROGRAM_OPTIONS="--use_cpu=$USE_CPU --use_gpu=$USE_GPU --use_eo=1 --start=continue --ntime=$NTIME --nspace=$NSPACE --kappa=0.$KAPPA --measure_pbp=$MEASURE_PBP --measure_correlators=$MEASURE_CORRELATORS --solver=$SOLVER --cgmax=$SOLVER_ITER --sourcetype=$SOURCETYPE --sourcecontent=$SOURCECONTENT --ferm_obs_corr_postfix=$FERM_OBS_CORR_POSTFIX --num_sources=$NUM_SOURCES --beta=$BETA --theta_fermion_temporal=1 --theta_fermion_spatial=0 --use_chem_pot_im=1 --chem_pot_im=0.523598775598299"
 
     # First of all we have to wrte the job script, whose name is "job.calculate.pbp"
     JOBFILENAME="job.calculate.pbp"
     if [ -e $JOBFILENAME ]; then
-	echo "File \"$JOBFILENAME\" already existing. Aborting..." 
+	echo "File \"$JOBFILENAME\" already existing. Aborting..."
 	exit -1
     fi
     echo "#!/bin/sh" > $JOBFILENAME

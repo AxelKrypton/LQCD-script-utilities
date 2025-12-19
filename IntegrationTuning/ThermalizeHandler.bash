@@ -1,4 +1,24 @@
 #!/bin/bash
+#
+#  Copyright (c) 2014 Alessandro Sciarra
+#  Copyright (c) 2014,2015 Christopher Czaban
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 # This script is to thermalize a hot/cold configuration in a MC run.
 # It is not really well written as script, but it is just ad hoc with
@@ -76,8 +96,8 @@ LOEWE_NODE="unset"
 #USER_MAIL="sciarra@th.physik.uni-frankfurt.de"
 #HMC_BUILD_PATH="clhmc/build/RefExec"
 #SIMULATION_PATH="IntegratorTest"
-#HOME_DIR="/home/hfftheo/sciarra" 
-#WORK_DIR="/scratch/hfftheo/sciarra" 
+#HOME_DIR="/home/hfftheo/sciarra"
+#WORK_DIR="/scratch/hfftheo/sciarra"
 #HMC_FILENAME="hmc_ref"
 #HMC_GLOBALPATH="$HOME_DIR/$HMC_BUILD_PATH/$HMC_FILENAME"
 #INPUTFILE_NAME="hmc.input"
@@ -98,7 +118,7 @@ ParseCommandLineOption $@
 
 
 #-----------------------------------------------------------------------------------------------------------------#
-# Perform all the checks on the path, reading out some variables 
+# Perform all the checks on the path, reading out some variables
 CheckSingleOccurrenceInPath "lustre" "nyx" "lcsc" "$(whoami)" "mui" "k[[:digit:]]\+" "nt[[:digit:]]\+" "ns[[:digit:]]\+"
 
 ReadParametersFromPath $(pwd)
@@ -145,7 +165,7 @@ printf "\e[0;36m**************************************************\n\e[0m"
 
 
 #-------------------------------------------------------------------------------------------------------------------------#
-# Create the input files inside each betafolder 
+# Create the input files inside each betafolder
 for BETA in ${BETAVALUES[@]}; do
     LOCALPATH_TO_INPUTFILE="$BETA_PREFIX$BETA/getConf/$INPUTFILE_NAME"
     INPUTFILE_GLOBALPATH="${WORK_DIR_WITH_BETAFOLDERS}/$LOCALPATH_TO_INPUTFILE"
@@ -176,7 +196,7 @@ while [[ "${!BETAVALUES[@]}" != "" ]]; do # ${!array[@]} gives the list of the v
     if [ -e $JOBSCRIPT_GLOBALPATH ]; then
 	mv $JOBSCRIPT_GLOBALPATH ${JOBSCRIPT_GLOBALPATH}_$(date +'%F_%H%M') || exit -2
     fi
-    ProduceJobScriptFile "${BETA_FOR_JOBSCRIPT[@]}"    
+    ProduceJobScriptFile "${BETA_FOR_JOBSCRIPT[@]}"
     if [ -e $JOBSCRIPT_GLOBALPATH ]; then
 	JOBS_TO_BE_SUBMITTED+=( "$JOBSCRIPT_NAME" )
     else

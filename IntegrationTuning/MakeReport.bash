@@ -1,4 +1,23 @@
 #!/bin/bash
+#
+#  Copyright (c) 2014,2015 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 # Just a short script to read out the situation from
 # the folders present where the script is run.
@@ -80,7 +99,7 @@ for INDEX in "${!FOLDERS[@]}"; do
     fi
     if [[ $SHOW_ONLY_ST == "TRUE" ]] && [[ ! $NAME =~ ^[0-9]{1,2}_[0-9]{1,2}$ ]]; then
 	    unset FOLDERS[$INDEX]
-    fi    
+    fi
 done
 FOLDERS=( "${FOLDERS[@]}" ) #Make FOLDERS not sparse for the following!!!
 #-----------------------------------------------------------------------------------------------------------------#
@@ -119,7 +138,7 @@ for NAME in ${FOLDERS[@]}; do
             TOTAL_TIME_OF_SIMULATION=$(( $(date -d "${TIMES_ARRAY[@]:(-1)}" +%s) - $(date -d "${TIMES_ARRAY[0]}" +%s) ))
             [ $TOTAL_TIME_OF_SIMULATION -lt 0 ] && TOTAL_TIME_OF_SIMULATION=$(( $TOTAL_TIME_OF_SIMULATION + 86400 ))
             TOTAL_TIME_OF_SIMULATION=$(( $TOTAL_TIME_OF_SIMULATION + $NUMBER_OF_DAYS*86400 ))
-            #AVERAGE_TIME_PER_TRAJECTORY=$(( $TOTAL_TIME_OF_SIMULATION / (${#TIMES_ARRAY[@]}-1) +1)) #The +1 is to round to the following integer                                                                                                                      
+            #AVERAGE_TIME_PER_TRAJECTORY=$(( $TOTAL_TIME_OF_SIMULATION / (${#TIMES_ARRAY[@]}-1) +1)) #The +1 is to round to the following integer
         else
             TOTAL_TIME_OF_SIMULATION=0
         fi
@@ -170,7 +189,7 @@ else
 	unset TRAJECTORIES[$i]; TRAJECTORIES=( "${TRAJECTORIES[@]}" )
 	unset MAX_DELTAS[$i]; MAX_DELTAS=( "${MAX_DELTAS[@]}" )
 
-    done    
+    done
 fi
 printf "\e[0;36m=======================================================================\e[0m\n\n"
 

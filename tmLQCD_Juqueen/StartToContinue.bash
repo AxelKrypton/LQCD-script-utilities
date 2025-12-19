@@ -1,7 +1,26 @@
 #!/bin/bash
+#
+#  Copyright (c) 2014 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 # This script is to comment the hot/cold starting condition in the input file
-# of tmLQCD and to uncomment the continue starting condition. 
+# of tmLQCD and to uncomment the continue starting condition.
 # The strings that will be replaced MUST have a space before and after the '='
 # symbol, i.e. the input file can contain:
 #
@@ -13,7 +32,7 @@
 
 
 #Wrong arguments for the script => exit!
-if [ $# -ne 1 ]; then 
+if [ $# -ne 1 ]; then
     printf "\nPlease use the following syntax:\n"
     printf "\t\e[0;32m $0 <input_file>\e[0m\n\n"
     exit -1

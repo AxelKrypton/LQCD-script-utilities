@@ -1,9 +1,31 @@
 #!/bin/bash
+#
+#  Copyright (c) 2016,2017 Christopher Czaban
+#  Copyright (c) 2016,2017,2019-2021 Alessandro Sciarra
+#  Copyright (c) 2017 Francesca Cuteri
+#  Copyright (c) 2021 Reinhold Kaiser
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 # This fit script is suited to perform a multi-branch LINEAR fit of some data contained in
 # the file FILE_WITH_DATA_TO_BE_FITTED. It is in particular fitting the Binder linearly
 # at different masses. The finite size scaling form used in the fit for the kurtosis reads
-# 
+#
 #          B4(m,ns) = B4(m,ns=inf) + a*(m-mc)*ns^(1/nu) + ...  :=  a0 + a1*x + ...
 #
 # It is quite general, due to the command line parameters.
@@ -23,7 +45,7 @@ LINEAR_COEFFICIENT="1"
 CUBIC_COEFFICIENT="1"
 ytminusyh="-0.894"
 bfactor="-1"
-FIT_LOWER_BOUND="" 
+FIT_LOWER_BOUND=""
 FIT_UPPER_BOUND=""
 SET_Y_RANGE="FALSE"
 
@@ -171,11 +193,11 @@ while [ $# -gt 0 ]; do
         -c | --useCorrectionTerm)
             USECORRECTIONTERM="TRUE"
             ;;
-        -o | --outputFilename) 
+        -o | --outputFilename)
             OUTPUT_FILENAME=$2
             shift
             ;;
-        -p | --prefix) 
+        -p | --prefix)
             PREFIX=$2
             shift
             ;;
@@ -223,8 +245,8 @@ if [ $SEPERATE_MASS_VALUES = "FALSE" ]; then
 fi
 
 function ReadDataFile(){
-    VOLUMES=( $(awk '$0 !~ /^([[:space:]]*#|$)/ {print $2}' $FILE_WITH_DATA_TO_BE_FITTED | sort -un) ) 
-    MASS_PARAMETER_VALUES=( $(awk '$0 !~ /^([[:space:]]*#|$)/ {print $1}' $FILE_WITH_DATA_TO_BE_FITTED | sort -un) ) 
+    VOLUMES=( $(awk '$0 !~ /^([[:space:]]*#|$)/ {print $2}' $FILE_WITH_DATA_TO_BE_FITTED | sort -un) )
+    MASS_PARAMETER_VALUES=( $(awk '$0 !~ /^([[:space:]]*#|$)/ {print $1}' $FILE_WITH_DATA_TO_BE_FITTED | sort -un) )
 }
 
 function CreateGnuplotFit(){
@@ -265,7 +287,7 @@ function CreateGnuplotFit(){
     #            somewhere in the tex distribution when gnuplot gets installed. If these are missing
     #            or present but produced with a different version of gnuplot than that in use, there
     #            could be problems in the later compilation of the .tex file. This happens, for example,
-    #            using gnuplot 5.0 and having the support files of gnuplot 4.6. 
+    #            using gnuplot 5.0 and having the support files of gnuplot 4.6.
     #            Reading http://tex.stackexchange.com/questions/267031/tikz-problem-since-texlive-2015-update
     #            and in particular the comment of Akira Kakuto to the answer of egreg, it is possible to
     #            create the support files locally from where the gnuplot script is run and be sure that
@@ -308,7 +330,7 @@ function CreateGnuplotFit(){
     # Actual fit
     [ "$QUIET_MODE" = "TRUE" ] && echo 'set fit quiet' >> $TMP_FILE_FOR_GNUPLOT
 
-    if [ "$FIXB4" = "FALSE" ] && [ "$FIXNU" = "FALSE" ]; then 
+    if [ "$FIXB4" = "FALSE" ] && [ "$FIXNU" = "FALSE" ]; then
         if [ "$USECORRECTIONTERM" = "TRUE" ]
         then
             if [ "$FIT_TYPE" = "linear" ]; then
@@ -387,7 +409,7 @@ function CreateGnuplotFit(){
     echo 'chisq = FIT_STDFIT**2 * ndf'            >> $TMP_FILE_FOR_GNUPLOT  # chi-squared
     echo 'Q = 1 - igamma(0.5 * ndf, 0.5 * chisq)' >> $TMP_FILE_FOR_GNUPLOT  # the quality of fit Q -> NOTE: From version 5.0 this is in the variable FIT_P (and the option "set fit noerrorscaling" gives correct errors!)
     # Plot information
-    [ "$STAGGERED" = "TRUE" ] && echo 'set xlabel "$m$"'    >> $TMP_FILE_FOR_GNUPLOT 
+    [ "$STAGGERED" = "TRUE" ] && echo 'set xlabel "$m$"'    >> $TMP_FILE_FOR_GNUPLOT
     [ "$WILSON" = "TRUE" ] && echo 'set xlabel "$\\kappa$"'    >> $TMP_FILE_FOR_GNUPLOT
     [ "$STAGGERED" = "TRUE" ] && echo 'set ylabel "$B_4(\\beta_c,m,N_\\sigma)$"'    >> $TMP_FILE_FOR_GNUPLOT
     [ "$WILSON" = "TRUE" ] && echo 'set ylabel "$B_4(\\beta_c,\\kappa,N_\\sigma)$"'    >> $TMP_FILE_FOR_GNUPLOT
@@ -438,7 +460,7 @@ function CreateGnuplotFit(){
         echo '            .sprintf("\n")'                                                                                                                                  >> $TMP_FILE_FOR_GNUPLOT
     fi
     [ "$SUPPRESS_TITLE" = "FALSE" ] && echo 'set title fit_title'                                        >> $TMP_FILE_FOR_GNUPLOT
-    echo 'set output "'$OUTPUT_FILENAME'"'                              >> $TMP_FILE_FOR_GNUPLOT 
+    echo 'set output "'$OUTPUT_FILENAME'"'                              >> $TMP_FILE_FOR_GNUPLOT
     echo 'set style arrow 1 filled head lt 0 lc -1 lw .5'             >> $TMP_FILE_FOR_GNUPLOT
     #TODO: GENERALIZE THE FOLLOWING LINE
     # echo 'set arrow from mc,fns1(mc) to mc,graph(0,0) arrowstyle 1'   >> $TMP_FILE_FOR_GNUPLOT
@@ -482,7 +504,7 @@ function CreateGnuplotFit(){
     fi
     TMP_VAR1="${TMP_VAR1}& $%.6g$\","
     TMP_VAR2="${TMP_VAR2}, FIT_STDFIT**2)"
-    echo "$TMP_VAR1$TMP_VAR2" >> $TMP_FILE_FOR_GNUPLOT    
+    echo "$TMP_VAR1$TMP_VAR2" >> $TMP_FILE_FOR_GNUPLOT
 }
 
 function RunGnuplotScriptAndProducePdf(){
@@ -502,7 +524,7 @@ function CleanAuxiliaryFiles(){
 }
 
 function ReplaceMassValueInFile(){
-    
+
   awk -v oldMassValue=$1 -v shiftValue=$2 'BEGIN{
         counter=0;
         newMassValue=oldMassValue
@@ -535,7 +557,7 @@ CleanAuxiliaryFiles
 evince ${OUTPUT_FILENAME/.tex/.pdf} &
 
 if [ "$SEPERATE_MASS_VALUES" = "TRUE" ] && [ "$BELOW_MIN_SHIFT" = "TRUE" ]; then
-    echo 
+    echo
     echo "Warning: Specified relativ shift results in a smaller total shift ($OLD_TOTAL_SHIFT) than then the minimal allowed shift with $MIN_SHIFT. Setting total shift to minimal allowed shift $MIN_SHIFT."
     echo
 fi

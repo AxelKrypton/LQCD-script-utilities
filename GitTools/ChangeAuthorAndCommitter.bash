@@ -1,4 +1,23 @@
 #!/bin/bash
+#
+#  Copyright (c) 2017,2019 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 #Inspired from https://help.github.com/articles/changing-author-info/
 
@@ -33,7 +52,7 @@ function ParseCommandLineOption(){
             -h | --help )
                 printf "\n\e[0;91m"
                 echo "This script will rewrite the history of your git repository on all branches,"
-                echo "therefore use it with care (from great powers comes great responsibilities)!" 
+                echo "therefore use it with care (from great powers comes great responsibilities)!"
                 printf "\n\e[0;36m"
                 echo "Running the script, the history of the repository from where the script is run will"
                 echo "be analysed, looking for wrong authors and/or committers. If found, the information"
@@ -43,11 +62,11 @@ function ParseCommandLineOption(){
                 echo "Call the script $0 with the following optional arguments:"
                 echo "  --help"
                 echo "  --oldAuthorEmail      ->    Author email to be corrected"
-                echo "  --newAuthorEmail      ->    Author email to be used"     
-                echo "  --newAuthorName       ->    Author name to be used"      
+                echo "  --newAuthorEmail      ->    Author email to be used"
+                echo "  --newAuthorName       ->    Author name to be used"
                 echo "  --oldCommitterEmail   ->    Committer email to be corrected (if not given, use old author email)"
-                echo "  --newCommitterEmail   ->    Committer email to be used      (if not given, use new author email)"     
-                echo "  --newCommitterName    ->    Committer name to be used       (if not given, use new author name)"      
+                echo "  --newCommitterEmail   ->    Committer email to be used      (if not given, use new author email)"
+                echo "  --newCommitterName    ->    Committer name to be used       (if not given, use new author name)"
                 echo ""
 	            echo "  --use-mailmap         ->    Execute author and committer replacement using a file in the format"
                 echo "                              of a complete git .mailmap file. If the file is specified after the"
@@ -88,10 +107,10 @@ function ParseCommandLineOption(){
     done
 }
 
-function ExecuteGitOperations(){ 
+function ExecuteGitOperations(){
     #Rewrite history
     local COMMAND_TO_BE_RUN
-    COMMAND_TO_BE_RUN="git filter-branch --env-filter ' 
+    COMMAND_TO_BE_RUN="git filter-branch --env-filter '
                            WRONG_AUTHOR_EMAIL=\"$1\" ;
                            CORRECT_AUTHOR_EMAIL=\"$2\" ;
                            CORRECT_AUTHOR_NAME=\"$3\" ;
@@ -99,12 +118,12 @@ function ExecuteGitOperations(){
                            CORRECT_COMMITTER_EMAIL=\"$5\" ;
                            CORRECT_COMMITTER_NAME=\"$6\" ;
                            if [ \"\$GIT_COMMITTER_EMAIL\" = \"\$WRONG_COMMITTER_EMAIL\" ] || [ \"\$GIT_COMMITTER_EMAIL\" = \"\$CORRECT_COMMITTER_EMAIL\" ];
-                           then 
+                           then
                                export GIT_COMMITTER_NAME=\"\$CORRECT_COMMITTER_NAME\"   ;
                                export GIT_COMMITTER_EMAIL=\"\$CORRECT_COMMITTER_EMAIL\" ;
                            fi ;
                            if [ \"\$GIT_AUTHOR_EMAIL\" = \"\$WRONG_AUTHOR_EMAIL\" ] || [ \"\$GIT_AUTHOR_EMAIL\" = \"\$CORRECT_AUTHOR_EMAIL\" ];
-                           then 
+                           then
                                export GIT_AUTHOR_NAME=\"\$CORRECT_AUTHOR_NAME\"   ;
                                export GIT_AUTHOR_EMAIL=\"\$CORRECT_AUTHOR_EMAIL\" ;
                            fi ;
@@ -150,8 +169,8 @@ if ElementInArray "--help" ${SPECIFIED_COMMAND_LINE_OPTIONS[@]}; then
     SPECIFIED_COMMAND_LINE_OPTIONS=( "--help" )
 elif ElementInArray "--use-mailmap" ${SPECIFIED_COMMAND_LINE_OPTIONS[@]}; then
     SPECIFIED_COMMAND_LINE_OPTIONS=( $(GetElementOfArrayAndFollowingIfNotAnOption "--use-mailmap" ${SPECIFIED_COMMAND_LINE_OPTIONS[@]}) )
-fi    
-ParseCommandLineOption "${SPECIFIED_COMMAND_LINE_OPTIONS[@]}" 
+fi
+ParseCommandLineOption "${SPECIFIED_COMMAND_LINE_OPTIONS[@]}"
 
 #Check options
 if [ $USE_MAILMAP = 'FALSE' ]; then
@@ -168,7 +187,7 @@ if [ $USE_MAILMAP = 'FALSE' ]; then
     [ "$OLD_COMMITTER_EMAIL" = '' ] && OLD_COMMITTER_EMAIL=$OLD_AUTHOR_EMAIL
     [ "$NEW_COMMITTER_EMAIL" = '' ] && NEW_COMMITTER_EMAIL=$NEW_AUTHOR_EMAIL
     [ "$NEW_COMMITTER_NAME" = '' ]  &&  NEW_COMMITTER_NAME=$NEW_AUTHOR_NAME
-    
+
     ExecuteGitOperations $OLD_AUTHOR_EMAIL  $NEW_AUTHOR_EMAIL "$NEW_AUTHOR_NAME" $OLD_COMMITTER_EMAIL $NEW_COMMITTER_EMAIL "$NEW_COMMITTER_NAME"
 
 else

@@ -1,3 +1,22 @@
+#
+#  Copyright (c) 2015 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 # Show result of fitting tries that must be in a file whose name is to be given and the format:
 #
 #	Fitted Volumes   NDF  χ2  Q   	      υ ± dυ	    β_c ± dβ 	      B4(∞) ± dB
@@ -10,7 +29,7 @@ do for [i=1:words(filenames)] {
     filename=word(filenames, i)
     set term wxt i
     stats filename using 4 name "A" nooutput
-        
+
     #Make the plot in pdf where we are
     set terminal pdfcairo enhanced color font "Helvetica, 10"
     set output filename.".pdf"

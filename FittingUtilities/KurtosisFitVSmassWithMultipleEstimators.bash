@@ -1,4 +1,23 @@
 #!/usr/bin/env bash
+#
+#  Copyright (c) 2021 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 #--------------------------------------------------------------------------------#
 # Load auxiliary bash files that will be used.
@@ -128,7 +147,7 @@ while [ $# -gt 0 ]; do
         -j | --jackknife)
             useJackknife='TRUE'
             ;;
-        -b | --bootstrap) 
+        -b | --bootstrap)
             useBootstrap='TRUE'
             ;;
         -f | --dataFilename)
@@ -157,7 +176,7 @@ while [ $# -gt 0 ]; do
         --doNotfixNu)
             fixCriticalExponent="FALSE"
             ;;
-        --obs | --observable)               
+        --obs | --observable)
             observable="$2"
             shift
             ;;
@@ -224,9 +243,9 @@ function DetermineFitRanges()
 
 function ReadDataFile()
 {
-    volumes=(             $(awk '$0 !~ /^([[:space:]]*#|$)/ {print $2}'      "${fileWithGatheredKurtosisData}" | sort -n | uniq) ) 
-    massParameterValues=( $(awk '$0 !~ /^([[:space:]]*#|$)/ {print $1}'      "${fileWithGatheredKurtosisData}" | sort -n | uniq) ) 
-    massVolumesPairs=(    $(awk '$0 !~ /^([[:space:]]*#|$)/ {print $1"_"$2}' "${fileWithGatheredKurtosisData}" | sort -V | uniq) ) 
+    volumes=(             $(awk '$0 !~ /^([[:space:]]*#|$)/ {print $2}'      "${fileWithGatheredKurtosisData}" | sort -n | uniq) )
+    massParameterValues=( $(awk '$0 !~ /^([[:space:]]*#|$)/ {print $1}'      "${fileWithGatheredKurtosisData}" | sort -n | uniq) )
+    massVolumesPairs=(    $(awk '$0 !~ /^([[:space:]]*#|$)/ {print $1"_"$2}' "${fileWithGatheredKurtosisData}" | sort -V | uniq) )
 }
 
 # NOTE: Here we assume that the data-to-be-fitted file exists!

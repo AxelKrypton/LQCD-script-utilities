@@ -1,4 +1,23 @@
 function __static__CheckFileForSuspiciousTrajectory(){
+#
+#  Copyright (c) 2015,2016 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
     local FILE_GLOBALPATH="$1"
     #Check whether there is any trajectory repeated but with different observables
     # TODO: Adjust the following line for JUQUEEN where there is the time in the output file!
@@ -15,7 +34,7 @@ function __static__CleanFile(){
     #Do a backup of the file
     local FILE_GLOBALPATH_BACKUP="${FILE_GLOBALPATH}_$(date +'%F_%H%M')"
     cp $FILE_GLOBALPATH $FILE_GLOBALPATH_BACKUP || exit -2
-    
+
     if [ "$CHECK_FOR_SUSPICIOUS_TR" = "TRUE" ]; then
         __static__CheckFileForSuspiciousTrajectory $FILE_GLOBALPATH
     fi
@@ -48,13 +67,13 @@ function CleanOutputFiles()
         fi
 
         printf "\n   \e[1;36m- $BETA\n\e[0m"
-        
+
         if $(sort --numeric-sort --unique --check=silent --key 1,1 ${MAINFILE_GLOBALPATH}); then
             printf "\e[38;5;13m        The file \"${BETA_PREFIX}${MAINFILE_GLOBALPATH##*/$BETA_PREFIX}\" has not to be cleaned!\n\e[0m"
         else
             __static__CleanFile "$MAINFILE_GLOBALPATH" "TRUE"
         fi
-        
+
         if [ -f $PBPFILE_GLOBALPATH ]; then
             if $(sort --numeric-sort --unique --check=silent --key 1,1 ${PBPFILE_GLOBALPATH}); then
                 printf "\e[38;5;13m        The file \"${BETA_PREFIX}${PBPFILE_GLOBALPATH##*/$BETA_PREFIX}\" has not to be cleaned!\n\e[0m"
@@ -62,6 +81,6 @@ function CleanOutputFiles()
                 __static__CleanFile "$PBPFILE_GLOBALPATH" "FALSE"
             fi
         fi
-        
+
     done
 }

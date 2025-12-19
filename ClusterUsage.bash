@@ -1,4 +1,24 @@
 #!/bin/bash
+#
+#  Copyright (c) 2016-2020 Alessandro Sciarra
+#  Copyright (c) 2021 Reinhold Kaiser
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 # Script to gather information on the cluster usage.
 # Given a list of users, the sinfo and squeue commands
@@ -68,7 +88,7 @@ if [ "$(hostname)" = "lxlcsc0001" ]; then
     CLUSTER_NAME='LCSC'
     PARTITION='lcsc'
     USERS_LIST=( "fcuteri" "asciarra" "aschoen" "rekaiser" "adambros" )
-fi    
+fi
 OUTPUT_FILE="${CLUSTER_NAME}_usage"
 EXCLUDED_NODES_FILENAME="${CLUSTER_NAME}_excludedNodes"
 
@@ -167,7 +187,7 @@ do
         SLEEP_SECONDS=$(( $TARGET_EPOCH - $CURRENT_EPOCH ))
         sleep $SLEEP_SECONDS || { echo "Sleep $SLEEP_SECONDS failed!"; exit -1; }
     fi
-    
+
     RUNNING_BY_USERS=0
     PENDING_BY_USERS=0
     OTHER_BY_USERS=0
@@ -214,7 +234,7 @@ do
     PENDING_BY_OTHERS=$(( $PENDING_IN_TOTAL - $PENDING_BY_USERS))
     OTHER_BY_OTHERS=$(( $QUEUED_IN_TOTAL - $RUNNING_IN_TOTAL - $PENDING_IN_TOTAL - $OTHER_BY_USERS ))
     USERS_USAGE+=( "$RUNNING_BY_OTHERS $PENDING_BY_OTHERS $OTHER_BY_OTHERS" )
-    
+
     #Get excluded nodes from remote file and then parse information into list of numbers
     EXCLUDED_NODES=$(ssh $REMOTE_NAME 'bash -s' << EOF
 grep -oE "\-\-exclude=.*\[.*\]" ${REMOTE_PATH}/${EXCLUDED_NODES_FILENAME} 2>/dev/null
@@ -266,7 +286,7 @@ EOF
             EXCLUDED_BUT_IDLING_LIST=' ---------------'
         else
         EXCLUDED_BUT_IDLING_LIST="${PREFIX_NODES}["$(ReconstructNodeListFromArrayOfNodes $EXCLUDED_BUT_IDLING_LIST)"]"
-        fi            
+        fi
         if [ $EXCLUDED_BUT_ALLOCATED -eq 0 ]; then
             EXCLUDED_BUT_ALLOCATED_LIST=' ---------------'
         else

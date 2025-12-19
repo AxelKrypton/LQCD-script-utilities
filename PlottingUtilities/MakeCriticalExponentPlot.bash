@@ -1,4 +1,23 @@
 #!/bin/bash
+#
+#  Copyright (c) 2015,2016 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 # This script is intended to produce the plot of the
 # critical exponent nu as function of the quark mass.
@@ -114,12 +133,12 @@ echo 'dataFile = "'$DATA_FILENAME'"'  >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 
 echo 'stats "'$DATA_FILENAME'" nooutput'                        >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 echo "set xrange[${XRANGE[0]}*0.99:${XRANGE[1]}*1.01]" >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-echo 'set yrange[.25:.8]'                              >> $TMP_FILE_FOR_GNUPLOT_SCRIPT     
-echo 'f(x) = 0.5'                                      >> $TMP_FILE_FOR_GNUPLOT_SCRIPT    
-echo 'g(x) = 1./3'                                     >> $TMP_FILE_FOR_GNUPLOT_SCRIPT    
-echo 'h(x) = 0.6301'                                   >> $TMP_FILE_FOR_GNUPLOT_SCRIPT 
-echo 'set title "Fitted values of $\\nu$"'             >> $TMP_FILE_FOR_GNUPLOT_SCRIPT  
-echo 'set key left top'                                >> $TMP_FILE_FOR_GNUPLOT_SCRIPT    
+echo 'set yrange[.25:.8]'                              >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+echo 'f(x) = 0.5'                                      >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+echo 'g(x) = 1./3'                                     >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+echo 'h(x) = 0.6301'                                   >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+echo 'set title "Fitted values of $\\nu$"'             >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
+echo 'set key left top'                                >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 echo 'set ylabel "$\\nu$"'                             >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 if [ $WILSON = 'TRUE' ]; then
     echo 'set xlabel "$\\kappa$"'      >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
@@ -128,18 +147,18 @@ elif [ $STAGGERED = 'TRUE' ]; then
 fi
 
 if [ $DO_NOT_CORRECT_ERRORS = 'FALSE' ]; then
-    echo 'plot \'                                                                   >> $TMP_FILE_FOR_GNUPLOT_SCRIPT  
+    echo 'plot \'                                                                   >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     echo '    h(x) title "Second-order" lc 1 \'                                     >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-    echo '    , f(x) title "Tricritical" lc 3 \'                                    >> $TMP_FILE_FOR_GNUPLOT_SCRIPT  
+    echo '    , f(x) title "Tricritical" lc 3 \'                                    >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     echo '    , g(x) title "First-order" lc 5 \'                                    >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     echo '    , dataFile index 0 u '$COLUMN_X':'$COLUMN_Y':($'$COLUMN_DY'/sqrt($'$COLUMN_CHI2')) w e notitle'    >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     echo "if(STATS_blocks > 1){" >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     echo '  replot dataFile index 1 u '$COLUMN_X':'$COLUMN_Y':($'$COLUMN_DY'/sqrt($'$COLUMN_CHI2')) w e ls 0 lc 4 pt 4 notitle'   >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     echo '}' >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
 else
-    echo 'plot \'                                                                      >> $TMP_FILE_FOR_GNUPLOT_SCRIPT  
+    echo 'plot \'                                                                      >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     echo '    h(x) title "Second-order" lc 1 \'                                        >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
-    echo '    , f(x) title "Tricritical" lc 3 \'                                       >> $TMP_FILE_FOR_GNUPLOT_SCRIPT  
+    echo '    , f(x) title "Tricritical" lc 3 \'                                       >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     echo '    , g(x) title "First-order" lc 5 \'                                       >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     echo '    , dataFile index 0 u '$COLUMN_X':'$COLUMN_Y':'$COLUMN_DY' w e notitle'   >> $TMP_FILE_FOR_GNUPLOT_SCRIPT
     echo "if(STATS_blocks > 1){" >> $TMP_FILE_FOR_GNUPLOT_SCRIPT

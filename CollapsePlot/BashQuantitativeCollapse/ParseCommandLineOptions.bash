@@ -1,4 +1,23 @@
 function ParseCommandLineOptionsAndChecksGivenInformation(){
+#
+#  Copyright (c) 2016 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
     while [ "$1" != "" ]; do
         case $1 in
@@ -13,7 +32,7 @@ function ParseCommandLineOptionsAndChecksGivenInformation(){
                 echo "  --xmin                         ->   Only data between xmin and xmax will be considered in the collapse. This means that data outside"
                 echo "  --xmax                              the given range are not considered (and then not rescaled). These are used only if given."
                 echo "                                      Since each volume can in principle have a different range, insert the option value as "
-                echo "                                      \"ns xmin\" or \"ns xmax\" without forgetting the quotation marks (i.e. \"16 5.456\")!"  
+                echo "                                      \"ns xmin\" or \"ns xmax\" without forgetting the quotation marks (i.e. \"16 5.456\")!"
 	            echo "  -y | --yColumn                 ->   Column in the file containing observable to be collapsed (counting from 1, default = $Y_COLUMN)"
                 echo "                                      The error on the observable is considered automatically to be in the following column!"
                 echo "  -b | --betaC                   ->   The critical value for beta to be used in the collapse. More values can be given."
@@ -24,9 +43,9 @@ function ParseCommandLineOptionsAndChecksGivenInformation(){
                 echo "  -t | --integralThreshold       ->   The resolution in x for the numerical integral is varied until the result is correct up to the"
                 echo "                                      given threshold (default = ${COLLAPSE_THRESHOLD}%). If used, then the initial integral resolution"
                 echo "                                      used is the one specified via the -r | --integralResolution option. Note that it is a percentage, so"
-                echo "                                      if for example you desire the collapse correct up to 1% just give \"-t 1\"" 
+                echo "                                      if for example you desire the collapse correct up to 1% just give \"-t 1\""
                 echo "  --factorToIncreaseResolution   ->   This is the factor by which the integral resolution is multiplied at each iteration to make the"
-                echo "                                      result converge to the desired precition. It has to be a number in between 0 and 1 (default ${FACTOR_TO_INCREASE_COLLAPSE_RESOLUTION})" 
+                echo "                                      result converge to the desired precition. It has to be a number in between 0 and 1 (default ${FACTOR_TO_INCREASE_COLLAPSE_RESOLUTION})"
                 echo "  --nu                           ->   The value of the exponent nu to be used in the collapse. More values can be given."
                 echo "                                      If desired, a minimum and maximum value together with a resolution can be specified, in order"
                 echo "                                      to do an homogeneous scan. Use the following syntax \"[min max res]\" without forgetting the quotation marks!"
@@ -38,13 +57,13 @@ function ParseCommandLineOptionsAndChecksGivenInformation(){
 	            printf "\n\e[0m"
 	            exit
                 ;;
-            -f | --filename )  
+            -f | --filename )
                 while [[ ! $2 =~ ^- ]] && [ "$2" != "" ]; do
                     DATA_FILENAMES+=( $2 )
                     shift
                 done
                 shift ;;
-            -v | --ns )  
+            -v | --ns )
                 while [[ ! $2 =~ ^- ]] && [ "$2" != "" ]; do
                     VOLUMES+=( $2 )
                     shift

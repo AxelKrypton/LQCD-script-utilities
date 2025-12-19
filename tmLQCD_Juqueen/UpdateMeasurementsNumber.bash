@@ -1,4 +1,23 @@
 #!/bin/bash
+#
+#  Copyright (c) 2014 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 # This script is to change the number of Measurements in the input file
 # of tmLQCD.
@@ -12,7 +31,7 @@
 
 
 #Wrong arguments for the script => exit!
-if [ $# -ne 2 ]; then 
+if [ $# -ne 2 ]; then
     printf "\nPlease use the following syntax:\n"
     printf "\t\e[0;32m $0 <input_file> <new_number_of_measurements>\e[0m\n\n"
     exit -1
@@ -66,13 +85,13 @@ END{
 
         #Grep for the exact line and extract the number of the line
 	parameterLine=$(grep -n "Measurements\s*=" $1 | sed 's/  */ /g' | awk -v line=$numberGreppedLine_Param 'NR==line{print substr($1,0,index($1, ":")-1)}')
-	
+
 	if [ $parameterLine ]; then
 	    awk -v line=$parameterLine -v newNumber=$2 'NR!=line{print $0} NR==line{printf "#%s\n%s%d\n", $0, "Measurements = ", newNumber}' $1 > fileThatHopefullyDoesNotExists
 	    mv fileThatHopefullyDoesNotExists $1
 	fi
-	
+
 	exit 0
-	
+
     fi
 fi

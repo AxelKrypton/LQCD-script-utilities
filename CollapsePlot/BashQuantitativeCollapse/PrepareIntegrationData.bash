@@ -1,4 +1,23 @@
 # Here the structure of the input files is assumed to be [x, y, dy]
+#
+#  Copyright (c) 2016 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 # without commented line. No check is performed since this file has been produced
 # by this script and not by the user.
 function PrepareIntegrationDataGivenPairOfFiles(){
@@ -12,8 +31,8 @@ function PrepareIntegrationDataGivenPairOfFiles(){
     local XMIN=( $(head -n1 $FILE_I | cut -f1 -d' ') $(head -n1 $FILE_II | cut -f1 -d' ')  )
     local XMAX=( $(tail -n1 $FILE_I | cut -f1 -d' ') $(tail -n1 $FILE_II | cut -f1 -d' ')  )
     #Since I have to do the integral of square of difference of function, I need to have both functions defined. Consider overlap interval
-    [ $(bc -l <<< "${XMIN[0]} < ${XMIN[1]}") -eq 1 ] && XMIN=${XMIN[1]} || XMIN=${XMIN[0]} 
-    [ $(bc -l <<< "${XMAX[0]} > ${XMAX[1]}") -eq 1 ] && XMAX=${XMAX[1]} || XMAX=${XMAX[0]} 
+    [ $(bc -l <<< "${XMIN[0]} < ${XMIN[1]}") -eq 1 ] && XMIN=${XMIN[1]} || XMIN=${XMIN[0]}
+    [ $(bc -l <<< "${XMAX[0]} > ${XMAX[1]}") -eq 1 ] && XMAX=${XMAX[1]} || XMAX=${XMAX[0]}
 
     #Here, I filter the data keeping only the closest point to that of the grid for the numeric integration. I start at XMIN and stop at XMAX using RESOLUTION_TO_BE_USED.
     #In the output file, I write in the first column the grid value and I add in the end the closest x value so that later I can estimate the approximation done here.
@@ -34,9 +53,9 @@ function PrepareIntegrationDataGivenPairOfFiles(){
            dx=sqrt((firstEntryLine-x)*(firstEntryLine-x))
            line=sprintf("%.12f %.12f %.12f %.12f %.12f", x, $2, $3, firstEntryLine, dx)
          }
-         
+
          BEGIN{x=xmin; printLineOnExit=1}
-         
+
          NR==1{
            SetDxAndLineWithAdditionalInfoUsingActualLine()
          }
@@ -50,7 +69,7 @@ function PrepareIntegrationDataGivenPairOfFiles(){
                x+=xres
                SetDxAndLineWithAdditionalInfoUsingPreviousGoodLine()
                if(x>xmax){
-                 printLineOnExit=0 
+                 printLineOnExit=0
                  exit
                }
                if(sqrt(($1-x)*($1-x))>dx){

@@ -1,14 +1,33 @@
 #!/bin/bash
+#
+#  Copyright (c) 2015-2017 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 #######################################################################################
 #
-#   This fit script is suited to perform a multi-branch fit of the Binder cumulant 
+#   This fit script is suited to perform a multi-branch fit of the Binder cumulant
 #   of an observable specified by the user. The type of the fit is by default linear.
 #   We assume that some information is included in the path from which this script
 #   is called. In particular the mass (whose prefix can be either "k" or "mass") and
 #   the temporal and spatial extensions of the lattice (prefixes "nt" and "ns").
 #   The finite size scaling form used in the fit for the Binder Cumulant reads
-#   
+#
 #                  B4(beta,ns) = B4(beta,ns=inf) + a*x + a^2*x^2 + ...
 #
 #   where x=(beta-betaC)*ns^(1/nu).
@@ -149,7 +168,7 @@ if [ $PRODUCE_TEMPLATE = 'TRUE' ]; then
         elif [ $STAGGERED = 'TRUE' ]; then
             GNUPLOT_SCRIPT_TEMPLATE_GLOBALPATH="BinderFitTemplate_Staggered_${#NSPACE[@]}volumes_${FIT_TYPE}.plt"
         fi
-    fi       
+    fi
     CreateGnuplotTemplateFitScriptWithoutPlotting
     exit
 fi
@@ -172,7 +191,7 @@ for INDEX in ${!NSPACE[@]}; do
     [ $(bc <<< "$BETA_MAX > $FIT_UPPER_BOUND") -eq 1 ] && FIT_UPPER_BOUND="$BETA_MAX"
 done && unset -v 'BETA_MIN' 'BETA_MAX' 'INDEX'
 #Check if there was any range without any data inside
-if [ ! -f $TMP_FILE_FOR_DATA_TO_BE_FITTED ] || 
+if [ ! -f $TMP_FILE_FOR_DATA_TO_BE_FITTED ] ||
    [ $(awk 'BEGIN{failed=0; lastEmptyLine=-1; num=0}/^$/{if(NR==lastEmptyLine+1){num++; if(num>1){failed=1; exit}}else{num=0}; lastEmptyLine=NR}END{print failed}' $TMP_FILE_FOR_DATA_TO_BE_FITTED) -eq 1 ]; then
     printf "\n\e[0;31m No data found for the given observable in some provided beta ranges! Aborting...\n\n\e[0m"
     exit -1

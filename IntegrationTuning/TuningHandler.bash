@@ -1,4 +1,24 @@
 #!/bin/bash
+#
+#  Copyright (c) 2014 Alessandro Sciarra
+#  Copyright (c) 2014 Christopher Czaban
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 # This script is to automatize the Integrator tuning in hmc simulation.
 # It is not really well written as script, but it is just ad hoc with
@@ -9,10 +29,10 @@
 # 0_YY means that only one timescale is used. The integrator is always
 # 2MN integrator.
 #
-# Since on LOEWE now one should group GPU_PER_NODE srun in order not to waste 
+# Since on LOEWE now one should group GPU_PER_NODE srun in order not to waste
 # computing time, in this script the user will have to specify
 # the number of integration steps for each scale in the following
-# way: 
+# way:
 #                      Smin:Smax:delta
 # where Smin is the minimum number of steps that will be used on
 # that scale, Smax is the maximum, and delta is the resolution
@@ -20,9 +40,9 @@
 #  --intsteps0=4:6:1
 #  --intsteps1=24:30:2
 # will make the following 12 simulations start:
-#  (4,24) - (4,26) - (4,28) - (4,30)  
-#  (5,24) - (5,26) - (5,28) - (5,30)  
-#  (6,24) - (6,26) - (6,28) - (6,30)  
+#  (4,24) - (4,26) - (4,28) - (4,30)
+#  (5,24) - (5,26) - (5,28) - (5,30)
+#  (6,24) - (6,26) - (6,28) - (6,30)
 #
 #
 # From the path some parameters like kappa, ns, nt, mu are deduced.
@@ -70,8 +90,8 @@ EVALUATEONLY=0
 #USER_MAIL="sciarra@th.physik.uni-frankfurt.de"
 #HMC_BUILD_PATH="clhmc/build/RefExec"
 #SIMULATION_PATH="IntegratorTest"
-#HOME_DIR="/home/hfftheo/sciarra" 
-#WORK_DIR="/scratch/hfftheo/sciarra" 
+#HOME_DIR="/home/hfftheo/sciarra"
+#WORK_DIR="/scratch/hfftheo/sciarra"
 #HMC_FILENAME="hmc_ref"
 #HMC_GLOBALPATH="$HOME_DIR/$HMC_BUILD_PATH/$HMC_FILENAME"
 #INPUTFILE_NAME="hmc.input"
@@ -92,7 +112,7 @@ ParseCommandLineOption $@
 
 
 #-----------------------------------------------------------------------------------------------------------------#
-# Perform all the checks on the path, reading out some variables 
+# Perform all the checks on the path, reading out some variables
 CheckSingleOccurrenceInPath "scratch" "hfftheo" "$(whoami)" "mui" "k[[:digit:]]\+" "nt[[:digit:]]\+" "ns[[:digit:]]\+"
 
 ReadParametersFromPath $(pwd)
@@ -217,7 +237,7 @@ while [[ "${!INTSTEPS_TOGETHER[@]}" != "" ]]; do # ${!array[@]} gives the list o
 	printf "\n\e[0;31m Jobscript \"$JOBSCRIPT_NAME\" failed to be created! It will be not submitted!!!\n\e[0m"
     fi
 done
-    
+
 #-----------------------------------------------------------------------------------------------------------------#
 
 

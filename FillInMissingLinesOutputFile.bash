@@ -1,4 +1,24 @@
 #!/bin/bash
+#
+#  Copyright (c) 2016 Christopher Czaban
+#  Copyright (c) 2021 Alessandro Sciarra
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 if [[ $# -ne 2 ]]; then
     echo "Usage: $0 (output|pbp) <filename>"
@@ -84,13 +104,13 @@ for((INDEX=0; INDEX < $NR_ENTRIES; INDEX++)); do
 		CONFIRM="";
 		while read CONFIRM; do
 			if [ "$CONFIRM" = "Y" ]; then
-				break	
+				break
 			elif [ "$CONFIRM" = "N" ]; then
 				continue 2
 			fi
 		done
 	fi
-	
+
 	LINE_NR=$(grep -n "^[[:space:]]*${START_TRAJ_NR[$INDEX]}" $INPUT_FILE | cut -f1 -d":")
 	head -n$LINE_NR $INPUT_FILE > $TMP_FILE
 	for((i=1; i<=${NR_MISSING_LINES[$INDEX]}; i++)); do
@@ -101,7 +121,7 @@ for((INDEX=0; INDEX < $NR_ENTRIES; INDEX++)); do
 	NR_LINES_FROM_BOTTOM=$(($(wc -l < $INPUT_FILE)-$LINE_NR))
 	tail -n$(($NR_LINES_FROM_BOTTOM)) $INPUT_FILE >> $TMP_FILE
 	cat $TMP_FILE > $INPUT_FILE
-done	
+done
 
 rm -f $TMP_FILE
 

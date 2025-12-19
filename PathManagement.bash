@@ -1,4 +1,25 @@
 #!/bin/bash
+#
+#  Copyright (c) 2014,2016 Christopher Czaban
+#  Copyright (c) 2014-2016,2018 Alessandro Sciarra
+#  Copyright (c) 2021 Francesca Cuteri
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 # This script is supposed to be the ONLY place where to store the path
 # convention used in all the other scripts. Basically this is the best
@@ -14,7 +35,7 @@
 # NOTE: Variables are written with capital letters and underscores, name
 #       of functions with only capital initial letter of each word and no
 #       underscores.
-# 
+#
 # ATTENTION: The path management should be such that both Wilson and Staggered
 #            code can be handled at the same time. This is achieved anywhere
 #            according to the variables WILSON and STAGGERED set respectively
@@ -110,7 +131,7 @@ function SetParametersPathAndString(){
     #TODO: Use function GetParametersString giving ${PARAMETER_PREFIXES[@]} to it and build PARAMETERS_PATH as "/${PARAMETERS_STRING[@]//_/\/}"
     IsAnyParameterUnsetAmong $@ &&  printf "\n\e[0;31m Function \"$FUNCNAME\" called before extracting parameters! Aborting...\n\n\e[0m" && exit -1
     local PARAMETERS_VALUE=([$NFLAVOUR_POSITION]=$NFLAVOUR [$CHEMPOT_POSITION]=$CHEMPOT [$MASS_POSITION]=$MASS [$NTIME_POSITION]=$NTIME [$NSPACE_POSITION]=$NSPACE)
-    for ((i=0; i<${#PARAMETER_PREFIXES[@]}; i++)); do    
+    for ((i=0; i<${#PARAMETER_PREFIXES[@]}; i++)); do
 	    PARAMETERS_PATH="$PARAMETERS_PATH/${PARAMETER_PREFIXES[$i]}${PARAMETERS_VALUE[$i]}"
 	    PARAMETERS_STRING="$PARAMETERS_STRING${PARAMETER_PREFIXES[$i]}${PARAMETERS_VALUE[$i]}_"
     done
@@ -134,7 +155,7 @@ function ReadSingleParameterFromPath(){
 
 # This function takes the path to be used as first argument and the prefix of the parameters to be extracted as second argument
 # but it considers that the prefix is present multiple times in the path, so the slash before the prefix is not considered.
-# At the moment the global variable is set to a readonly array value. 
+# At the moment the global variable is set to a readonly array value.
 function ReadSingleParameterFromPathWithMultipleOccurence(){
     [ $# -ne 2 ] &&  printf "\n\e[0;31m Function \"$FUNCNAME\" called with wrong number of parameters! Aborting...\n\n\e[0m" && exit -1
     [ -z ${PARAMETER_VARIABLE_NAMES[$2]:+x} ] &&  printf "\n\e[0;31m Function \"$FUNCNAME\" called with unknown prefix! Aborting...\n\n\e[0m" && exit -1
@@ -158,7 +179,7 @@ function CheckParametersExtractedFromPath(){
                 for VALUE in ${MASS[@]}; do
                     if [[ ! $VALUE =~ ^${MASS_REGEX//\\/}$ ]]; then
 	                    printf "\n\e[0;31m Parameter \"$MASS_PREFIX\" extracted from the path not allowed! Aborting...\n\n\e[0m"; exit -1
-                    fi 
+                    fi
                 done && unset -v 'VALUE' ;;
             NTIME)
                 for VALUE in ${NTIME[@]}; do
@@ -175,13 +196,13 @@ function CheckParametersExtractedFromPath(){
             NFLAVOUR)
                 for VALUE in ${NFLAVOUR[@]}; do
                     if [[ ! $VALUE =~ ^${NFLAVOUR_REGEX//\\/}$ ]]; then
-	                    printf "\n\e[0;31m Parameter \"$NFLAVOUR_PREFIX\" extracted from the path not allowed! Aborting...\n\n\e[0m"; exit -1        
+	                    printf "\n\e[0;31m Parameter \"$NFLAVOUR_PREFIX\" extracted from the path not allowed! Aborting...\n\n\e[0m"; exit -1
                     fi
                 done && unset -v 'VALUE' ;;
             CHEMPOT)
                 for VALUE in ${CHEMPOT[@]}; do
                     if [[ ! $VALUE =~ ^${CHEMPOT_REGEX//\\/}$ ]]; then
-	                    printf "\n\e[0;31m Parameter \"$CHEMPOT_PREFIX\" extracted from the path not allowed! Aborting...\n\n\e[0m"; exit -1        
+	                    printf "\n\e[0;31m Parameter \"$CHEMPOT_PREFIX\" extracted from the path not allowed! Aborting...\n\n\e[0m"; exit -1
                     fi
                 done && unset -v 'VALUE' ;;
             *)
@@ -191,7 +212,7 @@ function CheckParametersExtractedFromPath(){
 }
 
 function ReadParametersFromPath(){
-    
+
     # TODO: This function should become something like
     #
     #   for PREFIX in $@; do
@@ -203,7 +224,7 @@ function ReadParametersFromPath(){
 
     local PARAMETERS_VALUE=()
     #Path given as first argument to this function
-    local PATH_TO_BE_USED="/$1/" 
+    local PATH_TO_BE_USED="/$1/"
     for ((i=0; i<${#PARAMETER_PREFIXES[@]}; i++)); do
 	    if [ $(echo $PATH_TO_BE_USED | grep -o "/${PARAMETER_PREFIXES[$i]}" | wc -l) -ne 1 ]; then
 	        printf "\n\e[0;31m Unable to recover \"${PARAMETER_PREFIXES[$i]}\" from the path \"$1\". Aborting...\n\n\e[0m"
@@ -231,10 +252,10 @@ function ReadParametersFromPath(){
 	    exit -1
     elif [[ ! $NFLAVOUR =~ ^${NFLAVOUR_REGEX//\\/}$ ]]; then
 	    printf "\n\e[0;31m Parameter \"$NFLAVOUR_PREFIX\" from the path \"$1\" not allowed! Aborting...\n\n\e[0m"
-	    exit -1        
+	    exit -1
     elif [[ ! $CHEMPOT =~ ^${CHEMPOT_REGEX//\\/}$ ]]; then
 	    printf "\n\e[0;31m Parameter \"$CHEMPOT_PREFIX\" from the path \"$1\" not allowed! Aborting...\n\n\e[0m"
-	    exit -1        
+	    exit -1
     fi
     #Set parameters path
     SetParametersPathAndString
@@ -244,7 +265,7 @@ function CheckSingleOccurrenceInPath(){
     for var in $@; do
 	    Var=$(echo $(pwd) | grep -o "$var" | wc -l)
 	    if [ $Var -ne 1 ] ; then
-	        printf "\n\e[0;31m The string \"$var\" must occur once and only once in the path! Aborting...\n\n\e[0m" 
+	        printf "\n\e[0;31m The string \"$var\" must occur once and only once in the path! Aborting...\n\n\e[0m"
 	        exit 1
 	    fi
     done

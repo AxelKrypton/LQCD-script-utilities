@@ -1,4 +1,24 @@
 #!/bin/bash
+#
+#  Copyright (c) 2014,2015,2018 Alessandro Sciarra
+#  Copyright (c) 2015 Christopher Czaban
+#
+#  This file is part of "Script utilities".
+#
+#  "Script utilities" is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  "Script utilities" is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with "Script utilities". If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 # This script is just supposed to run the Python script to backup simulation
 # data automatically for a bunch of simulations.
@@ -16,7 +36,7 @@
 # This script works also for Staggered simulations, since the python
 # script can manage also that case.
 #
-# IMPORTANT: Add here below your globalpath to the python executable 
+# IMPORTANT: Add here below your globalpath to the python executable
 #            using a variable whose name is $(whoami).
 
 sciarra="${HOME}/Documents/PhD_project/Data_Elaboration_tools/LQCD_SimulationManagementUtilities/ImagMu/ImagMuSync.py"
@@ -87,7 +107,7 @@ while [ "$1" != "" ]; do
             printf "\n\e[0m"
             exit
             shift ;;
-        
+
         -r | --remote )
             while [[ ! "$2" =~ ^- ]] && [ "$2" != "" ]; do
                 REMOTE=$2
@@ -101,7 +121,7 @@ while [ "$1" != "" ]; do
                 shift
             done
             shift ;;
-            
+
         * ) printf "\n\e[0;31m Invalid option \e[1m$1\e[0;31m (see help for further information)! Aborting...\n\n\e[0m" ; exit -1 ;;
     esac
 done
@@ -132,7 +152,7 @@ for RUN in ${DATA_GLOBALPATHS[@]}; do
     # Then syncronize
     printf "\n\e[38;5;10m Syncronizing..."
     python ${!identity} -f=$BETASFILE --remote=$REMOTE >/dev/null
-    printf " done!\e[0m\n" 
+    printf " done!\e[0m\n"
     # Then clean data files
     CleanDataFiles ${BETAVALUES[@]}
     PrintSituationVolume
@@ -140,7 +160,7 @@ for RUN in ${DATA_GLOBALPATHS[@]}; do
 done
 
 # Print report on skipped folder
-if [ ${#SKIPPED_DIRECTORIES[@]} -gt "0" ]; then	
+if [ ${#SKIPPED_DIRECTORIES[@]} -gt "0" ]; then
     printf "\n\e[0;31m===================================================================================\n\e[0m"
     printf "\e[0;31m For the following given folders something went wrong and hence\n\e[0m"
     printf "\e[0;31m they were left out during the syncronization process:\n"
